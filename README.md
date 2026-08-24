@@ -5,7 +5,8 @@ drawn as vinyl discs; clicking one plays it, `Tab` walks to the next sound the
 analyser thinks is like it, `S` keeps it, and anything you keep — or anything a
 filter has left on screen — packs into a zip with its credits. **The page opens by
 running ForceAtlas2**, so the graph assembles itself in front of you; the same
-nodes can also be arranged four ways — including a scatter against any two of
+nodes can also be arranged four ways — including a scatter graph against any two
+of
 sixteen measured fields.
 
 Current build: **7,023 samples · 7,759 nodes · 31,849 edges · 19 communities**.
@@ -136,9 +137,40 @@ reaches. Four rings is where the curve flattens - six buys two more points under
 a hard filter and stretches the word "similar" further than it will go - and the
 whole sweep of 21,139 lookups takes 15ms, so one of them is not a cost.
 
+Widening on its own still walks in circles, though. A ranking graph is mostly
+small tight cliques, and nearest-visible inside one of them is a loop: three
+kicks that all name each other pass the walk round and round for ever, because
+the nearest thing to each of them is one it has just heard. A hundred `Tab`s
+landed on 4.4 distinct sounds, and 84% of walks ended in a cycle three or four
+long.
+
+So the walk remembers where it has been, and a ring is offered fresh ground
+first, then ground already heard, longest-ago first. Nothing is taken away - it
+goes to the back of the queue - and a ring of nothing but old ground is not where
+the walk stops either: it widens past that too, looking for something new, and
+only comes back to the nearest such ring when there is nothing new within reach
+at all. A hundred `Tab`s now land on 45, and the 7% of walks that still come
+round do it in eights rather than threes, which is a neighbourhood genuinely that
+small rather than a rule chasing its own tail.
+
+The memory is an LRU `Map`: delete-then-set moves a key to the end of it, so the
+oldest is whatever `keys()` hands back first, and the value doubles as the age
+the old-ground sort needs. It is 400 deep, which is as far back as `Backspace`
+goes, and it is cleared when a walk is - `Escape`, or clicking somewhere else and
+starting a new path.
+
+shift-`Tab` had to be told about the ordering too. Backwards from a step you have
+not branched from yet means the far end of the list, and the far end of the list
+is now precisely where the sounds you have just heard are - so holding it walked
+4 distinct sounds in a hundred presses. Backwards from cold takes the far end of
+the *fresh* ground instead, the other side of the ring rather than a lap of the
+old one, and walks 38. (It was also off by one, landing on the last but one.)
+
 Anything past the first ring says so on the now-playing line, `2 hops 1/6` rather
 than `similar 1/6`: a sound two edges away is a weaker claim than one the ranking
-put next to you, and the count is of a different list.
+put next to you, and the count is of a different list. Landing on something
+already heard adds `· again`, which is the cue that this corner of the graph
+is walked out and it is worth filtering or moving somewhere else.
 
 The adjacency is a CSR pair of typed arrays built once at load (9.6ms), because
 `E` is a flat list of 31,849 edges and rescanning it per hop is the kind of thing
@@ -252,16 +284,16 @@ middle of their own graph.
 |---|---|
 | **clusters** | one sunflower disc per community, packed largest first |
 | **grid** | every node once, in reading order by cluster then links. Not a picture of the graph — a contact sheet of it |
-| **scatter** | any two of sixteen fields, with axes |
+| **scatter graph** | any two of sixteen fields, with axes |
 
 Each is a pure function from the active subgraph to positions, scaled uniformly
 into the same world the physics uses — never stretched to the window, because a
-scatter squashed to an aspect ratio is lying about both of its axes. Pressing
+scatter graph squashed to an aspect ratio is lying about both of its axes. Pressing
 `P` from any of them starts the simulation there and retires the arrangement.
 
-### The scatter
+### The scatter graph
 
-The x and y pickers appear with the scatter and go away with it — they are its
+The x and y pickers appear with the scatter graph and go away with it — they are its
 own controls, and mean nothing under a layout that has no axes. They cover the
 seven timbre descriptors, loudness and dynamic range, tempo, key, duration,
 downloads, rating, link count and cluster. Duration, downloads and links are on
@@ -287,7 +319,8 @@ all seven descriptors, against 1,376 with a trusted key.
 Stacked points are the real problem at 7,023 samples, so `spacing` pushes them
 apart into a beeswarm; at 0 you get exact positions and nothing legible. That
 relaxation does its own collision on a uniform grid rather than reusing the
-physics quadtree, because a fresh scatter is the one input that tree is worst at
+physics quadtree, because a fresh scatter graph is the one input that tree is
+worst at
 — a few thousand near-identical values drive it to its depth cap. It also caps
 the radius at the 90th percentile first: a cell has to be twice the largest
 radius in it, the biggest node here is 4.5× the median, and left uncapped one
@@ -478,12 +511,18 @@ The cost is that restarting the server mid-sign-in invalidates the flow, since
 the pending states are in memory. That is the right way round: it fails closed,
 and the rejection page says to start again from the **originals** chip.
 
-**Nothing about this is required.** The page probes `/api/auth/status` on load;
-served from a plain `http.server` the probe fails, the header chip stays hidden
-and every download is a preview exactly as before. A 401 mid-zip — nobody
-authorised, or the day's quota gone — falls back to the preview per file rather
-than failing the download, and the footer says whether what you got was
-originals, previews, or the mix that means the quota ran out partway.
+**Nothing about this is required.** `serve_originals.py` is itself the web
+server, so it only ever serves the page from `127.0.0.1` — which means the page
+only probes `/api/auth/status` when its own origin is loopback. Anywhere else,
+GitHub Pages included, the probe is not made at all: the header chip stays
+hidden and every download is a preview exactly as before. Served from a plain
+`http.server` on localhost the probe is made and simply fails, to the same
+effect.
+
+A 401 mid-zip — nobody authorised, or the day's quota gone — falls back to the
+preview per file rather than failing the download, and the footer says whether
+what you got was originals, previews, or the mix that means the quota ran out
+partway.
 
 `safeName()` follows: an original is named with the format the uploader posted,
 `n.f`, and only a preview is `.mp3`. Dragging into a DAW carries the original

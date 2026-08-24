@@ -2606,22 +2606,44 @@ function litSimEdges(i){
 // ranking read back off the picture. It also means the walk agrees with what the
 // eye can see, which a hidden rank would not. Index breaks ties, so the same
 // graph in the same arrangement always walks the same way.
+//
+// One edge out is the answer nearly always, and when it is not the walk widens
+// rather than stopping. A ring at a time: everything one edge out, then
+// everything two edges out, and so on, taking the first ring with anything
+// visible in it. That is what makes the dead ends walkable - a sound whose only
+// neighbour is the one you came from goes back through it and out a different
+// edge, and a sound whose neighbours are all filtered off screen steps through
+// them to whatever is behind. What cannot be landed on is still a road: `from`
+// and the filtered-out are crossed, never offered.
+//
+// A ring is all the same distance from where you stand, so the layout still
+// orders it, exactly as it does the one at a single hop.
+const WALK_HOPS = 4;     // past this the word "neighbour" has stopped meaning it
 function simNeighbours(i, from){
-  const a = SIMOFF[i], b = SIMOFF[i+1];
-  if (b <= a) return [];
-  const n = N[i], seen = new Set(), out = [];
-  for (let k=a;k<b;k++){ const j = SIMNB[k];
-    // `from` is left out because Backspace is what goes back: without this, the
-    // nearest thing to the sound you just landed on is almost always the one you
-    // came from, and Tab twice is a ping-pong rather than a walk.
-    if (j === i || j === from || seen.has(j)) continue;
-    seen.add(j);
-    if (!shown(N[j])) continue;          // shown() is the truth about the screen
-    const dx = N[j].x - n.x, dy = N[j].y - n.y;
-    out.push([j, dx*dx + dy*dy]); }
-  out.sort((p, q) => p[1] - q[1] || p[0] - q[0]);
-  for (let k=0;k<out.length;k++) out[k] = out[k][0];
-  return out;
+  const n = N[i], seen = new Set([i]);
+  let ring = [i];
+  for (let hop = 1; hop <= WALK_HOPS && ring.length; hop++){
+    const next = [], out = [];
+    for (let r = 0; r < ring.length; r++){
+      for (let k = SIMOFF[ring[r]], e = SIMOFF[ring[r]+1]; k < e; k++){
+        const j = SIMNB[k];
+        if (seen.has(j)) continue;
+        seen.add(j);
+        next.push(j);                      // a road, whether or not it is a stop
+        // `from` is left out because Backspace is what goes back: without this,
+        // the nearest thing to the sound you just landed on is almost always the
+        // one you came from, and Tab twice is a ping-pong rather than a walk.
+        if (j === from) continue;
+        if (!shown(N[j])) continue;        // shown() is the truth about the screen
+        const dx = N[j].x - n.x, dy = N[j].y - n.y;
+        out.push([j, dx*dx + dy*dy]); } }
+    if (out.length){
+      out.sort((p, q) => p[1] - q[1] || p[0] - q[0]);
+      for (let k=0;k<out.length;k++) out[k] = out[k][0];
+      return { nb: out, hop }; }
+    ring = next;
+  }
+  return { nb: [], hop: 0 };
 }
 
 // Frames rather than bare indices: coming back has to put the cursor back where
@@ -2646,10 +2668,12 @@ function walkFrame(){
   if (top && top.i === a){
     // Same node, but the filters have moved: re-order rather than restart, and
     // drop the cursor because the list it indexed no longer exists.
-    if (top.gen !== walkGen){ top.nb = simNeighbours(a, top.from); top.sel = -1; top.gen = walkGen; }
+    if (top.gen !== walkGen){ const s = simNeighbours(a, top.from);
+      top.nb = s.nb; top.hop = s.hop; top.sel = -1; top.gen = walkGen; }
     return top; }
   f.length = 0;                    // standing somewhere else is a new path
-  const nf = { i:a, from:-1, nb:simNeighbours(a, -1), sel:-1, gen:walkGen };
+  const s = simNeighbours(a, -1);
+  const nf = { i:a, from:-1, nb:s.nb, hop:s.hop, sel:-1, gen:walkGen };
   f.push(nf);
   return nf;
 }
@@ -2657,15 +2681,18 @@ function walkStep(dir){
   const f = walkFrame();
   if (!f){ setNow("Nothing to walk from \u2014 hover a sample or play one", true);
            holdBar(2600); return; }
+  // Only reachable now when four rings of the similarity graph came back empty,
+  // which takes a whole filtered-out corner of it rather than one dead end.
   if (!f.nb.length){
     setNow(SIMOFF[f.i+1] > SIMOFF[f.i]
-      ? "Every similarity neighbour of " + N[f.i].l + " is filtered out"
+      ? "Nothing within " + WALK_HOPS + " similarity hops of " + N[f.i].l + " is on screen"
       : N[f.i].l + " has no similarity neighbours", true);
     holdBar(2600); draw(); return; }
   const len = f.nb.length;
   f.sel = ((f.sel + dir) % len + len) % len;
   const j = f.nb[f.sel];
-  WALK.f.push({ i:j, from:f.i, nb:simNeighbours(j, f.i), sel:-1, gen:walkGen });
+  const s = simNeighbours(j, f.i);
+  WALK.f.push({ i:j, from:f.i, nb:s.nb, hop:s.hop, sel:-1, gen:walkGen });
   if (WALK.f.length > WALK_MAX) WALK.f.splice(0, WALK.f.length - WALK_MAX);
   walkArrive(j);
 }
@@ -2685,7 +2712,11 @@ function walkArrive(i){
 function walkLabel(){
   const f = WALK.f; if (f.length < 2) return "";
   const p = f[f.length-2];
-  return "similar " + (p.sel+1) + "/" + p.nb.length + " \u00b7 step " + (f.length-1);
+  // Two rings out or more means the walk went back through something it could
+  // not land on and out again, which is worth saying: "similar" is a weaker
+  // claim at that range, and the count is of a different list.
+  const kind = p.hop > 1 ? p.hop + " hops" : "similar";
+  return kind + " " + (p.sel+1) + "/" + p.nb.length + " \u00b7 step " + (f.length-1);
 }
 
 // Ease to what you landed on, at the zoom you are already at. A walk is a user

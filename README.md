@@ -10,17 +10,22 @@ sixteen measured fields.
 
 Current build: **7,023 samples · 7,759 nodes · 31,849 edges · 19 communities**.
 
-> The same engine over **your own folder of audio** lives in `../desktop`. It
-> shares no code with this repo any more: it has no API layer, no licence, no
-> uploader and no credits, because a file on disk has none of those. The two
-> were one dual-mode codebase until the split, and the guards each carried for
-> the other's sake are gone from both.
+> The same engine over **your own folder of audio** lives in its own
+> repository. It shares no code with this one any more: it has no API layer, no
+> licence, no uploader and no credits, because a file on disk has none of those.
+> The two were one dual-mode codebase until the split, and the guards each
+> carried for the other's sake are gone from both.
 
 ## Running it
 
-The audio streams from `cdn.freesound.org`, so the page needs real network
-access — it works from `localhost` or any ordinary browser, and stays silent
-inside a sandbox that blocks remote hosts. Open it over HTTP, not `file://`:
+The built map is <https://alexm1010.github.io/visualise-music/>. Nothing to
+install — it is the committed `index.html`, payload and all.
+
+Locally, `index.html` is in the clone already, so there is nothing to build
+first. The audio streams from `cdn.freesound.org`, so the page needs real
+network access — it works from `localhost` or any ordinary browser, and stays
+silent inside a sandbox that blocks remote hosts. Open it over HTTP, not
+`file://`:
 
 ```bash
 python -m http.server 8973 --bind 127.0.0.1
@@ -30,13 +35,22 @@ then <http://127.0.0.1:8973/>.
 
 ## Rebuilding
 
+Only needed if you change `viewer.html` or the builder. `numpy` and `networkx`
+are the only dependencies:
+
 ```bash
-python -u producer_graph_v2.py producer-graph.html
+pip install -r requirements.txt
 ```
 
-Reads `freesound-raw.json` and spends **no API requests**. Two consecutive
-cached builds are byte-identical, which is asserted rather than hoped for — see
-the note on `_ranked` in the builder.
+```bash
+python -u producer_graph.py
+```
+
+Writes `index.html` — or wherever a positional argument points — by inlining the
+payload into `viewer.html`. Reads `freesound-raw.json`, spends **no API
+requests**, and takes about fifteen minutes, nearly all of it layout. Two
+consecutive cached builds are byte-identical, which is asserted rather than
+hoped for — see the note on `_ranked` in the builder.
 
 | flag | what it does |
 |---|---|
@@ -105,8 +119,26 @@ taken are marked, so a walk is a visible thing rather than a sequence of jumps.
 
 Neighbours are visited nearest-first *in the current layout*, which is the only
 ordering that matches what you can see - the next sound is the one your eye was
-already on. A filtered-out neighbour is not a neighbour: `shown()` is the truth
-about what is on screen, so filtering to CC0 loopables narrows the walk to them.
+already on. A filtered-out neighbour is not a stop - `shown()` is the truth about
+what is on screen - but it is still a road. When nothing is one edge away, which
+is a dead end, or a neighbour list the filters have emptied, or the only
+neighbour being the one you came from, the walk widens instead of stopping:
+everything one edge out, then everything two edges out, up to four, offering the
+first ring that has something visible in it. From the keyboard that is going back
+through the node you arrived from and out of it in a different direction.
+
+It is the difference between a walk and a series of dead ends. Over every way of
+arriving at every sample - 21,139 of them - `Tab` had nothing to offer on 23.4%
+with nothing filtered and has nothing on 5.4% now; under the one-shot filter,
+56.6% against 22.3%. Most of what is left is the 987 samples of 7,023 that
+Freesound returned no similar sounds for at all, which no amount of widening
+reaches. Four rings is where the curve flattens - six buys two more points under
+a hard filter and stretches the word "similar" further than it will go - and the
+whole sweep of 21,139 lookups takes 15ms, so one of them is not a cost.
+
+Anything past the first ring says so on the now-playing line, `2 hops 1/6` rather
+than `similar 1/6`: a sound two edges away is a weaker claim than one the ranking
+put next to you, and the count is of a different list.
 
 The adjacency is a CSR pair of typed arrays built once at load (9.6ms), because
 `E` is a flat list of 31,849 edges and rescanning it per hop is the kind of thing
@@ -379,8 +411,8 @@ builder emits, which is also why nothing can wander off the edge and be lost.
   on** — 87 of the 150 most-downloaded sounds are flagged, flagship kicks
   included. Filtering on it would gut the best of the library.
 
-`probes/` holds the scripts that established all of the above. They are kept
-because the answers are not in the documentation.
+Each of these was established by probing the live API rather than reading the
+documentation, which is wrong or silent on all of them.
 
 ## Outstanding
 

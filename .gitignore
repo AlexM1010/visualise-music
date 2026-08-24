@@ -5,13 +5,15 @@ freesound.key
 freesound-oauth.key
 freesound-oauth-token.json
 
-# Build output. Regenerated from freesound-raw.json in about ten minutes, and
-# four megabytes of inlined payload does not want a revision each time. The
-# cache itself IS committed - it is thousands of API requests and the one thing
-# here that cannot simply be rebuilt.
-producer-graph.html
-index.html
+# index.html IS committed. It is build output, but it is also what GitHub Pages
+# serves and the only way to see the map without a fifteen-minute build, so the
+# four megabytes are the price of the thing being openable. freesound-raw.json
+# is committed for the opposite reason - it is thousands of API requests and the
+# one thing here that cannot simply be rebuilt.
 
 *.log
 __pycache__/
+*.py[cod]
 .venv/
+.DS_Store
+Thumbs.db

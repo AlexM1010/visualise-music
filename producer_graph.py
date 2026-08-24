@@ -98,7 +98,7 @@ from networkx.algorithms.community import louvain_communities
 
 SCRATCH = Path(__file__).parent
 _POS = [a for a in sys.argv[1:] if not a.startswith("--")]
-OUT = Path(_POS[0]) if _POS else SCRATCH / "producer-graph.html"
+OUT = Path(_POS[0]) if _POS else SCRATCH / "index.html"
 # Read only if something is going to be fetched. A local build makes no requests,
 # and should not need a credential to prove it.
 _KEYFILE = SCRATCH / "freesound.key"
@@ -774,7 +774,7 @@ payload = {
     "keyconf": KEY_CONF, "bpmconf": BPM_CONF,
 }
 
-HTML = Path(SCRATCH / "viewer_v2.html").read_text(encoding="utf-8")
+HTML = Path(SCRATCH / "viewer.html").read_text(encoding="utf-8")
 OUT.write_text(HTML.replace("__PAYLOAD__", json.dumps(payload, separators=(",", ":"))),
                encoding="utf-8")
 print(f"\nwrote {OUT} ({OUT.stat().st_size:,} bytes)")

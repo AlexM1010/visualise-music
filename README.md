@@ -3,11 +3,10 @@
 An interactive map of Freesound samples, built for music producers. Samples are
 drawn as vinyl discs; clicking one plays it, `Tab` walks to the next sound the
 analyser thinks is like it, `S` keeps it, and anything you keep — or anything a
-filter has left on screen — packs into a zip with its credits. **The page opens by
-running ForceAtlas2**, so the graph assembles itself in front of you; the same
-nodes can also be arranged four ways — including a scatter graph against any two
-of
-sixteen measured fields.
+filter has left on screen — packs into a zip with its credits. **The page opens
+by running ForceAtlas2**, so the graph assembles itself in front of you; the
+same nodes can also be arranged four ways — including a scatter graph against
+any two of sixteen measured fields.
 
 Current build: **7,023 samples · 7,759 nodes · 31,849 edges · 19 communities**.
 
@@ -287,17 +286,19 @@ middle of their own graph.
 | **scatter graph** | any two of sixteen fields, with axes |
 
 Each is a pure function from the active subgraph to positions, scaled uniformly
-into the same world the physics uses — never stretched to the window, because a
-scatter graph squashed to an aspect ratio is lying about both of its axes. Pressing
-`P` from any of them starts the simulation there and retires the arrangement.
+into the same world the physics uses — never stretched to the window, because
+a scatter graph squashed to an aspect ratio is lying about both of its axes.
+Pressing `P` from any of them starts the simulation there and retires the
+arrangement.
 
 ### The scatter graph
 
-The x and y pickers appear with the scatter graph and go away with it — they are its
-own controls, and mean nothing under a layout that has no axes. They cover the
-seven timbre descriptors, loudness and dynamic range, tempo, key, duration,
-downloads, rating, link count and cluster. Duration, downloads and links are on
-log axes; key runs chromatically through the minor block then the major.
+The x and y pickers appear with the scatter graph and go away with it — they
+are its own controls, and mean nothing under a layout that has no axes. They
+cover the seven timbre descriptors, loudness and dynamic range, tempo, key,
+duration, downloads, rating, link count and cluster. Duration, downloads and
+links are on log axes; key runs chromatically through the minor block then the
+major.
 
 Loudness and dynamic range are measured for all but 8 samples, and were computed
 and then thrown away until now. They are also the pair a producer reaches for
@@ -320,12 +321,11 @@ Stacked points are the real problem at 7,023 samples, so `spacing` pushes them
 apart into a beeswarm; at 0 you get exact positions and nothing legible. That
 relaxation does its own collision on a uniform grid rather than reusing the
 physics quadtree, because a fresh scatter graph is the one input that tree is
-worst at
-— a few thousand near-identical values drive it to its depth cap. It also caps
-the radius at the 90th percentile first: a cell has to be twice the largest
-radius in it, the biggest node here is 4.5× the median, and left uncapped one
-family node set the grid resolution for seven thousand samples and turned a 30ms
-pass into 925ms.
+worst at — a few thousand near-identical values drive it to its depth cap. It
+also caps the radius at the 90th percentile first: a cell has to be twice the
+largest radius in it, the biggest node here is 4.5× the median, and left
+uncapped one family node set the grid resolution for seven thousand samples and
+turned a 30ms pass into 925ms.
 
 ## Live physics
 

@@ -1,0 +1,2992 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Freesound sample library</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background:#0b0e14; color:#c9d1d9;
+    font:13px/1.5 ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif; }
+  #wrap { position:fixed; inset:0; display:flex; flex-direction:column; }
+  header { padding:8px 13px; border-bottom:1px solid #1e2530; display:flex; gap:11px;
+    align-items:center; flex-wrap:wrap; background:#0d1117; }
+  h1 { font-size:14px; margin:0; font-weight:600; color:#e6edf3; white-space:nowrap; }
+  .stat { color:#7d8590; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .stat b { color:#e6edf3; font-weight:600; }
+  input { background:#0b0e14; border:1px solid #30363d; color:#e6edf3; padding:4px 8px;
+    border-radius:6px; font:inherit; width:180px; }
+  input:focus { outline:none; border-color:#4b8bd6; }
+  /* A BPM is three digits; the shared `input` rule is sized for the search box
+     and would hand this 180px of nothing. */
+  #pbpm { width:58px; padding:3px 6px; }
+  /* The query box has to show more than a word now that one term can be
+     `bpm:120-130`; at the shared 180px you cannot see the term you are typing. */
+  #q { width:250px; }
+  header select { background:#0b0e14; border:1px solid #30363d; color:#e6edf3;
+    font:inherit; font-size:12px; padding:3px 5px; border-radius:6px; cursor:pointer; }
+  header select:focus { outline:none; border-color:#4b8bd6; }
+  .grp { display:flex; gap:3px; align-items:center; }
+  .grp .lbl { color:#6e7681; font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
+  button { background:#161b22; border:1px solid #30363d; color:#9aa4b0; padding:3px 8px;
+    border-radius:6px; font:inherit; font-size:12px; cursor:pointer; white-space:nowrap; }
+  button.on { background:#1f6feb33; border-color:#4b8bd6; color:#e6edf3; }
+  button.cc.on { background:#57a77333; border-color:#57a773; }
+  button:disabled { opacity:.5; cursor:default; }
+  #main { flex:1; position:relative; min-height:0; }
+  canvas { display:block; width:100%; height:100%; cursor:grab; }
+  canvas.drag { cursor:grabbing; }
+  #legend { position:absolute; top:11px; left:11px; background:rgba(13,17,23,.93);
+    border:1px solid #1e2530; border-radius:8px; padding:8px 10px; max-width:225px;
+    max-height:calc(100% - 22px); overflow:auto; }
+  #legend div.row { display:flex; align-items:center; gap:6px; padding:1px 0; color:#9aa4b0; }
+  .sw { width:9px; height:9px; border-radius:2px; flex:none; }
+  .nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ct { color:#6e7681; font-variant-numeric:tabular-nums; margin-left:auto; padding-left:8px; }
+  #ramp { height:10px; border-radius:3px; margin:5px 0 3px; }
+  #legend .ends { display:flex; justify-content:space-between; color:#6e7681; font-size:11px; }
+  #tip { position:absolute; pointer-events:none; background:#161b22; border:1px solid #30363d;
+    border-radius:7px; padding:9px 11px; max-width:390px; display:none; z-index:5;
+    box-shadow:0 6px 24px rgba(0,0,0,.6); }
+  #tip b { color:#e6edf3; display:block; margin-bottom:3px; word-break:break-word; }
+  #tip .row { color:#7d8590; font-size:12px; }
+  #tip .cc0 { color:#57a773; font-weight:600; }
+  #tip .by { color:#e0823d; font-weight:600; }
+  #tip .dim { color:#6e7681; font-style:italic; }
+  #tip table { border-collapse:collapse; margin-top:5px; }
+  #tip td { padding:0 6px 1px 0; font-size:11px; color:#7d8590; }
+  #tip .bar { display:inline-block; height:6px; border-radius:2px; vertical-align:middle; }
+  footer { padding:5px 13px; border-top:1px solid #1e2530; color:#6e7681; font-size:12px;
+    background:#0d1117; display:flex; gap:11px; align-items:center; }
+  #now { color:#57a773; font-weight:600; white-space:nowrap; overflow:hidden;
+    text-overflow:ellipsis; max-width:44%; }
+  #now.err { color:#d1655b; }
+  /* Fetching a preview off the CDN is usually imperceptible and occasionally
+     several seconds, and in the meantime the only feedback is a ring pulsing on
+     a node that is silent - which reads as a sound that failed. The spinner is
+     that wait made visible. It holds off for LOAD_DELAY_MS so a cached one-shot
+     never flashes one on its way to playing. */
+  #load { flex:none; width:11px; height:11px; border-radius:50%; display:none;
+    border:2px solid #1e2530; border-top-color:#57a773;
+    animation:spin .7s linear infinite; }
+  #load.on { display:block; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  /* Still turning, because a ring that stopped would say loaded - just not at a
+     speed that pulls the eye off the graph. */
+  @media (prefers-reduced-motion:reduce) { #load { animation-duration:2.2s; } }
+  #dlone { padding:2px 8px; font-size:12px; }
+  /* The footer is the one place a link is actually clickable: #tip is
+     pointer-events:none, and reaching for it changes which node is hovered. */
+  #note { color:#7d8590; white-space:nowrap; flex:none; }
+  #note a { color:#4b8bd6; }
+  #note a:hover { color:#6fa8dc; }
+  /* The help text is what yields when the footer runs out of room, never the
+     download notice - a truncated link is a link nobody can click. */
+  #foot { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap; }
+  footer button { flex:none; }
+  /* The waveform belongs to the footer bar and stays hidden until a decode
+     lands, so the bar never holds a gap open for something that may not come. */
+  #wave { flex:none; width:190px; height:26px; display:none; cursor:pointer;
+    border:1px solid #1e2530; border-radius:4px; background:#0f1319; }
+  /* Loop is a button rather than a read-out: the state it shows is the one thing
+     in the footer anybody would want to change on sight. It keeps its place when
+     nothing is playing, where it shows - and sets - the standing preference for
+     loopable samples, so the mouse reaches everywhere L already went. */
+  #loopst { flex:none; padding:2px 8px; font-size:12px; white-space:nowrap;
+    font-variant-numeric:tabular-nums; }
+  /* Green rather than the default blue .on, because a looping sound is a playing
+     sound and the footer says that in one colour. */
+  #loopst.on { background:#57a77333; border-color:#57a773; color:#e6edf3; }
+  /* A preference is not a state. With no sound to apply it to the button drops
+     its fill and sits back, so it never reads as something currently looping. */
+  #loopst.def { background:transparent; border-color:#21262d; color:#6e7681; }
+  /* The arrangement and physics panel sits opposite the legend, so a slider is
+     never over the thing it is changing. */
+  #phys { position:absolute; top:11px; right:11px; width:272px; z-index:4;
+    background:rgba(13,17,23,.95); border:1px solid #1e2530; border-radius:8px;
+    padding:9px 11px 10px; max-height:calc(100% - 22px); overflow:auto; }
+  #phys h2 { font-size:10px; margin:0 0 7px; color:#6e7681; font-weight:600;
+    text-transform:uppercase; letter-spacing:.05em; }
+  #phys .btns { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:8px; }
+  #phys .btns button { padding:2px 7px; font-size:11px; }
+  #phys h2 + .btns { margin-bottom:6px; }
+  #phys label { display:block; margin:0 0 5px; }
+  /* Name, track and value on one line: ten stacked three-line sliders made the
+     panel taller than most windows, and the panel is meant to sit beside the
+     graph rather than scroll over it. */
+  #phys label.sl { display:flex; align-items:center; gap:6px; margin:0 0 3px; }
+  #phys label.sl .nm { flex:none; width:74px; color:#7d8590; font-size:11px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #phys label.sl b { flex:none; width:36px; text-align:right; color:#c9d1d9;
+    font-size:11px; font-weight:600; font-variant-numeric:tabular-nums; }
+  #phys input[type=range] { flex:1 1 0; min-width:0; width:100%; height:13px;
+    margin:0; padding:0; border:0; background:transparent;
+    accent-color:#4b8bd6; cursor:pointer; }
+  #phys .axes { display:flex; gap:6px; }
+  #phys .axes[hidden] { display:none; }
+  #phys .ax { flex:1 1 0; min-width:0; display:flex; align-items:center; gap:5px; margin:0; }
+  #phys .ax span { color:#6e7681; font-size:11px; }
+  #phys select { flex:1 1 0; min-width:0; background:#0b0e14; color:#e6edf3;
+    font:inherit; font-size:11px; border:1px solid #30363d; border-radius:5px;
+    padding:2px 3px; cursor:pointer; }
+  #phys select:focus { outline:none; border-color:#4b8bd6; }
+  #phys .chk { display:flex; align-items:center; gap:6px; color:#7d8590;
+    font-size:11px; margin:7px 0 0; cursor:pointer; }
+  #phys .chk input { width:auto; accent-color:#4b8bd6; }
+  #phys .meta { color:#6e7681; font-size:11px; margin-top:8px; padding-top:6px;
+    border-top:1px solid #1e2530; font-variant-numeric:tabular-nums; }
+  #phys .hint { color:#6e7681; font-size:11px; margin-top:5px; line-height:1.35; }
+  #phys #ph_lay .hint { margin-bottom:9px; }
+  /* The basket borrows the physics panel's look but not its corner. Bottom left,
+     under the legend: the physics panel is 550px of sliders down the right-hand
+     side, and anything sharing that edge covers the ones you are dragging. The
+     legend is 15 rows and stops well short of the bottom. */
+  #basket { position:absolute; left:11px; bottom:11px; width:272px; z-index:4;
+    background:rgba(13,17,23,.95); border:1px solid #1e2530; border-radius:8px;
+    padding:9px 11px 10px; max-height:55%; display:flex; flex-direction:column; }
+  /* display:flex on an id beats the UA's [hidden]{display:none}, so the hidden
+     attribute has to be given its own rule or the panel is never hidden. */
+  #basket[hidden] { display:none; }
+  #basket h2 { font-size:10px; margin:0 0 7px; color:#6e7681; font-weight:600;
+    text-transform:uppercase; letter-spacing:.05em; }
+  #basket .btns { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:6px; }
+  #basket .btns button { padding:2px 7px; font-size:11px; }
+  #basket .hint { color:#6e7681; font-size:11px; margin-top:6px; line-height:1.35; }
+  #basket .hint[hidden] { display:none; }
+  /* The rows scroll rather than the panel growing: 200 kept samples is an
+     ordinary basket and would otherwise run off the bottom of the window. */
+  #bk_list { flex:1 1 auto; min-height:0; overflow:auto; margin:0 -3px; }
+  .bkr { display:flex; align-items:center; gap:6px; padding:2px 3px;
+    border-radius:4px; cursor:pointer; }
+  .bkr:hover { background:#161b22; }
+  .bkr .nm { flex:1 1 auto; min-width:0; color:#c9d1d9; font-size:11px;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bkr .mt { flex:none; color:#6e7681; font-size:10px; white-space:nowrap;
+    font-variant-numeric:tabular-nums; }
+  .bkr .lic { flex:none; font-size:10px; font-weight:600; }
+  .bkr .lic.cc0 { color:#57a773; }
+  .bkr .lic.by { color:#e0823d; }
+  .bkr .x { flex:none; padding:0 3px; font-size:12px; line-height:1.2;
+    background:transparent; border:0; color:#6e7681; }
+  .bkr .x:hover { color:#d1655b; }
+  #bk_list .none { color:#6e7681; font-size:11px; padding:3px; }
+  /* The now-playing chip is a drag source, but only while it names something. */
+  #now { cursor:grab; }
+  #now:empty { cursor:default; }
+</style>
+<div id="wrap">
+  <header>
+    <h1>Freesound library</h1>
+    <span class="stat"><b id="nsm"></b> samples</span>
+    <span class="stat"><b id="ncc"></b> CC0</span>
+    <span class="stat"><b id="nky"></b> keyed</span>
+    <span class="stat"><b id="ntp"></b> tempo</span>
+    <span class="stat"><b id="nsi"></b> similarity links</span>
+    <span class="stat" id="sfit" hidden><b id="nfit"></b> fit the key</span>
+    <span class="stat" id="sbask" hidden><b id="nbask"></b> in the basket</span>
+    <span class="stat" id="sorig" hidden></span>
+    <div class="grp"><span class="lbl">show</span>
+      <button data-k="sample" class="on">samples</button>
+      <button data-k="family" class="on">family</button>
+      <button data-k="tag" class="on">tags</button>
+      <button id="tclap" class="on">similarity</button>
+    </div>
+    <div class="grp"><span class="lbl">only</span>
+      <button id="fcc0" class="cc">CC0</button>
+      <button id="floop">loopable</button>
+      <button id="fone">one-shot</button>
+      <button id="fkey">keyed</button>
+      <button id="ftempo">tempo</button>
+      <button id="flink">linked</button>
+      <button id="ffit" disabled title="key compatible with the project key">fits</button>
+      <button id="fbask" disabled title="only the samples you have kept">basket</button>
+    </div>
+    <div class="grp"><span class="lbl">project</span>
+      <input id="pbpm" type="number" min="20" max="300" step="1" placeholder="BPM" autocomplete="off">
+      <select id="pkey"></select>
+      <button id="trate" title="audition at the project tempo (T)">at tempo</button>
+    </div>
+    <div class="grp"><span class="lbl">colour</span>
+      <button data-col="cluster" class="on">cluster</button>
+      <button data-col="0">bright</button>
+      <button data-col="1">warm</button>
+      <button data-col="2">deep</button>
+      <button data-col="3">hard</button>
+    </div>
+    <div class="grp"><span class="lbl">layout</span>
+      <button id="tphys">arrange</button>
+    </div>
+    <div class="grp"><button id="tbask" title="open the basket (S keeps the hovered sample)">&#9776; basket</button><button id="dlvis">&#10515; visible</button></div>
+    <input id="q" placeholder="snare, tag:vinyl, bpm:120-130&hellip;" autocomplete="off"
+           title="Terms are ANDed. A leading - drops what the term matches.&#10;&#10;bpm:120-130  bpm:&gt;100  bpm:&lt;90  bpm:128&#10;key:Amin  key:&quot;A minor&quot;  key:C&#10;dur:&lt;2  dur:0.5-4&#10;dl:&gt;1000  rate:&gt;4&#10;tag:vinyl  by:username  pack:...  fam:...  sub:...&#10;loud:&gt;-14  dyn:&gt;6&#10;&#10;Anything else is matched as text, over the name, uploader,&#10;pack, family and every tag on the sample.&#10;Only trusted key and BPM readings are ever matched.">
+    <span class="stat" id="hits"></span>
+  </header>
+  <div id="main"><canvas id="cv"></canvas><div id="legend"></div><div id="phys" hidden></div><div id="basket" hidden></div><div id="tip"></div></div>
+  <footer><span id="now" draggable="true"></span><span id="load" role="status" aria-label="loading"></span><canvas id="wave"></canvas><button id="loopst"></button><button id="dlone" hidden>&#10515; save</button><span id="note"></span><span id="foot"></span></footer>
+</div>
+<script>
+const DATA = __PAYLOAD__;
+// serve_originals.py holds the OAuth2 session a static page cannot, and answers
+// /api/original/<id> with the uploader's actual file instead of the ~128 kbps
+// preview. Everything about it is optional: served from anything else these
+// probes fail, ORIGINALS stays false, and the page is the page it always was.
+let ORIGINALS = false, ORIG_STATE = null;
+const origUrl = n => "/api/original/" + n.i;
+async function probeOriginals(){
+  try {
+    const r = await fetch("/api/auth/status", {cache:"no-store"});
+    if (!r.ok) return;
+    ORIG_STATE = await r.json();
+    ORIGINALS = !!ORIG_STATE.authed;
+  } catch (e){ ORIG_STATE = null; ORIGINALS = false; }
+  paintOriginals();
+}
+const N = DATA.nodes, E = DATA.edges;
+const PAL = ["#4b8bd6","#e0823d","#57a773","#c9518f","#9a7bd0","#d4b03c","#4bb3c4",
+             "#d1655b","#6fa8dc","#8fbf6a","#c77dbb","#c9a227","#5bbcae","#b07a4f","#7f8fa6"];
+const clusterColour = r => r < PAL.length ? PAL[r] : "#3d4652";
+// Blue -> cyan -> yellow -> red, for a 0-100 timbre value.
+const rampColour = v => "hsl(" + Math.round((1 - v) * 225) + ",72%," + Math.round(38 + v * 18) + "%)";
+
+const cv = document.getElementById("cv"), ctx = cv.getContext("2d"), tip = document.getElementById("tip");
+const TIMBRE = ["brightness","warmth","depth","hardness","boominess","roughness","sharpness"];
+
+document.getElementById("nsm").textContent = (DATA.counts.sample||0).toLocaleString();
+document.getElementById("ncc").textContent = DATA.cc0.toLocaleString();
+document.getElementById("nky").textContent = DATA.keyed.toLocaleString();
+document.getElementById("ntp").textContent = DATA.tempoed.toLocaleString();
+document.getElementById("nsi").textContent = DATA.sims.toLocaleString();
+const FOOT_KEYS =
+  "Click a sample to play · Tab walks to the next similar sound, shift-Tab the previous, "
+  + "Backspace comes back · D saves it · S keeps it · Esc stops · Space plays the hovered "
+  + "node · L loops · T auditions at the project tempo · 1-3 arrange · "
+  + "P runs the physics · F frames it";
+// The query grammar needs somewhere to be found that costs nothing once you know
+// it. The footer already ellipsises and never grows the layout, and it is only
+// standing in for the key list while someone is actually typing a query.
+const FOOT_QUERY =
+  "bpm:120-130 · bpm:>100 · key:Amin · key:\"A minor\" · dur:<2 · dl:>1000 · rate:>4 · "
+  + "tag:vinyl · by:name · pack: · fam: · sub: · loud:>-14 · dyn:>6 · "
+  + "a leading - drops what a term matches · anything else is matched as text";
+const footEl = document.getElementById("foot");
+footEl.textContent = FOOT_KEYS;
+
+// ---- state -----------------------------------------------------------------
+const kinds = { sample:true, family:true, tag:true };
+let colourBy = "cluster";
+const only = { cc0:false, loop:false, one:false, key:false, tempo:false, link:false, fits:false,
+               basket:false };
+let matches = null, hover = -1;
+// Walk and camera state that sections above the walk itself have to touch:
+// syncActive() bumps the generation when a filter takes a neighbour off screen,
+// and fit() cancels an easing pan. Declared here for the same reason PROJ is -
+// the readers run before the block that owns them is reached.
+let walkGen = 0, panI = -1, panRaf = 0;
+// The project the library is being browsed for. Declared here rather than beside
+// its header controls because shown() and tipHtml() both read it, and both of
+// those can run before the script has finished executing. Empty key = no opinion.
+const PROJ = { bpm: 0, key: "" };
+try { const b = Math.round(+(localStorage.getItem("fs-proj-bpm") || 0));
+      if (isFinite(b) && b >= 20 && b <= 300) PROJ.bpm = b;
+      const k = localStorage.getItem("fs-proj-key");
+      if (k && /^[A-G]#? (major|minor)$/.test(k)) PROJ.key = k; } catch(e){}
+
+// ---- the basket ------------------------------------------------------------
+// Everything else on this page is a view of the corpus and can be rebuilt from
+// it. The basket is the one thing that is the user's own, so it is the one thing
+// that has to survive a reload.
+//
+// Stored as Freesound ids, never node indices: the builder renumbers every node
+// on each rebuild - the corpus just grew by 500 - so an index written today
+// points at a different sound tomorrow.
+const BASKET_KEY = "fs-basket";
+const ID2IX = new Map();
+for (let i=0;i<N.length;i++){ const n = N[i];
+  if (n.k === "sample" && n.i !== undefined && !ID2IX.has(n.i)) ID2IX.set(n.i, i); }
+// id -> node index, or -1 for an id this build does not carry. Unknown ids are
+// kept rather than pruned: a filter change in the builder drops samples from one
+// build and brings them back in the next, and quietly eating someone's basket in
+// between is not a trade worth making. Insertion order is the panel's order.
+const BASKET = new Map();
+try { const raw = JSON.parse(localStorage.getItem(BASKET_KEY) || "[]");
+      if (Array.isArray(raw)) for (const v of raw){ const id = +v;
+        if (!isFinite(id) || BASKET.has(id)) continue;
+        BASKET.set(id, ID2IX.has(id) ? ID2IX.get(id) : -1); } } catch(e){}
+function saveBasket(){
+  try { localStorage.setItem(BASKET_KEY, JSON.stringify([...BASKET.keys()])); } catch(e){}
+}
+function basketNodes(){ const out = [];
+  for (const i of BASKET.values()) if (i >= 0) out.push(N[i]); return out; }
+function basketMissing(){ let m = 0;
+  for (const i of BASKET.values()) if (i < 0) m++; return m; }
+
+// A sample is drawn as a record: dark body, grooves, and a centre label in the
+// node's own colour, so colour-by-cluster and colour-by-timbre still read at a
+// glance. Detail is tiered by on-screen radius - grooves on a 3px disc are just
+// a smudge that costs three extra arcs, and there are 6,189 of these.
+const TAU = 6.283185307;
+function drawVinyl(x, y, r, col){
+  ctx.beginPath(); ctx.arc(x, y, r, 0, TAU);
+  ctx.fillStyle = "#0f1319"; ctx.fill();
+  ctx.lineWidth = Math.max(0.4, r * 0.09);
+  ctx.strokeStyle = "rgba(200,214,232,0.22)"; ctx.stroke();
+  if (r >= 5.5){
+    ctx.strokeStyle = "rgba(200,214,232,0.10)";
+    ctx.lineWidth = Math.max(0.35, r * 0.045);
+    for (let f = 0.84; f > 0.5; f -= 0.15){
+      ctx.beginPath(); ctx.arc(x, y, r * f, 0, TAU); ctx.stroke();
+    }
+  }
+  ctx.beginPath(); ctx.arc(x, y, Math.max(0.9, r * 0.40), 0, TAU);
+  ctx.fillStyle = col; ctx.fill();
+  if (r >= 9){                       // spindle hole, once there is room for one
+    ctx.beginPath(); ctx.arc(x, y, r * 0.09, 0, TAU);
+    ctx.fillStyle = "#0b0e14"; ctx.fill();
+  }
+}
+const VINYL_MIN_R = 2.5;
+let showClap = true;
+
+function nodeColour(n){
+  if (colourBy === "cluster") return clusterColour(n.c);
+  if (n.k !== "sample") return "#2f3743";
+  const v = n.tb && n.tb[+colourBy];
+  if (v === null || v === undefined) return "#2f3743";
+  return rampColour(Math.max(0, Math.min(1, v / 100)));
+}
+function shown(n){
+  if (!kinds[n.k]) return false;
+  if (n.k !== "sample") return true;
+  if (only.cc0 && n.g !== "CC0") return false;
+  if (only.loop && !n.lp) return false;
+  if (only.one && !n.one) return false;
+  if (only.key && !n.ko) return false;
+  // "fits" is measured against the project key, so with no project key it has
+  // nothing to say and stands aside rather than emptying the graph. The button
+  // is disabled to match, so this guard should never be the thing that saves it.
+  if (only.fits && PROJ.key && !keyFits(n)) return false;
+  if (only.tempo && !n.bo) return false;
+  if (only.link && !n.ln) return false;
+  // Keyed off the Freesound id rather than the loop's index, because shown() is
+  // handed a node and half its callers do not have an index to give it.
+  if (only.basket && !BASKET.has(n.i)) return false;
+  return true;
+}
+const rad = n => n.k==="family" ? Math.max(2.4,Math.min(8,1.9+Math.sqrt(n.d)*0.58))
+              : (n.k==="key"||n.k==="tempo") ? Math.max(2.2,Math.min(8,2.1+Math.sqrt(n.d)*0.64))
+              : n.k==="tag" ? Math.max(1.1,Math.min(4.6,1.1+Math.sqrt(n.d)*0.44))
+              : Math.max(0.9,Math.min(3.2,0.9+Math.sqrt(n.d)*0.38));
+
+function drawLegend(){
+  const el = document.getElementById("legend");
+  if (colourBy === "cluster"){
+    el.innerHTML = DATA.legend.map(l =>
+      '<div class="row"><span class="sw" style="background:'+clusterColour(l.r)+'"></span>'+
+      '<span class="nm">'+l.n.replace(/</g,"&lt;")+'</span><span class="ct">'+l.s+'</span></div>').join("");
+  } else {
+    const stops = [];
+    for (let i=0;i<=10;i++) stops.push(rampColour(i/10)+" "+(i*10)+"%");
+    el.innerHTML = '<div class="row"><span class="nm">'+TIMBRE[+colourBy]+'</span></div>'+
+      '<div id="ramp" style="background:linear-gradient(90deg,'+stops.join(",")+')"></div>'+
+      '<div class="ends"><span>0</span><span>100</span></div>'+
+      '<div class="row" style="margin-top:6px"><span class="sw" style="background:#2f3743"></span>'+
+      '<span class="nm">no value / not a sample</span></div>';
+  }
+}
+
+// ---- canvas ----------------------------------------------------------------
+let W=0,H=0,dpr=1;
+// Sized from a ResizeObserver, not once at load: a page laid out while its pane
+// is hidden measures 0x0, and window's resize event never fires when that pane is
+// shown, leaving a 0x0 backing store and a blank canvas around a healthy DOM.
+function resize(){
+  const r = cv.getBoundingClientRect();
+  if (r.width < 2 || r.height < 2) return;
+  dpr = window.devicePixelRatio || 1;
+  W = r.width; H = r.height;
+  cv.width = Math.round(W*dpr); cv.height = Math.round(H*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0); draw();
+}
+let scale=1, ox=0, oy=0, inited=false;
+// Opening "fit to window" is what made this look like a blob however the layout
+// was tuned: spring_layout renormalises to a unit square, the builder normalises
+// again, and fit() then scales to fill the canvas - so any repulsion increase is
+// cancelled three times over and on-screen spacing never changes. The only real
+// levers are how many nodes span the viewport and how big each one is drawn.
+// FIT_ZOOM starts past fit-to-window, centred; scroll out for the whole thing.
+// 1.0 = fit the whole graph. Opening zoomed in was tried and abandoned: at 2.6
+// you start inside a cluster and the canvas is 94% ink. Spacing has to come from
+// fewer edges and smaller nodes, not from cropping.
+const FIT_ZOOM = 1.0;
+// Fits whatever is on screen rather than assuming the 0-1 box the builder
+// emits: with the simulation running, or under any arrangement but the baked
+// one, the layout can end up any size at all.
+function fit(){ panStop(); const t=fitTarget(); if(!t) return;
+  scale=t.s; ox=t.ox; oy=t.oy; inited=true; }
+const sx=n=>n.x*scale+ox, sy=n=>n.y*scale+oy;
+
+function draw(){
+  if(!inited && W) fit();
+  // Grooves and labels are worth five arcs and a fillText when the graph is
+  // standing still. At 60fps across 7,214 nodes they are the whole frame budget,
+  // so a moving layout draws plain discs and gets its detail back when it stops.
+  const fast = (running || tweening) && !fullDetail;
+  ctx.fillStyle="#0b0e14"; ctx.fillRect(0,0,W,H);
+  drawAxes();                      // nothing, unless a scatter is arranged
+  const z = scale/Math.min(W,H);
+
+  // Structural edges first, then acoustic ones on top and brighter: an acoustic
+  // link is a claim about how two sounds actually sound, and is worth seeing.
+  // Three passes, weakest first, so the stronger claim is never buried:
+  // structural (shared tag/key/tempo), then timbre neighbours, then CLAP.
+  const passes = [
+    [0, "rgba(120,140,170,0.07)", Math.min(0.6, 0.26*z), true],
+    // Same grey as the structural links; weight alone carries the distinction.
+    // The alpha is higher only because a 2px line at 0.07 is invisible.
+    [1, "rgba(120,140,170,0.34)", Math.min(2.2, 0.95*z), showClap],
+  ];
+  for (const [cls, colour, width, on] of passes){
+    if (!on) continue;
+    ctx.lineWidth = width; ctx.strokeStyle = colour;
+    ctx.beginPath();
+    for(let i=0;i<E.length;i++){ if(E[i][2] !== cls) continue;
+      const a=N[E[i][0]], b=N[E[i][1]];
+      if(!shown(a)||!shown(b)) continue;
+      ctx.moveTo(sx(a),sy(a)); ctx.lineTo(sx(b),sy(b)); }
+    ctx.stroke();
+  }
+
+  // The similarity neighbourhood of whatever is in hand, and the trail walked to
+  // get here. Both read the CSR index and the path array instead of sweeping E
+  // again: a dozen segments against the 32,000 the passes above just drew, which
+  // is why this can sit inside the frame at all.
+  //
+  // Drawn whatever the similarity layer is set to. That toggle is about the
+  // density of 32,000 hairlines, and the seven edges you are walking are never
+  // what made the picture unreadable.
+  const wcur = walkNode();
+  const hcur = hover >= 0 && N[hover] && N[hover].k === "sample" && hover !== wcur ? hover : -1;
+  if (wcur >= 0 || hcur >= 0){
+    ctx.lineWidth = Math.min(3.0, Math.max(1.1, 1.3*z));
+    ctx.strokeStyle = "rgba(103,216,232,0.85)";
+    ctx.beginPath();
+    if (wcur >= 0) litSimEdges(wcur);
+    if (hcur >= 0) litSimEdges(hcur);
+    ctx.stroke();
+  }
+  // Everything the clicked node is joined to, both kinds. The same cyan as the
+  // walk above, so "lit" means one thing on this canvas rather than two - and
+  // when the click and the walk are on the same node, as they usually are, the
+  // similarity edges land on top of each other exactly.
+  //
+  // The hairlines come in at a lower alpha for the same reason they do in the
+  // passes above: a tag shared with three hundred samples is a weaker claim than
+  // an acoustic neighbour. Both kinds are drawn whatever the similarity toggle
+  // is set to, on the walk's own reasoning - that toggle is about the density of
+  // 29,520 hairlines, and the handful belonging to one node never made the
+  // picture unreadable.
+  if (selNode >= 0 && shown(N[selNode])){
+    const sn = N[selNode], ax = sx(sn), ay = sy(sn);
+    const lit = [[0, "rgba(103,216,232,0.34)", Math.min(1.6, Math.max(0.6, 0.5*z))],
+                 [1, "rgba(103,216,232,0.90)", Math.min(3.2, Math.max(1.2, 1.4*z))]];
+    for (const [cls, colour, width] of lit){
+      ctx.lineWidth = width; ctx.strokeStyle = colour;
+      ctx.beginPath();
+      for (let k=ADJOFF[selNode], e=ADJOFF[selNode+1]; k<e; k++){
+        const ei = ADJE[k]; if (E[ei][2] !== cls) continue;
+        const b = N[farEnd(ei, selNode)]; if (!shown(b)) continue;
+        ctx.moveTo(ax, ay); ctx.lineTo(sx(b), sy(b)); }
+      ctx.stroke();
+    }
+  }
+
+  // Dashed, because every solid line on this canvas is an edge and this is not
+  // one - it is the order things were visited in, and it crosses whatever it has
+  // to. Nothing else on the graph is dashed but the scatter's margins.
+  if (WALK.f.length > 1){
+    ctx.setLineDash([5, 4]); ctx.lineWidth = 1.7;
+    ctx.strokeStyle = "rgba(230,237,243,0.62)";
+    ctx.beginPath();
+    for (let k=0;k<WALK.f.length;k++){ const n = N[WALK.f[k].i];
+      if (k) ctx.lineTo(sx(n),sy(n)); else ctx.moveTo(sx(n),sy(n)); }
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // Node scale against zoom. Floor 1.0: zoomed out, a node stays its natural
+  // size rather than shrinking away, so the whole graph stays readable. Ceiling
+  // 7: zoomed in, nodes grow well past the old 2.4 cap, which is what makes the
+  // vinyl grooves and the coloured centre worth having.
+  const zf = Math.max(1.0, Math.min(7.0, z));
+  for(let i=0;i<N.length;i++){ const n=N[i]; if(!shown(n)) continue;
+    const px2=sx(n), py2=sy(n), r=rad(n)*zf;
+    // Culling matters here: zoomed in, most of 6,938 nodes are off-screen, and a
+    // vinyl is five arcs rather than one.
+    if(px2 < -r-2 || px2 > W+r+2 || py2 < -r-2 || py2 > H+r+2) continue;
+    const dim = matches && !matches.has(i);
+    ctx.globalAlpha = dim?0.10:1;
+    if(n.k==="sample" && r >= VINYL_MIN_R && !fast){
+      drawVinyl(px2, py2, r, nodeColour(n));
+      if(!dim && matches){ ctx.beginPath(); ctx.arc(px2,py2,r,0,6.2832);
+        ctx.lineWidth=1.4; ctx.strokeStyle="#fff"; ctx.stroke(); }
+      continue;
+    }
+    ctx.beginPath(); ctx.arc(px2,py2,r,0,6.2832);
+    ctx.fillStyle=nodeColour(n); ctx.fill();
+    if(!dim && n.k==="family"){
+      ctx.lineWidth=1.5; ctx.strokeStyle="#fff"; ctx.stroke(); }
+    else if(!dim && n.k==="tag"){ ctx.lineWidth=0.85; ctx.strokeStyle="rgba(255,255,255,.28)"; ctx.stroke(); }
+    if(!dim && matches){ ctx.lineWidth=1.4; ctx.strokeStyle="#fff"; ctx.stroke(); } }
+  ctx.globalAlpha=1; ctx.textAlign="center";
+
+  // The far ends, ringed, and over the nodes rather than under them. Without
+  // this the lit edges tell you how many neighbours there are but not which
+  // discs they landed on, which is the half you actually wanted. One path for
+  // all of them - moveTo before each arc, or consecutive arcs get joined by the
+  // line between them.
+  if (selNode >= 0){
+    const zf3 = Math.max(1.0, Math.min(7.0, z));
+    ctx.strokeStyle = "rgba(103,216,232,0.85)"; ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    for (let k=ADJOFF[selNode], e=ADJOFF[selNode+1]; k<e; k++){
+      const b = N[farEnd(ADJE[k], selNode)]; if (!shown(b)) continue;
+      const bx = sx(b), by = sy(b), br = rad(b)*zf3 + 2.2;
+      ctx.moveTo(bx + br, by); ctx.arc(bx, by, br, 0, TAU); }
+    ctx.stroke();
+    // The node itself, further out than the green playing ring so the two read
+    // as two things - it is usually both at once.
+    const sn = N[selNode];
+    if (shown(sn)){
+      ctx.strokeStyle = "rgba(103,216,232,1)"; ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.arc(sx(sn), sy(sn), rad(sn)*zf3 + 4, 0, TAU); ctx.stroke(); }
+  }
+
+  // A pinned node is one the simulation is not allowed to move, so it gets a
+  // marker: without one, "why is that cluster stuck" has no visible answer.
+  if(PINNED.size){ ctx.lineWidth=1.3; ctx.strokeStyle="#d4b03c";
+    const zf2 = Math.max(1.0, Math.min(7.0, z));
+    for(const i of PINNED){ const n=N[i]; if(!shown(n)) continue;
+      ctx.beginPath(); ctx.arc(sx(n),sy(n),rad(n)*zf2+2.6,0,TAU); ctx.stroke(); } }
+
+  // Kept samples get a filled corner tab, never a third ring. A gold ring already
+  // means pinned and a green one means playing, and at 3px a ring is its colour
+  // and nothing else - a new one would be read as one of those two long before
+  // anyone went looking for a legend. A square off the shoulder cannot be.
+  if(BASKET.size){ const zf3 = Math.max(1.0, Math.min(7.0, z));
+    for(const i of BASKET.values()){ if(i < 0) continue;
+      const n=N[i]; if(!shown(n)) continue;
+      const r=rad(n)*zf3, s=Math.max(2.6, r*0.62);
+      const bx2=sx(n)+r*0.72-s/2, by2=sy(n)-r*0.72-s/2;
+      if(bx2 < -s || bx2 > W || by2 < -s || by2 > H) continue;
+      ctx.fillStyle="#c9518f"; ctx.fillRect(bx2, by2, s, s);
+      ctx.lineWidth=0.8; ctx.strokeStyle="#0b0e14"; ctx.strokeRect(bx2, by2, s, s); } }
+
+  // Where the walk can go next. A diamond over the node, not a fourth ring: gold
+  // already means pinned, green means playing and white means matched, and at 3px
+  // a ring is its colour and nothing else. The basket took the upright square.
+  if (wcur >= 0 && WALK.f.length){
+    const nb = WALK.f[WALK.f.length-1].nb, zf4 = Math.max(1.0, Math.min(7.0, z));
+    ctx.fillStyle = "#67d8e8";
+    for (let k=0;k<nb.length;k++){ const n = N[nb[k]];
+      // The list was filtered when it was built, but a filter can move between
+      // then and now: the frame's neighbours are only re-sorted on the next Tab.
+      if (!shown(n)) continue;
+      const x = sx(n), y = sy(n);
+      if (x < -14 || x > W+14 || y < -14 || y > H+14) continue;
+      const s = Math.max(2.8, rad(n)*zf4*0.85);
+      ctx.beginPath(); ctx.moveTo(x, y-s); ctx.lineTo(x+s, y);
+      ctx.lineTo(x, y+s); ctx.lineTo(x-s, y); ctx.fill(); } }
+
+  if(!fast) for(let i=0;i<N.length;i++){ const n=N[i]; if(!shown(n)) continue;
+    const big = n.k==="family"||n.k==="key"||n.k==="tempo";
+    if(!big && !(z>1.3 && n.k==="tag" && n.d>=(z>2.6?4:16))) continue;
+    if(matches && !matches.has(i)) continue;
+    const px=sx(n), py=sy(n);
+    if(px<-70||px>W+70||py<-20||py>H+20) continue;
+    ctx.font = n.k==="family" ? "600 13px ui-sans-serif, system-ui, sans-serif"
+             : big ? "600 11px ui-sans-serif, system-ui, sans-serif"
+             : "11px ui-sans-serif, system-ui, sans-serif";
+    ctx.fillStyle = big ? "#e6edf3" : "#a8b3bf";
+    ctx.fillText(n.l, px, py-rad(n)-4); }
+
+  if(hover>=0 && N[hover] && shown(N[hover])){ const n=N[hover];
+    ctx.beginPath(); ctx.arc(sx(n),sy(n),rad(n)*Math.max(1.0,Math.min(7.0,z))+3.5,0,6.2832);
+    ctx.strokeStyle="#fff"; ctx.lineWidth=1.6; ctx.stroke(); }
+  if(playing>=0 && N[playing] && shown(N[playing])){ const n=N[playing];
+    const r0=rad(n)*Math.max(1.0,Math.min(7.0,z));
+    ctx.beginPath(); ctx.arc(sx(n),sy(n),r0+5+pulse*5,0,6.2832);
+    ctx.strokeStyle="#57a773"; ctx.lineWidth=2.4; ctx.stroke();
+    ctx.beginPath(); ctx.arc(sx(n),sy(n),r0+1.5,0,6.2832);
+    ctx.strokeStyle="rgba(87,167,115,.75)"; ctx.lineWidth=1.6; ctx.stroke(); }
+}
+function pick(mx,my){ let best=-1,bd=110;
+  for(let i=0;i<N.length;i++){ if(!shown(N[i])) continue;
+    const dx=sx(N[i])-mx, dy=sy(N[i])-my, d=dx*dx+dy*dy; if(d<bd){bd=d;best=i;} } return best; }
+
+// ---- tags and absent numbers -----------------------------------------------
+// `tg` is every lowercase tag on the sample, as indices into one shared sorted
+// array - all of them, not just the three rarest that became edges. Both it and
+// DATA.tagv are absent from any build made before the builder started emitting
+// them, so everything that reads a tag comes through here and gets an empty list.
+const TAGV = Array.isArray(DATA.tagv) ? DATA.tagv : [];
+function tagsOf(n){
+  const t = n && n.tg;
+  if (!TAGV.length || !Array.isArray(t) || !t.length) return [];
+  const out = [];
+  for (let i=0;i<t.length;i++){ const s = TAGV[t[i]]; if (s) out.push(s); }
+  return out;
+}
+// A number or nothing at all. `ld` and `dr` are the same kind of absence, and an
+// axis accessor, a filter and a gain stage all have to agree about it.
+const fnum = v => typeof v === "number" && isFinite(v) ? v : null;
+
+// ---- tooltip ---------------------------------------------------------------
+function bar(v){
+  if (v === null || v === undefined) return '<span class="dim">-</span>';
+  const w = Math.max(2, Math.round(v * 0.62));
+  return '<span class="bar" style="width:'+w+'px;background:'+rampColour(v/100)+'"></span> '+v.toFixed(0);
+}
+function tipHtml(n){
+  let h = "<b>"+n.l.replace(/</g,"&lt;")+"</b>";
+  if (n.k !== "sample"){
+    const what = n.k==="family" ? "family (Freesound taxonomy)" : n.k==="key" ? "musical key"
+               : n.k==="tempo" ? "tempo band" : n.k==="tag" ? "tag" : "uploader";
+    return h + '<div class="row">'+what+' &middot; '+n.d+' samples</div>';
+  }
+  h += '<div class="row">'+(n.g==="CC0"
+      ? '<span class="cc0">CC0 &middot; no credit needed</span>'
+      : '<span class="by">BY &middot; credit required</span>')
+      + (n.sub ? ' &middot; '+n.sub.replace(/</g,"&lt;") : '') + '</div>';
+  const form = [];
+  if (n.rx) form.push("remix");
+  if (n.one) form.push("one-shot");
+  if (n.lp) form.push("loopable");
+  if (n.rv) form.push("reverb");
+  form.push(n.s+"s");
+  if (n.f) form.push(n.f);
+  h += '<div class="row">'+form.join(" &middot; ")+'</div>';
+
+  // Key and tempo always show, but an untrusted reading is greyed and labelled -
+  // the analyser emits a key for a car crash, so the number alone would mislead.
+  const kv = n.key ? (n.ko ? n.key+" ("+n.kc+")"
+                           : '<span class="dim">'+n.key+" ("+n.kc+", low confidence)</span>") : null;
+  const bv = n.bpm ? (n.bo ? n.bpm+" BPM ("+n.bc+")"
+                           : '<span class="dim">'+n.bpm+" BPM ("+n.bc+", low confidence)</span>") : null;
+  const mus = [kv, bv, n.note ? "note "+n.note : null].filter(Boolean);
+  if (mus.length) h += '<div class="row">'+mus.join(" &middot; ")+'</div>';
+
+  // The tags are the most useful thing a producer reads off a tooltip, so they
+  // get a row of their own rather than being left to the search box. 12 is where
+  // a 390px tip stops being two lines; a sample carrying 34 would otherwise be a
+  // tooltip taller than the legend, so the rest are counted instead of wrapped.
+  const tg = tagsOf(n);
+  if (tg.length){
+    h += '<div class="row">tags &middot; ' +
+         tg.slice(0, 12).map(t => t.replace(/</g,"&lt;")).join(" &middot; ") +
+         (tg.length > 12 ? ' <span class="dim">+'+(tg.length-12)+' more</span>' : '') +
+         '</div>';
+  }
+
+  // What it would take to use this in the project in hand. Only trusted readings
+  // get arithmetic done to them: "+6.7% to 137" off a key the analyser guessed
+  // for a car crash is a confident answer to a question nobody asked.
+  const pr = [];
+  if (PROJ.bpm && n.bo && n.bpm){
+    const pct = (PROJ.bpm/n.bpm - 1)*100;
+    pr.push((pct >= 0 ? "+" : "") + pct.toFixed(1) + "% to " + PROJ.bpm);
+  }
+  if (PROJ.key && n.ko && n.key){ const t = keyToProject(n.key); if (t) pr.push(t); }
+  if (pr.length) h += '<div class="row">project &middot; '+pr.join(" &middot; ")+'</div>';
+
+  h += '<table>';
+  for (let i=0;i<4;i++)
+    h += '<tr><td>'+TIMBRE[i]+'</td><td>'+bar(n.tb ? n.tb[i] : null)+'</td></tr>';
+  h += '</table>';
+  if (n.pk) h += '<div class="row">pack: '+n.pk.replace(/</g,"&lt;")+'</div>';
+  h += '<div class="row">'+(n.u ? "by "+n.u.replace(/</g,"&lt;")+" &middot; " : "")+
+       n.n.toLocaleString()+" downloads"+(n.r?" &middot; "+n.r+"/5":"")+'</div>';
+  return h;
+}
+
+// ---- downloading -----------------------------------------------------------
+// cdn.freesound.org sends Access-Control-Allow-Origin:*, so a preview can be
+// fetched into a blob and saved under a real filename. These are the preview
+// MP3s: the uploader's original needs an OAuth2 session a static page cannot hold.
+const CRC = (() => { const t = new Uint32Array(256);
+  for (let i=0;i<256;i++){ let c=i; for(let k=0;k<8;k++) c = c&1 ? 0xEDB88320^(c>>>1) : c>>>1; t[i]=c>>>0; }
+  return t; })();
+function crc32(buf){ let c = 0xFFFFFFFF;
+  for (let i=0;i<buf.length;i++) c = CRC[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0; }
+function safeName(n){
+  let base = (n.l || ("sample-"+n.i)).replace(/[\/\\:*?"<>|]+/g, "_").replace(/[^ -~]+/g, "").trim();
+  base = base.replace(/\.(mp3|wav|aiff?|ogg|flac)$/i, "");
+  const tags = [];
+  if (n.bo) tags.push(n.bpm+"bpm");
+  if (n.ko) tags.push(n.key.replace(/\s+/g,""));
+  if (base.length > 60) base = base.slice(0,60);
+  // `n.f` is the format the uploader posted, which is what an original download
+  // returns; the preview is always mp3 whatever `n.f` says.
+  const ext = ORIGINALS ? ((n.f || "wav").toLowerCase()) : "mp3";
+  return [base].concat(tags).join("_") + "__fs" + n.i + "." + ext;
+}
+function saveBlob(blob, filename){
+  const url = URL.createObjectURL(blob), a = document.createElement("a");
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+// Originals first, preview second. A 401 means nobody has authorised yet and a
+// 429 means the day's quota is spent; neither is a reason to hand back nothing,
+// so both fall through to the preview that has always worked.
+async function fetchAudio(n){
+  if (ORIGINALS){
+    try {
+      const r = await fetch(origUrl(n));
+      if (r.ok) return {res:r, original:true};
+      if (r.status === 401) ORIGINALS = false, paintOriginals();
+    } catch (e){ /* server gone; fall through */ }
+  }
+  const r = await fetch(n.p);
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return {res:r, original:false};
+}
+async function downloadOne(n){
+  if (!n || n.k !== "sample" || !n.p){ setNow("Nothing to download", true); return; }
+  setNow("Fetching " + n.l + " ..."); setNote("");
+  try { const got = await fetchAudio(n);
+        saveBlob(await got.res.blob(), safeName(n)); setNow("Saved " + safeName(n));
+        if (got.original) setNote("original file · via your Freesound session");
+        else setNote("preview MP3 (~128 kbps) · original at ",
+                "https://freesound.org/s/"+n.i+"/", "freesound.org/s/"+n.i+"/");
+        holdBar(NOTE_MS); }
+  catch (e){ setNow("Download failed: " + e.message, true); }
+}
+// Deflate or store, decided per member rather than for the zip as a whole.
+// STORE-only was right while every member was a Freesound preview: an mp3 is
+// already compressed and deflating it burns CPU to save nothing. An originals
+// zip can be full of 24-bit wav, where deflate takes a real bite, and
+// credits.txt and manifest.csv compress to almost nothing either way.
+const STORED_EXT = /\.(mp3|ogg|opus|m4a|flac|aac)$/i;
+const CAN_DEFLATE = typeof CompressionStream === "function";
+async function deflateRaw(bytes){
+  // "deflate-raw" is the bare deflate stream zip method 8 wants; "deflate"
+  // would wrap it in a zlib header and every unzipper would reject the member.
+  const cs = new CompressionStream("deflate-raw");
+  const w = cs.writable.getWriter();
+  w.write(bytes); w.close();
+  return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+}
+async function buildZip(files){
+  const enc = new TextEncoder(), parts = [], central = [];
+  let offset = 0;
+  const u16 = v => [v & 255, (v >> 8) & 255];
+  const u32 = v => [v & 255, (v >> 8) & 255, (v >> 16) & 255, (v >>> 24) & 255];
+  for (const f of files){
+    // The CRC and the uncompressed size are always of the original bytes; only
+    // the stored length and the method change.
+    const name = enc.encode(f.name), crc = crc32(f.data), sz = f.data.length;
+    let body = f.data, method = 0;
+    if (CAN_DEFLATE && !STORED_EXT.test(f.name) && sz > 256){
+      try { const z = await deflateRaw(f.data);
+            // Only if it actually helped: deflate makes incompressible data
+            // very slightly bigger, and a zip is not the place to prove it.
+            if (z.length < sz){ body = z; method = 8; } }
+      catch (e){ /* no CompressionStream, or it failed - store it */ }
+    }
+    const csz = body.length;
+    const local = new Uint8Array([].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(method),
+      u16(0), u16(0), u32(crc), u32(csz), u32(sz), u16(name.length), u16(0)));
+    parts.push(local, name, body);
+    central.push(new Uint8Array([].concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800),
+      u16(method), u16(0), u16(0), u32(crc), u32(csz), u32(sz),
+      u16(name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset))), name);
+    offset += local.length + name.length + csz;
+  }
+  const cdSize = central.reduce((a,b) => a + b.length, 0);
+  const eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
+    u16(files.length), u16(files.length), u32(cdSize), u32(offset), u16(0)));
+  return new Blob(parts.concat(central, [eocd]), { type: "application/zip" });
+}
+// ---- what goes in a zip besides the audio ----------------------------------
+// A zip of 200 BY-licensed samples with no record of who made them is 200 files
+// that cannot legally be released, and the licence is the one thing that is not
+// recoverable from the audio itself. Both members are plain text and go through
+// the same STORE path as the MP3s - buildZip takes its CRC and its two sizes
+// straight off f.data.length, so a UTF-8 Uint8Array needs nothing special.
+function csvq(v){
+  const s = (v === null || v === undefined) ? "" : String(v);
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+const fsUrl = n => "https://freesound.org/s/" + n.i + "/";
+function creditsText(list){
+  const by = list.filter(n => n.g !== "CC0");
+  // A BOM, because this file is opened by a person: without one, Notepad on a
+  // Windows machine mangles every accented uploader name in the library.
+  const L = ["\uFEFFFreesound samples \u2014 credits",
+    "Packed " + new Date().toISOString().slice(0,10) + " from the Freesound sample map.", "",
+    "These are Freesound PREVIEW mp3s (~128 kbps). The uploader's original file is",
+    "behind the link beside each name.", "",
+    "CC0 samples need no credit. CC BY samples must be credited wherever the track",
+    "appears \u2014 the block at the end of this file is ready to paste into a track",
+    "description.", "",
+    "\u2014\u2014 " + list.length + " sample" + (list.length===1?"":"s") + " in this zip \u2014\u2014"];
+  for (const n of list)
+    L.push([n.l, "by " + (n.u || "unknown"), n.g === "CC0" ? "CC0" : "CC BY", fsUrl(n)]
+           .join("  \u00b7  "));
+  L.push("");
+  if (!by.length){
+    L.push("\u2014\u2014 attribution \u2014\u2014",
+           "Every sample here is CC0. Nothing in this zip has to be credited.");
+  } else {
+    L.push("\u2014\u2014 attribution: paste this (" + by.length + " CC BY sample" +
+           (by.length===1?"":"s") + ") \u2014\u2014");
+    for (const n of by)
+      L.push('"' + n.l + '" by ' + (n.u || "unknown") + " \u2014 " + fsUrl(n) + " \u2014 CC BY");
+  }
+  L.push("");
+  return L.join("\r\n");
+}
+// No BOM on the csv, unlike credits.txt: this one is read by a script sooner
+// than by Excel, and a BOM turns the first column's name into "\uFEFFid".
+function manifestCsv(list){
+  const rows = ["id,name,uploader,licence,duration,bpm,bpm_trusted,key,key_trusted," +
+                "downloads,rating,pack,url"];
+  for (const n of list) rows.push([
+    n.i, n.l, n.u || "", n.g === "CC0" ? "CC0" : "CC BY", n.s,
+    n.bpm || "", n.bpm ? (n.bo ? "yes" : "no") : "",
+    n.key || "", n.key ? (n.ko ? "yes" : "no") : "",
+    n.n, n.r || "", n.pk || "", fsUrl(n)
+  ].map(csvq).join(","));
+  return rows.join("\r\n") + "\r\n";
+}
+function metaFiles(list){
+  const enc = new TextEncoder();
+  return [{ name:"credits.txt",  data: enc.encode(creditsText(list)) },
+          { name:"manifest.csv", data: enc.encode(manifestCsv(list)) }];
+}
+
+// Chromium's non-standard DownloadURL is the only way a web page can hand a real
+// file to the desktop or to a DAW. Firefox and Safari ignore it and the drag
+// simply does nothing, which is why the panel says so rather than letting it
+// fail silently. The canvas is deliberately NOT a drag source: mousedown there
+// already means pan-the-view and drag-a-node, and a native drag would eat both.
+function setDragData(e, n){
+  if (!n || !n.p || !e.dataTransfer) return false;
+  // safeName() has already stripped ":" out of the filename, which matters here:
+  // the three DownloadURL fields are colon-separated and nothing escapes them.
+  const nm = safeName(n);
+  const mime = ({wav:"audio/wav", flac:"audio/flac", ogg:"audio/ogg", opus:"audio/opus",
+                 aif:"audio/aiff", aiff:"audio/aiff", m4a:"audio/mp4"})[(n.f||"").toLowerCase()]
+                || "audio/mpeg";
+  // A drag hands the DAW a URL and walks away - there is no callback to fall
+  // back from - so this is the one place the preview is used unless originals
+  // are known to be live right now.
+  const href = ORIGINALS ? (location.origin + origUrl(n)) : n.p;
+  try { e.dataTransfer.setData("DownloadURL", mime + ":" + nm + ":" + href);
+        e.dataTransfer.setData("text/uri-list", href);
+        e.dataTransfer.setData("text/plain", href);
+        e.dataTransfer.effectAllowed = "copy"; } catch(err){ return false; }
+  return true;
+}
+
+const MAX_ZIP = 250;
+let zipping = false;
+// One packer for both zips. The only difference between them is which list
+// arrives and what has to be said about whatever the cap left behind.
+async function packZip(list, btn, capNote){
+  if (zipping) return;
+  zipping = true; if (btn) btn.disabled = true;
+  setNote("");
+  const files = [], seen = Object.create(null), queue = list.slice();
+  let done = 0, failed = 0, anyOriginal = false, anyPreview = false;
+  const total = list.length;
+  async function worker(){
+    while (queue.length){
+      const n = queue.shift();
+      try { const got = await fetchAudio(n); const r = got.res;
+            if (got.original) anyOriginal = true; else anyPreview = true;
+            let name = safeName(n);
+            if (seen[name]){ seen[name] += 1;
+              // Split on the last dot rather than assuming .mp3: an originals
+              // zip is a mix of wav, flac and aiff.
+              const d = name.lastIndexOf(".");
+              name = name.slice(0,d) + "-" + seen[name] + name.slice(d); }
+            else seen[name] = 1;
+            // The node rides along so credits.txt and manifest.csv describe what
+            // actually made it into the zip, not what was asked for.
+            files.push({ name: name, data: new Uint8Array(await r.arrayBuffer()), n: n }); }
+      catch (e){ failed++; }
+      done++; setNow("Packing " + done + "/" + total + (failed ? "  ·  "+failed+" failed" : ""));
+    }
+  }
+  await Promise.all([worker(),worker(),worker(),worker(),worker(),worker()]);
+  if (files.length){
+    const raw = files.reduce((a,f) => a + f.data.length, 0);
+    const blob = await buildZip(files.concat(metaFiles(files.map(f => f.n))));
+    saveBlob(blob, "freesound-samples-" + files.length + ".zip");
+    const mb = (blob.size/1048576).toFixed(1);
+    // Only mentioned when it is worth mentioning: a zip of previews is all
+    // STORE and saying "0% smaller" would be noise.
+    const shrunk = raw - blob.size > raw*0.02
+      ? "  ·  " + Math.round(100*(1 - blob.size/raw)) + "% smaller" : "";
+    setNow("Saved " + files.length + " samples (" + mb + " MB) · " +
+      "credits.txt + manifest.csv" +
+      shrunk +
+      (capNote ? "  ·  " + capNote : "") +
+      (failed ? "  ·  "+failed+" failed" : ""));
+    if (anyOriginal && !anyPreview) setNote("original files · via your Freesound session");
+    else if (anyOriginal) setNote("a mix of originals and previews - the quota ran out partway");
+    else setNote("previews (~128 kbps) · each original is at freesound.org/s/<id>/ · ",
+            "https://freesound.org/", "freesound.org");
+    holdBar(NOTE_MS);
+  } else setNow("All downloads failed", true);
+  if (btn) btn.disabled = false; zipping = false;
+}
+function downloadVisible(){
+  if (zipping) return;
+  let list = [];
+  for (let i=0;i<N.length;i++){ const n=N[i];
+    if (n.k==="sample" && n.p && shown(n) && (!matches || matches.has(i))) list.push(n); }
+  if (!list.length){ setNow("Nothing visible to download", true); return; }
+  let capNote = "";
+  if (list.length > MAX_ZIP){
+    list = list.slice().sort((a,b) => b.n - a.n).slice(0, MAX_ZIP);
+    capNote = "capped at "+MAX_ZIP+", narrow the filters for more"; }
+  packZip(list, document.getElementById("dlvis"), capNote);
+}
+function downloadBasket(){
+  if (zipping) return;
+  let list = basketNodes().filter(n => n.p);
+  if (!list.length){ setNow("The basket is empty — hover a sample and press S", true);
+                     holdBar(3200); return; }
+  let capNote = "";
+  if (list.length > MAX_ZIP){
+    // A curated basket is not a filter result. Truncating one silently is worse
+    // than truncating a filter, so the ones left behind are named, and they stay
+    // in the basket so the rest can be fetched in a second pass.
+    const left = list.slice(MAX_ZIP);
+    list = list.slice(0, MAX_ZIP);
+    capNote = "left out " + left.length + " over the " + MAX_ZIP + " cap (" +
+      left.slice(0,3).map(n => n.l).join(", ") +
+      (left.length > 3 ? " and " + (left.length-3) + " more" : "") +
+      ") — still in the basket";
+  }
+  packZip(list, document.getElementById("bk_zip"), capNote);
+}
+
+// ---- playback --------------------------------------------------------------
+const nowEl = document.getElementById("now"), noteEl = document.getElementById("note");
+const dlOneBtn = document.getElementById("dlone"), loopEl = document.getElementById("loopst");
+let audio=null, playing=-1, pulse=0, rafId=0, lastPulse=0;
+
+// Playback runs through WebAudio - element -> gain -> limiter -> out - so the
+// library can be browsed at one level instead of arriving at -30 LUFS and then
+// at -6. Every part of it is optional: no AudioContext, a browser that refuses
+// createMediaElementSource, a CORS refusal at the CDN, and it falls back to a
+// plain Audio element. This is an enhancement, never a new way to be silent.
+let AC = null, acDead = false, limiterNode = null, srcNode = null, gainNode = null;
+function audioCtx(){
+  if (AC || acDead) return AC;
+  const C = window.AudioContext || window.webkitAudioContext;
+  if (!C){ acDead = true; return null; }
+  try { AC = new C(); } catch(e){ acDead = true; }
+  return AC;
+}
+// `ld` is EBU R128 integrated loudness, in LUFS. -16 as the target because that
+// is roughly where this library already sits, so most sounds move a decibel or
+// two rather than everything being hauled up against the ceiling. +12 dB is as
+// far as a boost goes: past that a quiet field recording is mostly its own hiss.
+// The cut has slack in it - nothing above the target can be more than 16 dB over
+// it - so the clamp is only there to keep a retuned target from inverting anything.
+const LOUD_TARGET = -16, LOUD_BOOST_MAX = 12, LOUD_CUT_MAX = -18;
+function gainFor(n){
+  const l = n && n.ld;
+  // Absent until the payload carries it, and a positive or absurd figure is not
+  // LUFS at all. Either way the sound is played exactly as it comes.
+  if (typeof l !== "number" || !isFinite(l) || l >= 0 || l < -70) return 1;
+  return Math.pow(10, Math.max(LOUD_CUT_MAX, Math.min(LOUD_BOOST_MAX, LOUD_TARGET - l))/20);
+}
+// Integrated loudness says nothing about peaks, so a +12 dB boost on a quiet but
+// peaky one-shot would clip the output. This sits at -1 dBFS and only ever meets
+// those peaks; on everything else it is not audibly in the path at all.
+function limiter(){
+  const ac = audioCtx(); if (!ac) return null;
+  if (limiterNode) return limiterNode;
+  try { const c = ac.createDynamicsCompressor();
+        c.threshold.value = -1; c.knee.value = 0; c.ratio.value = 20;
+        c.attack.value = 0.003; c.release.value = 0.25;
+        c.connect(ac.destination); limiterNode = c; } catch(e){ limiterNode = null; }
+  return limiterNode;
+}
+function routeAudio(a, n){
+  const ac = audioCtx(); if (!ac) return false;
+  let src = null;
+  try {
+    // From this call on the element is silent unless something connects it, so
+    // the catch has to put it back on the destination rather than give up.
+    src = ac.createMediaElementSource(a);
+    const g = ac.createGain(); g.gain.value = gainFor(n);
+    g.connect(limiter() || ac.destination);
+    src.connect(g);
+    srcNode = src; gainNode = g; return true;
+  } catch(e){
+    if (src){ try { src.connect(ac.destination); srcNode = src; } catch(e2){} }
+    return false;
+  }
+}
+function dropRouting(){
+  if (srcNode){ try { srcNode.disconnect(); } catch(e){} srcNode = null; }
+  if (gainNode){ try { gainNode.disconnect(); } catch(e){} gainNode = null; }
+}
+
+// Auditioning at the project tempo is resampling, not time-stretching: a sampler
+// pitches a loop when you drop its tempo, and that pitched version is the thing
+// a producer is actually deciding about. Browsers default preservesPitch to
+// true, so honest behaviour has to be asked for. The range is one octave either
+// way - past that the preview stops telling you anything about the sound.
+let atTempo = false, playRate = 1;
+try { atTempo = localStorage.getItem("fs-at-tempo") === "1"; } catch(e){}
+const RATE_LO = 0.5, RATE_HI = 2.0;
+function rateFor(n){
+  if (!atTempo || !PROJ.bpm || !n || !n.bo || !n.bpm) return 1;
+  const r = PROJ.bpm/n.bpm;
+  return (r >= RATE_LO && r <= RATE_HI) ? r : 1;
+}
+// defaultPlaybackRate as well as playbackRate: the load algorithm resets
+// playbackRate to it, so a rate set before src is silently thrown away.
+function setRate(a, r){
+  try { a.defaultPlaybackRate = r; a.playbackRate = r;
+        a.preservesPitch = a.mozPreservesPitch = a.webkitPreservesPitch = false; } catch(e){}
+}
+function setAtTempo(on){
+  atTempo = !!on;
+  const b = document.getElementById("trate"); if (b) b.classList.toggle("on", atTempo);
+  try { localStorage.setItem("fs-at-tempo", atTempo ? "1" : "0"); } catch(e){}
+  applyRate();
+}
+// The rate can change under a sound that is already playing - the toggle, or the
+// project BPM being typed - and the footer has to keep up, because the semitone
+// figure is the only warning that this is not what the file sounds like.
+function applyRate(){
+  if (playing < 0 || !audio) return;
+  const n = N[playing];
+  playRate = rateFor(n); setRate(audio, playRate);
+  if (!nowEl.classList.contains("err")) setNow(nowLine(n));
+}
+function nowLine(n){
+  let s = "♪ "+n.l+(n.bo?"  ·  "+n.bpm+" BPM":"")+(n.ko?"  ·  "+n.key:"")+"  ·  "+n.g;
+  const w = walkNode() >= 0 && N[walkNode()] === n ? walkLabel() : "";
+  if (w) s += "  ·  " + w;
+  if (playRate !== 1){
+    const st = 12*Math.log(playRate)/Math.LN2;
+    s += "  ·  at "+PROJ.bpm+" BPM, pitched "+(st>0?"+":"")+st.toFixed(1)+" st";
+  } else if (atTempo && PROJ.bpm && n.bo && n.bpm){
+    s += "  ·  "+(PROJ.bpm/n.bpm).toFixed(2)+"× is past ±1 octave, played as recorded";
+  }
+  return s;
+}
+
+// Loopables loop and one-shots do not, which is right nine times in ten. L
+// overrides it for the sound in hand; L with nothing playing moves the standing
+// preference instead, which is the only place that choice could live - a loop
+// toggle with no sound to apply it to is a dead key.
+let loopDefault = true, loopOn = false;
+try { loopDefault = localStorage.getItem("fs-loop-default") !== "0"; } catch(e){}
+function showLoop(){
+  // Which of the two questions the button is answering. A sound that is playing
+  // is the thing it is about; with none, it is about the standing preference -
+  // the same choice, asked about every loopable sample rather than about one.
+  // Nothing calls this while the bar serves out its floor, so a finished sound
+  // keeps showing how it played until something actually changes.
+  const live = playing >= 0, on = live ? loopOn : loopDefault;
+  loopEl.textContent = on ? "↻ loop" : "↻ once";
+  loopEl.classList.toggle("on", live && on);
+  loopEl.classList.toggle("def", !live);
+  loopEl.setAttribute("aria-pressed", on ? "true" : "false");
+  loopEl.title = live ? "loop this sample (L)"
+                      : "loop loopable samples by default (L)";
+}
+function toggleLoop(){
+  if (playing >= 0 && audio){ loopOn = !loopOn; audio.loop = loopOn; showLoop(); return; }
+  loopDefault = !loopDefault;
+  try { localStorage.setItem("fs-loop-default", loopDefault ? "1" : "0"); } catch(e){}
+  showLoop();
+  setNow(loopDefault ? "Loopable samples will loop" : "Loopable samples will play once");
+  holdBar(2600);
+}
+// Two lifetimes, deliberately separate. The pulsing ring belongs to the SOUND and
+// dies with it. The footer bar - the name and its save button - is held for
+// BAR_FLOOR_MS measured from the moment playback started, because most of this
+// library is one-shots: a 0.4s hat would otherwise take its own save button away
+// before a hand could reach it. Exactly one timer ever exists, and every path
+// that starts, stops or replaces the bar clears it first, so a stop followed by
+// a new play can never have the old timer wipe the new bar.
+const BAR_FLOOR_MS = 5000, NOTE_MS = 9000;
+let barTimer = 0, barNode = -1, playStart = 0;
+function cancelBarTimer(){ if(barTimer){ clearTimeout(barTimer); barTimer = 0; } }
+function holdBar(ms){ cancelBarTimer(); barTimer = setTimeout(barExpired, Math.max(0, ms)); }
+function barExpired(){
+  barTimer = 0;
+  if(playing >= 0) return;          // a newer sound owns the bar; leave it alone
+  clearBar();
+}
+// The waveform and the loop state are furniture of the BAR, not of the sound, so
+// they go when it goes and survive a sound that has already finished.
+function clearBar(){ cancelBarTimer(); barNode = -1; dlOneBtn.hidden = true;
+  hideWave(); showLoop(); setNow(""); setNote(""); }
+function setNow(text, isErr){ nowEl.textContent = text || ""; nowEl.classList.toggle("err", !!isErr); }
+// A download hands over the PREVIEW mp3, not the uploader's original - that needs
+// an OAuth2 session a static page cannot hold. Built as a real anchor rather than
+// tooltip text, because the tooltip is pointer-events:none and unreachable.
+function setNote(text, href, linkText){
+  noteEl.textContent = "";
+  if(!text) return;
+  noteEl.appendChild(document.createTextNode(text));
+  if(href){
+    const a = document.createElement("a");
+    a.href = href; a.textContent = linkText || href;
+    a.target = "_blank"; a.rel = "noopener noreferrer";
+    noteEl.appendChild(a);
+  }
+}
+// The loading symbol belongs to the SOUND, like the ring: it says this preview
+// is not audible yet. Most previews are cached or arrive in a few milliseconds,
+// so it waits LOAD_DELAY_MS before appearing - a spinner that flashes on every
+// hat is noise, and one that appears only when there is genuinely a wait is
+// information. Exactly one timer, cleared by every path that shows or hides it.
+const loadEl = document.getElementById("load");
+const LOAD_DELAY_MS = 180;
+let loadTimer = 0;
+function showLoading(){
+  cancelLoading();
+  loadTimer = setTimeout(() => { loadTimer = 0; loadEl.classList.add("on"); }, LOAD_DELAY_MS);
+}
+function cancelLoading(){
+  if(loadTimer){ clearTimeout(loadTimer); loadTimer = 0; }
+  loadEl.classList.remove("on");
+}
+
+// Stops the sound and the ring, and leaves the footer bar exactly as it is.
+function killEl(a){ try { a.pause(); a.removeAttribute("src"); a.load(); } catch(e){} }
+// 15ms. Cutting a sustained pad dead is an audible click; this is long enough to
+// remove it and short enough that pressing Esc still feels instant. It also
+// covers the overlap when one sample replaces another, which was the loudest
+// click of the lot - the old sound now fades under the new one's first frames.
+const STOP_RAMP = 0.015;
+function stopSound(){
+  if(audio){
+    const a = audio, g = gainNode, s = srcNode;
+    audio=null; srcNode=null; gainNode=null;
+    let ramped = false;
+    if(g && AC){
+      try { const t = AC.currentTime;
+            g.gain.cancelScheduledValues(t);
+            g.gain.setValueAtTime(g.gain.value, t);
+            g.gain.linearRampToValueAtTime(0.0001, t + STOP_RAMP);
+            ramped = true; } catch(e){}
+    }
+    const done = () => { killEl(a);
+      if(s){ try { s.disconnect(); } catch(e){} }
+      if(g){ try { g.disconnect(); } catch(e){} } };
+    if(ramped) setTimeout(done, STOP_RAMP*1000 + 20); else done();
+  }
+  playing=-1; if(rafId) cancelAnimationFrame(rafId); rafId=0;
+  cancelLoading();
+  draw();
+}
+// A deliberate stop - Esc, Space, clicking the playing node again - clears now.
+// The floor is for the natural end of playback, not for someone saying stop.
+function stopAudio(){ stopSound(); clearBar(); }
+// Playback ran out on its own: the ring goes, the bar serves out its floor. If a
+// download notice is up, it gets a moment to be read rather than blinking out.
+function onEnded(){
+  stopSound();
+  const left = BAR_FLOOR_MS - (Date.now() - playStart);
+  holdBar(noteEl.textContent ? Math.max(left, 4000) : left);
+}
+function playNode(i){
+  const n = N[i]; if(!n) return;
+  if(n.k!=="sample"){ setNow(n.l+" — "+n.k+", nothing to play"); return; }
+  if(!n.p){ setNow("No preview for "+n.l, true); return; }
+  if(playing===i){ stopAudio(); return; }
+  stopAudio();
+  // Made and resumed here because here is the user gesture: a context built at
+  // load time is born suspended and never recovers on its own.
+  const ac = audioCtx();
+  if(ac && ac.state === "suspended"){ try { ac.resume(); } catch(e){} }
+  loopOn = loopDefault && !!n.lp;
+  playRate = rateFor(n);
+  playing = i; barNode = i; playStart = Date.now(); lastPulse = 0;
+  dlOneBtn.hidden = false; showLoop(); draw();
+  rafId = requestAnimationFrame(pulseLoop);
+  showLoading();
+  startAudio(i, n, true);
+  // Asked for after playback is already under way, never before it: decoding a
+  // 30-second preview is tens of milliseconds nobody should wait to hear a hat.
+  wantWave(i, n);
+}
+function startAudio(i, n, routed){
+  // play() settles a tick later, so every callback checks it is still the current
+  // sound first - otherwise a stop, or a quick move to the next sample, gets its
+  // cleared bar repainted by the sound it just replaced.
+  const mine = audio = new Audio();
+  // Only ask for CORS when there is something to spend it on: without a context
+  // the request is a way to fail that plain playback would not have had.
+  const cors = routed && !!audioCtx();
+  // Before src, not after: set late, the response is already opaque and
+  // createMediaElementSource has nothing but silence to offer.
+  if(cors) mine.crossOrigin = "anonymous";
+  mine.volume = 0.9; mine.loop = loopOn;
+  mine.src = n.p;
+  setRate(mine, playRate);
+  const still = () => audio === mine;
+  if(cors) routeAudio(mine, n);
+  mine.addEventListener("ended", () => { if(still()) onEnded(); });
+  // The two events that bracket audible playback, in both directions: a pad that
+  // outruns its buffer half way through is the same wait as the one at the start
+  // and gets the same symbol back.
+  mine.addEventListener("playing", () => { if(still()) cancelLoading(); });
+  mine.addEventListener("waiting", () => { if(still()) showLoading(); });
+  mine.addEventListener("error", () => {
+    if(!still()) return;
+    // A CORS refusal reaches us as an ordinary load error, and the routed element
+    // is the only one that asked for CORS - so drop the routing and try again
+    // plain, rather than reporting a failure the enhancement caused.
+    // startAudio first, so `audio` no longer points at this element before it is
+    // torn down - otherwise a teardown that fired its own error would land back
+    // here with still() true and retry itself.
+    if(cors){ dropRouting(); startAudio(i, n, false); killEl(mine); return; }
+    cancelLoading();
+    setNow("Could not load "+n.l, true);
+  });
+  // play() resolving is a weaker promise than the playing event on some browsers,
+  // but it is the one that fires when the element was already buffered, so both
+  // clear the symbol and whichever comes first wins.
+  mine.play().then(() => { if(still()){ cancelLoading(); setNow(nowLine(n)); } })
+             .catch(err => { if(still()){ cancelLoading();
+               setNow("Blocked ("+err.name+") — open over http://localhost", true); } });
+}
+// ~11fps: the pulse only needs to read as alive, and a full redraw is tens of
+// thousands of edges, which is not worth doing 60 times a second.
+function pulseLoop(t){
+  if(playing<0) return;
+  if(running){ rafId = requestAnimationFrame(pulseLoop); return; }  // physics draws
+  if(!lastPulse || t-lastPulse > 90){ pulse=(Math.sin(t/260)+1)/2; lastPulse=t; draw(); }
+  rafId = requestAnimationFrame(pulseLoop);
+}
+
+// ---- waveform --------------------------------------------------------------
+// A 30-second pad auditions as its first second unless you can see where you are
+// in it and put the playhead somewhere else. The strip is drawn from peaks this
+// page decodes itself, and it is never on the critical path: playback has
+// already started by the time a decode is asked for, and a decode that fails
+// simply means the strip never appears.
+const waveEl = document.getElementById("wave"), wctx = waveEl.getContext("2d");
+const WAVE_BINS = 256;
+// Peaks, not AudioBuffers. A decoded 30s preview is ~5 MB of Float32 and forty
+// of those is a leak; forty sets of peaks are 40 KB. Forty because walking a
+// similarity chain and coming back the way you came is how this page is used,
+// and re-decoding the sound you heard twenty seconds ago is pure waste.
+const WAVE_CACHE = new Map(), WAVE_MAX = 40, waveBusy = new Set();
+let wavePeaks = null, waveDur = 0, waveNode = -1, waveT = 0, waveRaf = 0, waveDrag = false;
+function cacheWave(i, rec){
+  WAVE_CACHE.delete(i); WAVE_CACHE.set(i, rec);   // delete-then-set is the LRU touch
+  while (WAVE_CACHE.size > WAVE_MAX){
+    const o = WAVE_CACHE.keys().next(); if (o.done) break;
+    WAVE_CACHE.delete(o.value);
+  }
+}
+function hideWave(){
+  waveNode = -1; wavePeaks = null; waveDur = 0; waveT = 0; waveDrag = false;
+  waveEl.style.display = "none";
+  if (waveRaf){ cancelAnimationFrame(waveRaf); waveRaf = 0; }
+}
+function showWave(i, rec){
+  waveNode = i; wavePeaks = rec.peaks; waveDur = rec.dur;
+  waveT = audio && audio.currentTime || 0;
+  waveEl.style.display = "block";
+  drawWave();
+  if (!waveRaf) waveRaf = requestAnimationFrame(waveFrame);
+}
+function wantWave(i, n){
+  hideWave();
+  const rec = WAVE_CACHE.get(i);
+  if (rec){ cacheWave(i, rec); showWave(i, rec); return; }
+  if (waveBusy.has(i) || !n.p) return;
+  waveBusy.add(i);
+  decodeWave(n).then(got => {
+    waveBusy.delete(i);
+    if (!got) return;
+    cacheWave(i, got);
+    // The bar may have moved on, or been cleared, while this was decoding. The
+    // peaks are still worth keeping; showing them is not.
+    if (barNode === i) showWave(i, got);
+  }, () => { waveBusy.delete(i); });
+}
+async function decodeWave(n){
+  const ac = audioCtx(); if (!ac) return null;
+  // A second request for bytes the element already has. There is no way to hand
+  // a media element's buffer to decodeAudioData, and the CDN's cache headers
+  // make this a memory hit rather than a second download in practice.
+  const r = await fetch(n.p); if (!r.ok) return null;
+  const bytes = await r.arrayBuffer();
+  const ab = await new Promise((res, rej) => {
+    const p = ac.decodeAudioData(bytes, res, rej);   // older Safari has no promise form
+    if (p && p.then) p.then(res, rej);
+  });
+  return { peaks: reducePeaks(ab), dur: ab.duration || 0 };
+}
+function reducePeaks(ab){
+  const out = new Float32Array(WAVE_BINS);
+  const ch = ab.numberOfChannels ? ab.getChannelData(0) : null;
+  if (!ch || !ch.length) return out;
+  const per = ch.length/WAVE_BINS;
+  for (let b=0;b<WAVE_BINS;b++){
+    const s = Math.floor(b*per), e = Math.min(ch.length, Math.floor((b+1)*per));
+    // Stride rather than every sample: a 30s preview is 1.3M samples against 256
+    // columns, and 64 samples per column already draw the same picture.
+    const st = Math.max(1, ((e-s)/64)|0);
+    let m = 0;
+    for (let j=s;j<e;j+=st){ const v = ch[j] < 0 ? -ch[j] : ch[j]; if (v > m) m = v; }
+    out[b] = m;
+  }
+  // Normalised to its own loudest column. These are previews of everything from
+  // a distant field recording to a clipped kick, and an absolute strip for the
+  // quiet half of the library is a flat line that says nothing.
+  let mx = 0;
+  for (let b=0;b<WAVE_BINS;b++) if (out[b] > mx) mx = out[b];
+  if (mx > 1e-4) for (let b=0;b<WAVE_BINS;b++) out[b] /= mx;
+  return out;
+}
+// The element's duration wins where it has one: the peaks were decoded from the
+// same bytes, but seeking happens on the element's timeline, not the buffer's.
+function waveLen(){
+  if (audio && isFinite(audio.duration) && audio.duration > 0) return audio.duration;
+  return waveDur;
+}
+function drawWave(){
+  if (!wavePeaks) return;
+  const d = window.devicePixelRatio || 1;
+  const w = waveEl.clientWidth || 190, h = waveEl.clientHeight || 26;
+  const bw = Math.round(w*d), bh = Math.round(h*d);
+  if (waveEl.width !== bw || waveEl.height !== bh){ waveEl.width = bw; waveEl.height = bh; }
+  wctx.setTransform(d,0,0,d,0,0);
+  wctx.clearRect(0,0,w,h);
+  const len = waveLen(), mid = h/2;
+  const px = len ? Math.max(0, Math.min(1, waveT/len))*w : 0;
+  for (let x=0;x<w;x++){
+    const v = wavePeaks[Math.min(WAVE_BINS-1, (x/w*WAVE_BINS)|0)];
+    const a = Math.max(0.5, v*(mid - 1.5));       // a silent column still draws a line
+    wctx.fillStyle = x < px ? "#57a773" : "#3f4c5c";
+    wctx.fillRect(x, mid - a, 1, a*2);
+  }
+  if (len){ wctx.fillStyle = "#e6edf3"; wctx.fillRect(Math.min(w-1, Math.max(0, px)), 0, 1, h); }
+}
+// Only while a sound is actually moving. Once it has ended the strip stays up
+// with the bar, frozen where it stopped: there is nothing left to animate, and
+// this canvas is 190px wide, so drawing it is not what costs anything.
+function waveFrame(){
+  waveRaf = 0;
+  if (waveNode < 0) return;
+  if (audio && !waveDrag) waveT = audio.currentTime || 0;
+  drawWave();
+  if (audio && !audio.paused) waveRaf = requestAnimationFrame(waveFrame);
+}
+function seekWave(e){
+  if (!audio || waveNode < 0) return;
+  const r = waveEl.getBoundingClientRect();
+  const len = waveLen(); if (!len) return;
+  waveT = Math.max(0, Math.min(1, (e.clientX - r.left)/Math.max(1, r.width)))*len;
+  try { audio.currentTime = waveT; } catch(err){}
+  drawWave();
+}
+// Drag as well as click, and on window rather than the strip, so the playhead
+// keeps following once the pointer has left the 26px it started in.
+waveEl.addEventListener("mousedown", e => { e.preventDefault(); waveDrag = true; seekWave(e); });
+window.addEventListener("mousemove", e => { if (waveDrag) seekWave(e); });
+window.addEventListener("mouseup", () => {
+  if (!waveDrag) return;
+  waveDrag = false;
+  if (audio && !audio.paused && !waveRaf) waveRaf = requestAnimationFrame(waveFrame);
+});
+
+// ---- live physics ----------------------------------------------------------
+// The baked layout is spring_layout run once in the builder. This runs
+// ForceAtlas2 in the browser instead - and it is what the page opens on - so the
+// graph can be pushed around rather than only looked at, with every constant on
+// a slider instead of buried in Python.
+//
+// It runs in a 1000-unit world and writes back into the 0-1 box the renderer
+// already uses, so pan, zoom, picking and culling need to know nothing about
+// any of it. Only *visible* nodes and *drawn* edges are simulated - filter down
+// to CC0 loops and it is that subgraph, not the whole corpus, that settles.
+const WORLD = 1000, WCTR = WORLD / 2, VMAX = 60;
+const NN = N.length;
+const PX = new Float64Array(NN), PY = new Float64Array(NN);   // world position
+const VX = new Float64Array(NN), VY = new Float64Array(NN);   // velocity
+const BX = new Float64Array(NN), BY = new Float64Array(NN);   // the baked layout
+const CR = new Float64Array(NN);                              // collision radius
+const PIN = new Uint8Array(NN);
+const PINNED = new Set();
+// What a node weighs in the quadtree. 1 for most models; ForceAtlas2 repels by
+// degree, so its mass is deg+1 and the tree has to carry that instead of a count.
+const MW = new Float64Array(NN);
+// ForceAtlas2 compares each node's force with its previous one to tell swinging
+// from travelling, so the previous one has to be kept.
+const PFX = new Float64Array(NN), PFY = new Float64Array(NN);
+for (let i=0;i<NN;i++){ BX[i]=N[i].x; BY[i]=N[i].y; PX[i]=N[i].x*WORLD; PY[i]=N[i].y*WORLD; }
+
+// Defaults are tuned for 7k nodes. ForceAtlas2 has no natural scale - it settles
+// wherever repulsion and attraction happen to balance - and Gephi's own scaling
+// of 2 puts this graph at a span of tens of thousands of units, which is not
+// wrong in itself but leaves `spacing` meaningless beside it. 0.2 lands it at
+// about 2,400, the same order as the layout the builder ships.
+//
+// Flags are 0/1 rather than booleans so they ride along in the same numeric
+// restore as everything else.
+const SIM_DEF = {
+  fa2Scale:0.2, fa2Grav:1.2, fa2Tol:1, fa2Wsim:1, fa2Wstruct:0.15,
+  fa2Lin:0, fa2Strong:0, fa2Hub:0,
+  coll:8, theta:1.20, steps:1,
+};
+const SIM = Object.assign({}, SIM_DEF);
+let autoFit = true, fullDetail = false;
+try { const s = JSON.parse(localStorage.getItem("fs-physics") || "null");
+      if (s){ for (const k in SIM_DEF) if (typeof s[k] === "number") SIM[k] = s[k];
+              if (typeof s.autoFit === "boolean") autoFit = s.autoFit;
+              if (typeof s.fullDetail === "boolean") fullDetail = s.fullDetail; } } catch(e){}
+function saveSim(){
+  try { localStorage.setItem("fs-physics", JSON.stringify(
+        Object.assign({ autoFit:autoFit, fullDetail:fullDetail }, SIM))); } catch(e){}
+}
+
+// ---- the active subgraph ---------------------------------------------------
+const ACT = new Int32Array(NN);
+let ACTN = 0;
+let EA = new Int32Array(0), EB = new Int32Array(0), EK = new Uint8Array(0), ELN = 0;
+const DEG = new Float64Array(NN);
+const LIVE = new Uint8Array(NN);
+let actDirty = true;
+function syncActive(){
+  actDirty = false;
+  walkGen++;                     // a filter change can take a neighbour off screen
+  ACTN = 0; LIVE.fill(0);
+  for (let i=0;i<NN;i++) if (shown(N[i])){ ACT[ACTN++] = i; LIVE[i] = 1; }
+  let m = 0;
+  for (let i=0;i<E.length;i++){ const e = E[i];
+    if (e[2] === 1 && !showClap) continue;
+    if (LIVE[e[0]] && LIVE[e[1]]) m++; }
+  if (EA.length < m){ EA = new Int32Array(m); EB = new Int32Array(m); EK = new Uint8Array(m); }
+  ELN = 0; DEG.fill(0);
+  for (let i=0;i<E.length;i++){ const e = E[i];
+    if (e[2] === 1 && !showClap) continue;
+    if (!(LIVE[e[0]] && LIVE[e[1]])) continue;
+    EA[ELN] = e[0]; EB[ELN] = e[1]; EK[ELN] = e[2]; ELN++;
+    DEG[e[0]]++; DEG[e[1]]++; }
+  for (let k=0;k<ACTN;k++){ const i = ACT[k];
+    CR[i] = SIM.coll * rad(N[i]) * 0.5;
+    MW[i] = DEG[i] + 1; }
+}
+
+// ---- Barnes-Hut quadtree ---------------------------------------------------
+// Rebuilt every tick. 7,214 nodes against each other is 26M pairs a frame; this
+// is the difference between a slideshow and something you can drag. One tree
+// serves both repulsion (centre of mass per quad) and collision (largest radius
+// per quad), which is why qR is accumulated alongside qMass.
+let qCap = 0, qCnt = 0, treeSize = 0;   // how big the layout currently is
+let qCh, qBody, qNum, qMass, qCx, qCy, qX, qY, qS, qS2, qR;
+const STACK = new Int32Array(8192);
+function qAlloc(cap){
+  qCap = cap;
+  qCh = new Int32Array(cap*4); qBody = new Int32Array(cap); qNum = new Int32Array(cap);
+  qMass = new Float64Array(cap); qCx = new Float64Array(cap); qCy = new Float64Array(cap);
+  qX = new Float64Array(cap); qY = new Float64Array(cap); qS = new Float64Array(cap);
+  qS2 = new Float64Array(cap); qR = new Float64Array(cap);
+}
+function qGrow(){
+  const cap = qCap * 2;
+  const ch = new Int32Array(cap*4); ch.set(qCh); qCh = ch;
+  const bd = new Int32Array(cap); bd.set(qBody); qBody = bd;
+  const nu = new Int32Array(cap); nu.set(qNum); qNum = nu;
+  const ms = new Float64Array(cap); ms.set(qMass); qMass = ms;
+  const cx = new Float64Array(cap); cx.set(qCx); qCx = cx;
+  const cy = new Float64Array(cap); cy.set(qCy); qCy = cy;
+  const xx = new Float64Array(cap); xx.set(qX); qX = xx;
+  const yy = new Float64Array(cap); yy.set(qY); qY = yy;
+  const ss = new Float64Array(cap); ss.set(qS); qS = ss;
+  const s2 = new Float64Array(cap); s2.set(qS2); qS2 = s2;
+  const rr = new Float64Array(cap); rr.set(qR); qR = rr;
+  qCap = cap;
+}
+qAlloc(Math.max(2048, NN * 3));
+function qNew(x, y, s){
+  if (qCnt >= qCap) qGrow();
+  const i = qCnt++, o = i*4;
+  qCh[o] = qCh[o+1] = qCh[o+2] = qCh[o+3] = -1;
+  qBody[i] = -1; qNum[i] = 0; qMass[i] = 0; qCx[i] = 0; qCy[i] = 0; qR[i] = 0;
+  qX[i] = x; qY[i] = y; qS[i] = s; qS2[i] = s*s;
+  return i;
+}
+function qChildFor(qi, x, y){
+  const h = qS[qi] * 0.5;
+  const cx = x >= qX[qi] + h ? 1 : 0, cy = y >= qY[qi] + h ? 1 : 0;
+  const slot = qi*4 + cy*2 + cx;
+  let ci = qCh[slot];
+  if (ci < 0){ ci = qNew(qX[qi] + cx*h, qY[qi] + cy*h, h); qCh[slot] = ci; }
+  return ci;
+}
+// Depth cap for coincident bodies. Past it the pointer is dropped but the mass
+// and centroid are still counted, so the force stays right and all that is lost
+// is telling those two apart - at 1000/2^22 units they are the same point.
+const QMAXD = 22;
+function buildTree(){
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (let k=0;k<ACTN;k++){ const i = ACT[k];
+    if (PX[i] < x0) x0 = PX[i]; if (PX[i] > x1) x1 = PX[i];
+    if (PY[i] < y0) y0 = PY[i]; if (PY[i] > y1) y1 = PY[i]; }
+  const s = Math.max(x1-x0, y1-y0, 1) * 1.02 + 2;
+  treeSize = s;
+  qCnt = 0; qNew(x0 - 1, y0 - 1, s);
+  for (let k=0;k<ACTN;k++) qInsert(ACT[k]);
+  // Turn the accumulated sums into centres of mass once, here, rather than a
+  // million times inside the force traversal.
+  for (let q=0;q<qCnt;q++){ const m = qMass[q]; if (m){ qCx[q] /= m; qCy[q] /= m; } }
+}
+function qInsert(bi){
+  const bx = PX[bi], by = PY[bi], br = CR[bi], bm = MW[bi];
+  let qi = 0, d = 0;
+  for (;;){
+    qNum[qi] += 1; qMass[qi] += bm; qCx[qi] += bx*bm; qCy[qi] += by*bm;
+    if (qR[qi] < br) qR[qi] = br;
+    const b = qBody[qi];
+    if (b === -2){ qi = qChildFor(qi, bx, by); d++; continue; }
+    if (b === -1){ qBody[qi] = bi; return; }
+    if (d >= QMAXD) return;                       // merged into this quad's mass
+    qBody[qi] = -2;                               // leaf becomes internal
+    const cj = qChildFor(qi, PX[b], PY[b]);
+    qNum[cj] += 1; qMass[cj] += MW[b]; qCx[cj] += PX[b]*MW[b]; qCy[cj] += PY[b]*MW[b];
+    if (qR[cj] < CR[b]) qR[cj] = CR[b];
+    qBody[cj] = b;
+    qi = qChildFor(qi, bx, by); d++;
+  }
+}
+// Force falls off as 1/d (d3's convention) rather than 1/d^2: inverse-square at
+// this density turns a near-collision into an ejection. d2 is floored at 4 for
+// the same reason - two nodes on top of each other must not launch.
+function repelOne(bi, k, th2){
+  const px = PX[bi], py = PY[bi];
+  let sp = 0, ax = 0, ay = 0;
+  STACK[sp++] = 0;
+  while (sp){
+    const qi = STACK[--sp], m = qMass[qi];
+    if (!m) continue;
+    let dx = qCx[qi] - px, dy = qCy[qi] - py;
+    let d2 = dx*dx + dy*dy;
+    const leaf = qBody[qi] !== -2;
+    if (leaf || qS2[qi] < th2*d2){
+      if (leaf && qBody[qi] === bi && qNum[qi] <= 1) continue;
+      if (d2 < 4){
+        if (d2 < 1e-9){ dx = Math.random() - 0.5; dy = Math.random() - 0.5; }
+        d2 = 4;
+      }
+      const w = k * m / d2;
+      ax += dx * w; ay += dy * w;
+    } else {
+      const o = qi*4;
+      for (let c=0;c<4;c++){ const ci = qCh[o+c]; if (ci >= 0) STACK[sp++] = ci; }
+    }
+  }
+  VX[bi] += ax; VY[bi] += ay;
+}
+// Each unordered pair is resolved once, by only acting on the higher index.
+function collideOne(i){
+  const ri = CR[i]; if (ri <= 0) return;
+  const xi = PX[i] + VX[i], yi = PY[i] + VY[i];
+  let sp = 0; STACK[sp++] = 0;
+  while (sp){
+    const qi = STACK[--sp];
+    if (!qMass[qi]) continue;
+    const reach = ri + qR[qi], s = qS[qi];
+    if (xi + reach < qX[qi] || xi - reach > qX[qi] + s ||
+        yi + reach < qY[qi] || yi - reach > qY[qi] + s) continue;
+    const b = qBody[qi];
+    if (b === -2){ const o = qi*4;
+      for (let c=0;c<4;c++){ const ci = qCh[o+c]; if (ci >= 0) STACK[sp++] = ci; }
+      continue; }
+    if (b < 0 || b <= i) continue;
+    const rj = CR[b], r = ri + rj;
+    const dx = xi - (PX[b] + VX[b]), dy = yi - (PY[b] + VY[b]);
+    const d2 = dx*dx + dy*dy;
+    if (d2 >= r*r || d2 <= 1e-9) continue;
+    const d = Math.sqrt(d2), l = (r - d)/d * 0.6;
+    const share = rj*rj / (ri*ri + rj*rj);
+    VX[i] += dx*l*share;       VY[i] += dy*l*share;
+    VX[b] -= dx*l*(1 - share); VY[b] -= dy*l*(1 - share);
+  }
+}
+
+// ---- ForceAtlas2 -----------------------------------------------------------
+// Jacomy, Venturini, Heymann and Bastian's layout - Gephi's. Three things make
+// it what it is, and all three are here: repulsion scaled by (deg+1)(deg+1) so a
+// hub clears space for its own neighbours, attraction that is linear in distance
+// with no rest length at all, and an adaptive global speed derived from how much
+// the graph is swinging rather than travelling. That last one is what it has
+// instead of friction, and it is why it settles a 7,000-node graph without
+// anyone tuning a damping constant.
+//
+// VX/VY hold this tick's force rather than a velocity: nothing is carried over
+// but the previous force, which is what swinging is measured against. `alpha` is
+// kept as a rough "how hot is it" for the drag handler, the arrangements and the
+// meter, but no force here is scaled by it.
+let alpha = 0, running = false, rafP = 0, fps = 0, lastT = 0, fpsAcc = 0, fpsN = 0;
+let fa2Speed = 1, fa2Eff = 1, fa2Motion = 1, fa2Warm = 0, fa2Quiet = 0;
+const jiggle = () => Math.random() - 0.5;
+function zeroForces(){ for (let q=0;q<ACTN;q++){ const i = ACT[q]; VX[i] = 0; VY[i] = 0; } }
+function repelAll(k){
+  const th2 = SIM.theta * SIM.theta;
+  for (let q=0;q<ACTN;q++){ const i = ACT[q]; repelOne(i, k*(DEG[i] + 1), th2); }
+}
+function collideAll(){ if (SIM.coll > 0) for (let q=0;q<ACTN;q++) collideOne(ACT[q]); }
+
+function heat(){ fa2Speed = 1; fa2Eff = 1; fa2Motion = 1; fa2Warm = 0; fa2Quiet = 0;
+                 alpha = 1; PFX.fill(0); PFY.fill(0); }
+const QUIET = 2e-4;
+function settled(){ return fa2Warm > 120 && fa2Quiet > 30; }
+function status(){ return "speed " + fa2Speed.toFixed(1) + " · motion " +
+                          (fa2Motion/((treeSize || 2000)*1e-3)).toFixed(2); }
+function step(){
+  if (actDirty) syncActive();
+  if (!ACTN) return;
+  fa2Warm++;
+  zeroForces();
+  buildTree();
+  if (SIM.fa2Scale > 0) repelAll(-SIM.fa2Scale);
+  collideAll();
+
+  const lin = SIM.fa2Lin > 0, hub = SIM.fa2Hub > 0;
+  for (let e=0;e<ELN;e++){
+    const s = EA[e], t = EB[e], w = EK[e] === 1 ? SIM.fa2Wsim : SIM.fa2Wstruct;
+    if (w <= 0) continue;
+    let dx = PX[t] - PX[s], dy = PY[t] - PY[s];
+    let d2 = dx*dx + dy*dy;
+    if (d2 < 1e-9){ dx = jiggle(); dy = jiggle(); d2 = dx*dx + dy*dy || 1e-9; }
+    // Linear in distance, or logarithmic in LinLog mode, which is what pulls
+    // communities apart into separate lumps instead of one even sheet.
+    let f = lin ? w * Math.log(1 + Math.sqrt(d2)) / Math.sqrt(d2) : w;
+    // Dissuading hubs divides by the source's degree only, so a much-linked
+    // node is pushed to the edge and its leaves keep the middle.
+    if (hub) f /= DEG[s] + 1;
+    VX[s] += dx*f; VY[s] += dy*f;
+    VX[t] -= dx*f; VY[t] -= dy*f;
+  }
+
+  const kg = SIM.fa2Grav, strong = SIM.fa2Strong > 0;
+  if (kg > 0) for (let q=0;q<ACTN;q++){ const i = ACT[q], m = DEG[i] + 1;
+    const dx = WCTR - PX[i], dy = WCTR - PY[i];
+    if (strong){ const g = kg*0.005; VX[i] += dx*g*m; VY[i] += dy*g*m; }
+    else { const d = Math.sqrt(dx*dx + dy*dy) || 1e-9;
+           VX[i] += dx/d*kg*m; VY[i] += dy/d*kg*m; } }
+
+  // A node whose force keeps reversing is swinging, not going anywhere, so the
+  // global step shrinks until it stops. Constants are Gephi's.
+  let swingT = 0, tractT = 0;
+  for (let q=0;q<ACTN;q++){ const i = ACT[q], m = DEG[i] + 1;
+    const sx = VX[i] - PFX[i], sy = VY[i] - PFY[i];
+    const tx = VX[i] + PFX[i], ty = VY[i] + PFY[i];
+    swingT += m*Math.sqrt(sx*sx + sy*sy);
+    tractT += m*Math.sqrt(tx*tx + ty*ty)/2; }
+  const n = ACTN, est = 0.05*Math.sqrt(n);
+  let jt = SIM.fa2Tol * Math.max(Math.sqrt(est), Math.min(10, est*tractT/(n*n)));
+  if (swingT/Math.max(tractT, 1e-9) > 2){
+    if (fa2Eff > 0.05) fa2Eff *= 0.5;
+    jt = Math.max(jt, SIM.fa2Tol); }
+  const target = jt * fa2Eff * tractT / Math.max(swingT, 1e-9);
+  if (swingT > jt*tractT){ if (fa2Eff > 0.05) fa2Eff *= 0.7; }
+  else if (fa2Speed < 1000) fa2Eff = Math.min(10, fa2Eff*1.3);
+  fa2Speed += Math.min(target - fa2Speed, 0.5*fa2Speed);
+
+  let moved = 0;
+  for (let q=0;q<ACTN;q++){ const i = ACT[q];
+    const sx = VX[i] - PFX[i], sy = VY[i] - PFY[i];
+    PFX[i] = VX[i]; PFY[i] = VY[i];
+    if (PIN[i]) continue;
+    const sw = Math.sqrt(sx*sx + sy*sy), mag = Math.sqrt(VX[i]*VX[i] + VY[i]*VY[i]);
+    if (mag < 1e-12) continue;
+    let f = fa2Speed / (1 + Math.sqrt(fa2Speed*sw));
+    const cap = Math.max(VMAX, treeSize*0.02);    // nothing teleports
+    if (mag*f > cap) f = cap/mag;
+    PX[i] += VX[i]*f; PY[i] += VY[i]*f;
+    moved += mag*f; }
+  fa2Motion = moved/n;
+  // QUIET is the share of the graph's own size a node may still be moving each
+  // tick and count as stopped. It was 2e-5, and 2e-5 is a claim about arithmetic
+  // rather than about eyesight: traced across the 7,759-node build, mean motion
+  // falls to 0.036% of span by tick 100, 0.014% by 150 and only reaches 0.002%
+  // at tick 357 - so the old threshold spent 200 extra ticks, more than half the
+  // run, resolving movement of a fifth of a pixel a frame. The span is within 3%
+  // of final by tick 150. 2e-4 stops where the picture stops changing, which is
+  // what the test is for; anyone who wants the last 0.01% presses P.
+  if (fa2Motion < (treeSize || 2000)*QUIET) fa2Quiet++;
+  else fa2Quiet = Math.max(0, fa2Quiet - 2);
+  alpha = Math.min(1, fa2Motion/((treeSize || 2000)*1e-3));
+}
+function writeBack(){
+  for (let q=0;q<ACTN;q++){ const i = ACT[q]; N[i].x = PX[i]/WORLD; N[i].y = PY[i]/WORLD; }
+}
+function setWorld(i, x, y){ PX[i] = x; PY[i] = y; N[i].x = x/WORLD; N[i].y = y/WORLD; }
+
+// ---- framing ---------------------------------------------------------------
+// A live layout has no idea how big it wants to be, so the view follows it:
+// auto-fit eases toward the bounding box of whatever is shown. Touching the
+// wheel or dragging the background hands control back and switches this off,
+// because a view that keeps re-framing while you are trying to read it is worse
+// than one that occasionally needs F.
+function fitTarget(){
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, any = false;
+  for (let i=0;i<NN;i++){ const n = N[i]; if (!shown(n)) continue; any = true;
+    if (n.x < x0) x0 = n.x; if (n.x > x1) x1 = n.x;
+    if (n.y < y0) y0 = n.y; if (n.y > y1) y1 = n.y; }
+  if (!any || !W) return null;
+  const w = Math.max(x1 - x0, 1e-3), h = Math.max(y1 - y0, 1e-3);
+  const s = Math.max(1, Math.min((W - 90)/w, (H - 90)/h) * FIT_ZOOM);
+  return { s:s, ox:(W - w*s)/2 - x0*s, oy:(H - h*s)/2 - y0*s };
+}
+function setAutoFit(on){
+  if (autoFit === on) return;
+  autoFit = on;
+  const b = document.getElementById("ph_autofit"); if (b) b.checked = on;
+  saveSim();
+}
+function easeFit(){
+  const t = fitTarget(); if (!t) return;
+  const e = 0.07;
+  scale += (t.s - scale)*e; ox += (t.ox - ox)*e; oy += (t.oy - oy)*e;
+}
+
+// ---- run loop --------------------------------------------------------------
+function physFrame(ts){
+  if (!running) return;
+  const steps = Math.max(1, Math.min(4, Math.round(SIM.steps)));
+  for (let s=0;s<steps;s++) step();
+  writeBack();
+  if (autoFit) easeFit();
+  if (playing >= 0) pulse = (Math.sin(ts/260) + 1)/2;
+  draw();
+  if (lastT){ fpsAcc += ts - lastT; fpsN++;
+    if (fpsN >= 10){ fps = 1000/(fpsAcc/fpsN); fpsAcc = 0; fpsN = 0; updMeta(); } }
+  lastT = ts;
+  if (settled()){ setRun(false); return; }
+  rafP = requestAnimationFrame(physFrame);
+}
+function setRun(on){
+  if (on === running) return;
+  running = on;
+  document.getElementById("ph_run").textContent = on ? "⏸ pause" : "▶ run";
+  markPhysBtn();
+  if (on){ layoutInvalidated();
+           if (alpha < 0.02) heat(); actDirty = true; lastT = 0;
+           rafP = requestAnimationFrame(physFrame); }
+  else { if (rafP) cancelAnimationFrame(rafP); rafP = 0; draw(); }
+  updMeta();
+}
+function reheat(){ heat(); actDirty = true;
+  if (!running) setRun(true); else updMeta(); }
+
+// The opening view is the simulation, not the still. The page loads holding the
+// builder's layout and immediately settles it under ForceAtlas2, which takes
+// about 370 ticks. `B` puts the baked layout back, and P stops it.
+//
+// Fired from the ResizeObserver as well as directly, because a page laid out
+// while its pane is hidden measures 0x0 and there is nothing to settle into yet.
+let opened = false;
+function openOnRun(){
+  if (opened || !W || !H) return;
+  opened = true;
+  if (REDUCED){ settleQuietly(); return; }
+  setRun(true);
+}
+// Someone who has asked for reduced motion gets the same layout without watching
+// it arrive: the same ticks, several to a frame, painted once at the end. Frames
+// are still yielded, so the page does not lock up while it works.
+function settleQuietly(){
+  layoutInvalidated();
+  heat(); actDirty = true;
+  let guard = 0;
+  const chunk = () => {
+    for (let i=0;i<8 && guard<900 && !settled(); i++){ step(); guard++; }
+    if (guard >= 900 || settled()){
+      writeBack(); fit(); draw(); updMeta(); return; }
+    requestAnimationFrame(chunk);
+  };
+  requestAnimationFrame(chunk);
+}
+function resetBaked(){ PIN.fill(0); PINNED.clear(); applyLayout("baked"); }
+function unpinAll(){ PIN.fill(0); PINNED.clear(); draw(); updMeta(); }
+// A filter changes the subgraph, not only what is drawn: the simulation picks
+// it up on the next tick, and an arrangement is re-run over what is left. The
+// baked layout - reachable with `B` rather than as an arrangement - is exempt:
+// it is the fixed reference, and re-normalising it to whatever survives the
+// filters would move the one layout that is supposed to stay put.
+function refresh(){
+  syncActive();
+  if (layout && layout !== "baked"){ applyLayout(layout); return; }
+  draw(); updMeta();
+}
+
+// ---- panel -----------------------------------------------------------------
+const CTRL = [
+  ["fa2Scale",  "scaling",   0,   2,   0.01, "repulsion, scaled by (degree+1) at both ends"],
+  ["fa2Grav",   "gravity",   0,   10,  0.1,  "pull to the middle, also by degree"],
+  ["fa2Tol",    "tolerance", 0.1, 5,   0.05, "how much swinging the adaptive speed will put up with"],
+  ["fa2Wsim",   "sim links", 0,   3,   0.05, "attraction along the thick acoustic links"],
+  ["fa2Wstruct","tag links", 0,   3,   0.05, "attraction along the tag and family hairlines"],
+  ["coll",      "spacing",   0,   30,  0.5,  "how hard discs refuse to overlap - also spreads a scatter"],
+  ["theta",     "approx.",   0.3, 1.6, 0.05, "Barnes-Hut theta - higher is faster and coarser; 0.9 costs 38ms a tick against 1.3's 20ms, for 0.9% force error against 3.1%"],
+  ["steps",     "ticks/frame",1,  4,   1,    "settle faster, at the cost of frame rate"],
+];
+const FLAGS = [
+  ["fa2Lin",    "LinLog attraction", "logarithmic instead of linear - pulls the communities into separate lumps"],
+  ["fa2Strong", "strong gravity",    "gravity that grows with distance instead of staying constant"],
+  ["fa2Hub",    "dissuade hubs",     "divide attraction by the source's degree, pushing much-linked nodes out"],
+];
+// `compact` has to fight ForceAtlas2's own tendency to spread, and the version
+// that only turned strong gravity on did the opposite - it settled wider than the
+// default. Strong gravity grows with distance while repulsion falls off, so the
+// two balance at a radius the *scaling* sets; turning gravity up moves that
+// radius far less than pulling the scaling down does. At 0.04 against 1.5 the
+// graph settles at a span of about 780 where the default settles at 2,440.
+// It also drops `spacing` to 2: at a third of the span the collision radii are
+// what stops it getting any tighter, and they jitter while they do it.
+const PRESETS = {
+  default:  { fa2Scale:0.20, fa2Grav:1.2, fa2Tol:1,   fa2Wsim:1,   fa2Wstruct:0.15, fa2Lin:0, fa2Strong:0, fa2Hub:0, coll:8 },
+  linlog:   { fa2Scale:0.03, fa2Grav:1.6, fa2Tol:1,   fa2Wsim:1,   fa2Wstruct:0.15, fa2Lin:1, fa2Strong:0, fa2Hub:0, coll:8 },
+  "hubs out":{fa2Scale:0.035,fa2Grav:1.2, fa2Tol:1,   fa2Wsim:1,   fa2Wstruct:0.15, fa2Lin:0, fa2Strong:0, fa2Hub:1, coll:8 },
+  compact:  { fa2Scale:0.04, fa2Grav:1.5, fa2Tol:1,   fa2Wsim:1.2, fa2Wstruct:0.25, fa2Lin:0, fa2Strong:1, fa2Hub:0, coll:2 },
+};
+const STEP_OF = {}; CTRL.forEach(c => STEP_OF[c[0]] = c[4]);
+const fmt = (k, v) => v.toFixed(STEP_OF[k] < 0.01 ? 3 : STEP_OF[k] < 1 ? 2 : 0);
+
+document.getElementById("phys").innerHTML =
+  '<div id="ph_lay"></div>' +
+  '<h2>live physics &middot; ForceAtlas2</h2>' +
+  '<div class="btns"><button id="ph_run">&#9654; run</button>' +
+  '<button id="ph_unpin">unpin all</button></div>' +
+  '<div class="btns">' + Object.keys(PRESETS).map(p =>
+    '<button class="pre" data-p="' + p + '">' + p + '</button>').join("") + '</div>' +
+  CTRL.map(c =>
+    '<label class="sl" title="' + c[5] + '"><span class="nm">' + c[1] + '</span>' +
+    '<input type="range" id="ph_r_' + c[0] + '" min="' + c[2] + '" max="' + c[3] +
+    '" step="' + c[4] + '" value="' + SIM[c[0]] + '">' +
+    '<b id="ph_v_' + c[0] + '">' + fmt(c[0], SIM[c[0]]) + '</b></label>').join("") +
+  FLAGS.map(f => '<label class="chk" title="' + f[2] + '">' +
+    '<input type="checkbox" class="flg" data-f="' + f[0] + '"' +
+    (SIM[f[0]] > 0 ? " checked" : "") + '> ' + f[1] + '</label>').join("") +
+  '<label class="chk"><input type="checkbox" id="ph_autofit"' + (autoFit ? " checked" : "") +
+  '> keep the whole graph in view</label>' +
+  '<label class="chk"><input type="checkbox" id="ph_detail"' + (fullDetail ? " checked" : "") +
+  '> full detail while moving</label>' +
+  '<div class="meta" id="ph_meta"></div>' +
+  '<div class="hint">Drag a node to move it, shift-drag to leave it pinned. ' +
+  'Only what is on screen is simulated — filter first, then run.</div>';
+
+// A change has to reach the collision radii (they come off `spacing`) and has to
+// be visible, so a settled graph is given just enough heat to move.
+function touched(){
+  actDirty = true;
+  if (running && alpha < 0.05) alpha = 0.15;
+  saveSim(); updMeta();
+}
+CTRL.forEach(c => {
+  const k = c[0], r = document.getElementById("ph_r_" + k);
+  r.addEventListener("input", () => {
+    SIM[k] = +r.value;
+    document.getElementById("ph_v_" + k).textContent = fmt(k, SIM[k]);
+    touched();
+  });
+});
+document.querySelectorAll("#phys .flg").forEach(b => b.onchange = () => {
+  SIM[b.dataset.f] = b.checked ? 1 : 0; touched();
+});
+// The controls never change shape now, so a preset writes into the ones that are
+// already there rather than rebuilding them.
+function applyPreset(p){
+  const s = PRESETS[p]; if (!s) return;
+  for (const k in s){
+    SIM[k] = s[k];
+    const r = document.getElementById("ph_r_" + k);
+    if (r){ r.value = s[k]; document.getElementById("ph_v_" + k).textContent = fmt(k, s[k]); }
+    const f = document.querySelector('#phys .flg[data-f="' + k + '"]');
+    if (f) f.checked = s[k] > 0;
+  }
+  actDirty = true; saveSim(); reheat();
+}
+function updMeta(){
+  const el = document.getElementById("ph_meta"); if (!el) return;
+  el.textContent = ACTN.toLocaleString() + " nodes · " + ELN.toLocaleString() + " links · " +
+    (running ? status() + " · " + fps.toFixed(0) + " fps"
+             : settled() ? "settled" : "paused") +
+    (PINNED.size ? " · " + PINNED.size + " pinned" : "");
+}
+document.querySelectorAll("#phys button.pre").forEach(b =>
+  b.onclick = () => applyPreset(b.dataset.p));
+document.getElementById("ph_run").onclick    = () => setRun(!running);
+document.getElementById("ph_unpin").onclick  = unpinAll;
+document.getElementById("ph_autofit").onchange = e => { autoFit = e.target.checked; saveSim(); };
+document.getElementById("ph_detail").onchange  = e => { fullDetail = e.target.checked; saveSim(); draw(); };
+const physPanel = document.getElementById("phys");
+const physBtn = document.getElementById("tphys");
+// Lit while the panel is open OR while the simulation is running, so closing
+// the panel over a moving graph does not leave the header claiming nothing is.
+function markPhysBtn(){ physBtn.classList.toggle("on", running || !physPanel.hidden); }
+physBtn.onclick = () => { physPanel.hidden = !physPanel.hidden; markPhysBtn(); };
+updMeta();
+
+// ---- arrangements ----------------------------------------------------------
+// The baked spring layout answers one question - what sounds like what - and the
+// page opens on the simulation answering it again, live. These are the other
+// questions the same 7,214 nodes can be asked: which community is this in, how
+// bright is it, how long, how often has anyone downloaded it. Each one is a
+// pure function from the active subgraph to positions; the simulation is a mode
+// you can start from any of them, not one of the list.
+//
+// A layout writes TX/TY in whatever units suit it, normalise() maps the result
+// uniformly into a 0-1 box, and that box goes into the same world the physics
+// uses - so switching arrangement and pressing run are composable.
+const TX = new Float64Array(NN), TY = new Float64Array(NN);
+const FX = new Float64Array(NN), FY = new Float64Array(NN);
+const SPAN = 2200, TWEEN_MS = 700, RELAX_ITERS = 28;
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let layout = "baked", tweening = false, rafL = 0, tweenStart = 0;
+// The page opens on the baked layout without having run it, so the note it
+// would have set is the starting value.
+const BAKED_NOTE = "the builder's spring layout, as shipped";
+let AXIS = null, layNote = BAKED_NOTE, layTr = null;
+
+// A hash rather than Math.random: two runs of the same layout must agree, or
+// switching away and back would shuffle everything for no reason.
+function jit(i){ let h = Math.imul(i ^ 0x9e3779b9, 2654435761) >>> 0;
+  h ^= h >>> 15; h = Math.imul(h, 2246822507) >>> 0; h ^= h >>> 13;
+  return (h % 100000) / 100000 - 0.5; }
+
+// ---- the fields a scatter can be drawn against -----------------------------
+const PITCH = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+const KEYORDER = [];
+for (const mode of ["minor","major"]) for (const p of PITCH) KEYORDER.push(p + " " + mode);
+const KEYIDX = {}; KEYORDER.forEach((k, i) => KEYIDX[k] = i);
+const CLUNAME = [];
+for (let r=0;r<40;r++){ const l = DATA.legend.find(o => o.r === r);
+  CLUNAME.push(l ? l.n : "cluster " + r); }
+const FIELDS = [
+  { k:"bright", l:"brightness",   grp:"timbre",  g:n => n.tb ? n.tb[0] : null },
+  { k:"warm",   l:"warmth",       grp:"timbre",  g:n => n.tb ? n.tb[1] : null },
+  { k:"deep",   l:"depth",        grp:"timbre",  g:n => n.tb ? n.tb[2] : null },
+  { k:"hard",   l:"hardness",     grp:"timbre",  g:n => n.tb ? n.tb[3] : null },
+  { k:"boom",   l:"boominess",    grp:"timbre",  g:n => n.tb ? n.tb[4] : null },
+  { k:"rough",  l:"roughness",    grp:"timbre",  g:n => n.tb ? n.tb[5] : null },
+  { k:"sharp",  l:"sharpness",    grp:"timbre",  g:n => n.tb ? n.tb[6] : null },
+  // Not timbre, so their own group rather than an eighth row under it: these two
+  // are the pair that says whether a hit is punchy or already squashed flat. No
+  // units on the labels - these are AudioCommons figures and what either is
+  // measured against is not written down anywhere, so "LUFS" would be inventing
+  // one. Absent from an older build, and fnum() turns that into the same null
+  // every other accessor returns, which is what puts them in the scatter margin.
+  { k:"loud",   l:"loudness",     grp:"level",   g:n => fnum(n.ld) },
+  { k:"dyn",    l:"dynamic range",grp:"level",   g:n => fnum(n.dr) },
+  // Only the trusted readings are placed. An axis is a claim about where a
+  // sound sits, and the analyser's low-confidence keys are the ones it gave a
+  // car crash - they belong in the margin with the rest of the missing data.
+  { k:"bpm",    l:"tempo (BPM)",  grp:"musical", g:n => n.bo ? n.bpm : null },
+  { k:"key",    l:"key",          grp:"musical", g:n => n.ko ? KEYIDX[n.key] : null, cat:KEYORDER },
+  { k:"dur",    l:"duration (s)", grp:"library", g:n => n.k === "sample" ? n.s : null, log:true },
+  { k:"dl",     l:"downloads",    grp:"library", g:n => n.k === "sample" ? n.n : null, log:true },
+  { k:"rate",   l:"rating",       grp:"library", g:n => n.k === "sample" && n.r ? n.r : null },
+  { k:"deg",    l:"links",        grp:"graph",   g:n => n.d, log:true },
+  { k:"clu",    l:"cluster",      grp:"graph",   g:n => n.c, cat:CLUNAME },
+];
+const FIELD = {}; FIELDS.forEach(f => FIELD[f.k] = f);
+let axX = "bright", axY = "deep";
+try { const s = JSON.parse(localStorage.getItem("fs-layout") || "null");
+      if (s){ if (FIELD[s.x]) axX = s.x; if (FIELD[s.y]) axY = s.y; } } catch(e){}
+function saveLay(){
+  try { localStorage.setItem("fs-layout", JSON.stringify({ x:axX, y:axY })); } catch(e){}
+}
+
+// ---- normalising and moving ------------------------------------------------
+// Every layout is scaled uniformly, never stretched to fill: a scatter squashed
+// to the window's aspect ratio would be lying about both of its axes.
+function normalise(){
+  let x0=Infinity, y0=Infinity, x1=-Infinity, y1=-Infinity;
+  for (let q=0;q<ACTN;q++){ const i = ACT[q];
+    if (TX[i] < x0) x0 = TX[i]; if (TX[i] > x1) x1 = TX[i];
+    if (TY[i] < y0) y0 = TY[i]; if (TY[i] > y1) y1 = TY[i]; }
+  const w = Math.max(x1-x0, 1e-9), h = Math.max(y1-y0, 1e-9), s = 1/Math.max(w, h);
+  const ax = -x0*s + (1 - w*s)/2, ay = -y0*s + (1 - h*s)/2;
+  for (let q=0;q<ACTN;q++){ const i = ACT[q];
+    TX[i] = TX[i]*s + ax; TY[i] = TY[i]*s + ay; }
+  return { s:s, ax:ax, ay:ay };
+}
+const toWorld = u => WCTR + (u - 0.5)*SPAN;
+// Layout units straight to the 0-1 coordinates the renderer draws in, so an
+// axis tick can be placed by the same arithmetic as the node beside it.
+function axPos(tr, v){ return toWorld(v*tr.s + tr.ax)/WORLD; }
+
+// Stacked points are the whole problem with a scatter of 6,523 samples: they
+// pile onto the same few values and read as one blot. Pushing them apart turns
+// the pile into a beeswarm, which is why `node spacing` at 0 gives exact
+// positions and nothing legible.
+//
+// This does its own collision on a uniform grid rather than reusing the physics
+// quadtree, because a fresh scatter is the one input that tree is worst at: a
+// few thousand near-identical values drive it to its depth cap, and a pass that
+// should cost 30ms cost 1.8 seconds. Every node here is inside one cell of every
+// node it can touch, so nine cells is the whole search.
+//
+// The radius is capped at the 90th percentile first. A grid cell has to be twice
+// the largest radius in it, and the largest node in this graph is four and a half
+// times the median - left uncapped, one family node sets the resolution for seven
+// thousand samples, each 3x3 search sweeps 70 candidates instead of 9, and the
+// pass costs 925ms. The cap only means the few biggest discs are allowed to touch.
+function relaxTargets(iters){
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const sample = [];
+  for (let q=0;q<ACTN;q++){ const i = ACT[q];
+    if (q % 7 === 0) sample.push(CR[i]);
+    if (TX[i] < x0) x0 = TX[i]; if (TX[i] > x1) x1 = TX[i];
+    if (TY[i] < y0) y0 = TY[i]; if (TY[i] > y1) y1 = TY[i]; }
+  sample.sort((a, b) => a - b);
+  const rmax = sample[Math.min(sample.length - 1, (sample.length*0.9) | 0)] || 0;
+  if (rmax <= 0) return;
+  const RR = new Float64Array(NN);
+  for (let q=0;q<ACTN;q++){ const i = ACT[q]; RR[i] = Math.min(CR[i], rmax); }
+  const cell = rmax*2, pad = cell*2;
+  x0 -= pad; y0 -= pad; x1 += pad; y1 += pad;
+  const cols = Math.max(1, Math.ceil((x1-x0)/cell)), rows = Math.max(1, Math.ceil((y1-y0)/cell));
+  const head = new Int32Array(cols*rows), next = new Int32Array(NN);
+  const cx = i => Math.min(cols-1, Math.max(0, (TX[i]-x0)/cell | 0));
+  const cy = i => Math.min(rows-1, Math.max(0, (TY[i]-y0)/cell | 0));
+  for (let it=0; it<iters; it++){
+    head.fill(-1);
+    for (let q=0;q<ACTN;q++){ const i = ACT[q], c = cy(i)*cols + cx(i);
+      next[i] = head[c]; head[c] = i; }
+    for (let q=0;q<ACTN;q++){ const i = ACT[q], gx = cx(i), gy = cy(i), ri = RR[i];
+      for (let a = Math.max(0, gy-1), ae = Math.min(rows-1, gy+1); a <= ae; a++)
+        for (let b = Math.max(0, gx-1), be = Math.min(cols-1, gx+1); b <= be; b++)
+          for (let j = head[a*cols + b]; j >= 0; j = next[j]){
+            if (j <= i) continue;                        // each pair once
+            const r = ri + RR[j], dx = TX[i]-TX[j], dy = TY[i]-TY[j];
+            const d2 = dx*dx + dy*dy;
+            if (d2 >= r*r) continue;
+            let ux, uy, d;
+            if (d2 <= 1e-9){ ux = jit(i*31 + j); uy = jit(j*31 + i); d = 1e-3; }
+            else { d = Math.sqrt(d2); ux = dx/d; uy = dy/d; }
+            const push = (r - d)*0.5, sh = (RR[j]*RR[j])/(ri*ri + RR[j]*RR[j]);
+            TX[i] += ux*push*2*sh;       TY[i] += uy*push*2*sh;
+            TX[j] -= ux*push*2*(1-sh);   TY[j] -= uy*push*2*(1-sh);
+          }
+    }
+  }
+}
+
+// ---- the layouts -----------------------------------------------------------
+// Sunflower packing: equal-area, no arbitrary ring boundaries, and putting the
+// highest-degree members first sits the hubs in the middle where their edges
+// have the shortest distance to travel.
+const PHI = Math.PI * (3 - Math.sqrt(5));
+function sunflower(list, cx, cy, R){
+  for (let j=0;j<list.length;j++){
+    const i = list[j], r = R*Math.sqrt((j + 0.5)/list.length), a = j*PHI;
+    TX[i] = cx + r*Math.cos(a); TY[i] = cy + r*Math.sin(a);
+  }
+}
+function byCommunity(){
+  const m = new Map();
+  for (let q=0;q<ACTN;q++){ const i = ACT[q], c = N[i].c;
+    if (!m.has(c)) m.set(c, []); m.get(c).push(i); }
+  const gs = [...m.entries()].map(([c, list]) => ({ c:c, list:list }));
+  for (const g of gs) g.list.sort((a, b) => N[b].d - N[a].d || a - b);
+  gs.sort((a, b) => b.list.length - a.list.length || a.c - b.c);
+  return gs;
+}
+const LAYOUTS = {
+  // The builder's own spring_layout. Not one of the arrangements - it is what
+  // `B` comes back to, so it is here for resetBaked() and not in LAY_ORDER.
+  baked(){ for (let q=0;q<ACTN;q++){ const i = ACT[q]; TX[i] = BX[i]; TY[i] = BY[i]; }
+    layNote = BAKED_NOTE; },
+
+  // One disc per community, packed largest first. Greedy on a spiral: with 17
+  // communities the O(n^2) overlap test is free and the result is repeatable.
+  clusters(){
+    const gs = byCommunity(), placed = [];
+    for (const g of gs){
+      const R = Math.sqrt(g.list.length) * 1.9 + 2, pad = 3;
+      let cx = 0, cy = 0;
+      for (let t = 0; ; t += 0.35){
+        cx = t * 1.6 * Math.cos(t); cy = t * 1.6 * Math.sin(t);
+        let ok = true;
+        for (const p of placed){ const dx = cx-p.x, dy = cy-p.y;
+          if (dx*dx + dy*dy < (R + p.r + pad)*(R + p.r + pad)){ ok = false; break; } }
+        if (ok || t > 4000) break;
+      }
+      placed.push({ x:cx, y:cy, r:R });
+      sunflower(g.list, cx, cy, R);
+    }
+    layNote = gs.length + " communities, largest first";
+  },
+
+  // Every node, once, in reading order: cluster, then degree. Not a picture of
+  // the graph at all - a contact sheet of it.
+  grid(){
+    const order = ACT.slice(0, ACTN).sort((a, b) =>
+      N[a].c - N[b].c || N[b].d - N[a].d || (N[a].l < N[b].l ? -1 : 1));
+    const cols = Math.ceil(Math.sqrt(ACTN));
+    for (let j=0;j<order.length;j++){ const i = order[j];
+      TX[i] = j % cols; TY[i] = Math.floor(j / cols); }
+    layNote = cols + " columns by cluster, then links";
+  },
+
+  scatter(){
+    const fx = FIELD[axX], fy = FIELD[axY];
+    const sc = f => {
+      let lo = Infinity, hi = -Infinity, n = 0;
+      for (let q=0;q<ACTN;q++){ let v = f.g(N[ACT[q]]);
+        if (v === null || v === undefined || !isFinite(v)) continue;
+        if (f.log) v = Math.log(1 + Math.max(0, v));
+        if (v < lo) lo = v; if (v > hi) hi = v; n++; }
+      if (!n) return null;
+      const span = hi - lo || 1;
+      return { lo:lo, hi:hi, span:span, n:n,
+               p: v => ((f.log ? Math.log(1 + Math.max(0, v)) : v) - lo)/span };
+    };
+    const P = 100, J = 0.55;
+    const X = sc(fx), Y = sc(fy);
+    const hx = new Uint8Array(NN), hy = new Uint8Array(NN);
+    let both = 0, noX = 0, noY = 0;
+    for (let q=0;q<ACTN;q++){ const i = ACT[q], n = N[i];
+      const vx = X ? fx.g(n) : null, vy = Y ? fy.g(n) : null;
+      hx[i] = vx !== null && vx !== undefined && isFinite(vx) ? 1 : 0;
+      hy[i] = vy !== null && vy !== undefined && isFinite(vy) ? 1 : 0;
+      if (hx[i] && hy[i]) both++; else { if (!hx[i]) noX++; if (!hy[i]) noY++; }
+    }
+    // The margin is sized to its own population. Only 1,679 samples carry a
+    // trusted tempo, so a fixed thin strip would have to hold the other 4,844 -
+    // a black line rather than a margin, and the slowest thing on the page.
+    const band = c => c ? Math.min(45, 3 + Math.sqrt(c)*0.35) : 0;
+    const bx = band(noX), by = band(noY);
+    const gx = 8 + bx/2, gy = 8 + by/2;
+    for (let q=0;q<ACTN;q++){ const i = ACT[q], n = N[i];
+      // A node missing one value still knows the other, so it sits in that
+      // axis's margin at its true position on the axis it does have.
+      TX[i] = hx[i] ? X.p(fx.g(n))*P + jit(i)*J           : -gx + jit(i)*bx;
+      TY[i] = hy[i] ? (1 - Y.p(fy.g(n)))*P + jit(i + 7919)*J : P + gy + jit(i + 104729)*by;
+    }
+    AXIS = { fx:fx, fy:fy, X:X, Y:Y, P:P,
+             gutX: noX > 0 ? -(gx - bx/2)/2 : null,
+             gutY: noY > 0 ? P + (gy - by/2)/2 : null };
+    layNote = both.toLocaleString() + " of " + ACTN.toLocaleString() + " placed on both axes";
+  },
+};
+const LAY_ORDER = ["clusters", "grid", "scatter"];
+
+// ---- axis furniture --------------------------------------------------------
+// Decimals come from the range, not from each value, so an axis does not read
+// "4.0, 26, 48" - one tick dressed differently from its neighbours.
+function fmtNum(v, span){
+  if (Math.abs(v) >= 10000) return Math.round(v/1000) + "k";
+  return v.toFixed(span >= 40 ? 0 : span >= 4 ? 1 : 2);
+}
+// Ticks are built after normalise(), because that is when a layout unit finally
+// knows what it is worth on screen.
+function buildTicks(tr){
+  const A = AXIS; if (!A) return;
+  const mk = (f, S, horiz) => {
+    if (!S) return [];
+    const out = [];
+    if (f.cat){
+      const lo = Math.round(S.lo), hi = Math.round(S.hi), n = hi - lo + 1;
+      const every = Math.ceil(n / 12);
+      for (let v = lo; v <= hi; v += every)
+        out.push({ v: S.p(v), t: f.cat[v] || String(v) });
+    } else {
+      const un = r => f.log ? Math.exp(r) - 1 : r;
+      const range = Math.abs(un(S.hi) - un(S.lo));
+      for (let j=0;j<=4;j++){
+        const t = j/4;
+        out.push({ v:t, t: fmtNum(un(S.lo + S.span*t), range) });
+      }
+    }
+    return out.map(o => ({ p: axPos(tr, horiz ? o.v*A.P : (1 - o.v)*A.P), t:o.t }));
+  };
+  A.xt = mk(A.fx, A.X, true);
+  A.yt = mk(A.fy, A.Y, false);
+  A.x0 = axPos(tr, 0);            A.x1 = axPos(tr, A.P);
+  A.y0 = axPos(tr, 0);            A.y1 = axPos(tr, A.P);
+  A.gx = A.gutX !== null ? axPos(tr, A.gutX) : null;
+  A.gy = A.gutY !== null ? axPos(tr, A.gutY) : null;
+}
+// Drawn under everything, in the same 0-1 space as the nodes, so it pans and
+// zooms with them for free.
+function drawAxes(){
+  const A = AXIS; if (!A || running) return;
+  const gx = u => u*scale + ox, gy = u => u*scale + oy;
+  const L = gx(A.x0), R = gx(A.x1), T = gy(A.y0), B = gy(A.y1);
+  if (!isFinite(L) || R - L < 40) return;
+  ctx.save();
+  ctx.lineWidth = 1;
+  ctx.font = "11px ui-sans-serif, system-ui, sans-serif";
+
+  ctx.strokeStyle = "rgba(120,140,170,0.10)";     // grid
+  ctx.beginPath();
+  for (const t of A.xt){ const x = gx(t.p); ctx.moveTo(x, T); ctx.lineTo(x, B); }
+  for (const t of A.yt){ const y = gy(t.p); ctx.moveTo(L, y); ctx.lineTo(R, y); }
+  ctx.stroke();
+
+  ctx.strokeStyle = "rgba(120,140,170,0.42)";     // the two axes
+  ctx.beginPath();
+  ctx.moveTo(L, B); ctx.lineTo(R, B); ctx.moveTo(L, T); ctx.lineTo(L, B);
+  ctx.stroke();
+
+  if (A.gx !== null || A.gy !== null){             // the missing-value margins
+    ctx.setLineDash([3, 4]); ctx.strokeStyle = "rgba(120,140,170,0.30)";
+    ctx.beginPath();
+    if (A.gx !== null){ const x = gx(A.gx); ctx.moveTo(x, T); ctx.lineTo(x, gy(A.gy !== null ? A.gy : A.y1)); }
+    if (A.gy !== null){ const y = gy(A.gy); ctx.moveTo(gx(A.gx !== null ? A.gx : A.x0), y); ctx.lineTo(R, y); }
+    ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = "#6e7681"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    if (A.gx !== null) ctx.fillText("no value", gx(A.gx) - 62, T - 6);
+    if (A.gy !== null) ctx.fillText("no value", R + 8, gy(A.gy) + 4);
+  }
+
+  ctx.fillStyle = "#8b949e"; ctx.textAlign = "center"; ctx.textBaseline = "top";
+  for (const t of A.xt) ctx.fillText(t.t, gx(t.p), B + 6);
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (const t of A.yt) ctx.fillText(t.t, L - 7, gy(t.p));
+
+  ctx.fillStyle = "#c9d1d9"; ctx.font = "600 12px ui-sans-serif, system-ui, sans-serif";
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  ctx.fillText(A.fx.l, (L + R)/2, B + 24);
+  ctx.save(); ctx.translate(L - 46, (T + B)/2); ctx.rotate(-Math.PI/2);
+  ctx.textBaseline = "bottom"; ctx.fillText(A.fy.l, 0, 0); ctx.restore();
+  ctx.restore();
+}
+
+// ---- applying --------------------------------------------------------------
+function applyLayout(name, instant){
+  if (!LAYOUTS[name]) return;
+  // An arrangement frames itself at the end, so an easing pan has nothing left
+  // to aim at - and the tween would spend 700ms fighting it on the way there.
+  setRun(false); panStop();
+  if (rafL){ cancelAnimationFrame(rafL); rafL = 0; }
+  tweening = false;
+  syncActive();
+  if (!ACTN){ layNote = "nothing visible to arrange"; updLayNote(); return; }
+  AXIS = null; layNote = "";
+  LAYOUTS[name]();
+  const tr = layTr = normalise();
+  if (AXIS) buildTicks(tr);
+  for (let q=0;q<ACTN;q++){ const i = ACT[q]; TX[i] = toWorld(TX[i]); TY[i] = toWorld(TY[i]); }
+  if (name === "scatter" && SIM.coll > 0) relaxTargets(RELAX_ITERS);
+  layout = name; markLayoutBtns(); updLayNote();
+  for (let q=0;q<ACTN;q++){ const i = ACT[q]; FX[i] = PX[i]; FY[i] = PY[i]; }
+  if (instant || REDUCED){ finishTween(); return; }
+  tweening = true; tweenStart = 0;
+  rafL = requestAnimationFrame(tweenFrame);
+}
+function tweenFrame(ts){
+  if (!tweening) return;
+  if (!tweenStart) tweenStart = ts;
+  let t = (ts - tweenStart)/TWEEN_MS; if (t > 1) t = 1;
+  const e = t < 0.5 ? 2*t*t : 1 - (2 - 2*t)*(2 - 2*t)/2;
+  for (let q=0;q<ACTN;q++){ const i = ACT[q];
+    setWorld(i, FX[i] + (TX[i] - FX[i])*e, FY[i] + (TY[i] - FY[i])*e); }
+  easeFit(); draw();
+  if (t >= 1){ finishTween(); return; }
+  rafL = requestAnimationFrame(tweenFrame);
+}
+function finishTween(){
+  tweening = false;
+  if (rafL){ cancelAnimationFrame(rafL); rafL = 0; }
+  for (let q=0;q<ACTN;q++){ const i = ACT[q]; VX[i] = 0; VY[i] = 0; setWorld(i, TX[i], TY[i]); }
+  // Baked is the one that means "put it back", so it puts the hidden ones back
+  // too rather than leaving them wherever a filtered simulation left them - and
+  // through the same transform the visible ones went through. Placing them raw
+  // was a bug you only saw after filtering: normalise() had scaled the survivors
+  // into the shared box and the hidden ones returned at 1/2.2 of that, a clump
+  // in the middle of their own graph.
+  if (layout === "baked" && layTr)
+    for (let i=0;i<NN;i++) if (!LIVE[i]){ VX[i] = 0; VY[i] = 0;
+      setWorld(i, toWorld(BX[i]*layTr.s + layTr.ax), toWorld(BY[i]*layTr.s + layTr.ay)); }
+  alpha = 0;
+  // An arrangement is an explicit request to see something, so it always frames
+  // itself - unlike the simulation, which only follows when auto-fit is on.
+  fit(); draw(); updMeta(); updLayNote();
+}
+// Starting the simulation throws the arrangement away: the axes would still be
+// drawn under nodes that no longer sit on them.
+function layoutInvalidated(){
+  if (!AXIS && layout === null) return;
+  AXIS = null; layout = null; layNote = "";
+  markLayoutBtns(); updLayNote();
+}
+
+// ---- panel section ---------------------------------------------------------
+const optsFor = sel => {
+  let out = "", grp = "";
+  for (const f of FIELDS){
+    if (f.grp !== grp){ if (grp) out += "</optgroup>"; out += '<optgroup label="' + f.grp + '">'; grp = f.grp; }
+    out += '<option value="' + f.k + '"' + (f.k === sel ? " selected" : "") + ">" + f.l + "</option>";
+  }
+  return out + "</optgroup>";
+};
+document.getElementById("ph_lay").innerHTML =
+  '<h2>arrangement</h2>' +
+  '<div class="btns">' + LAY_ORDER.map(l =>
+    '<button class="lay" data-l="' + l + '">' + l + '</button>').join("") + '</div>' +
+  '<div class="axes" id="ph_axes" hidden><label class="ax"><span>x</span><select id="ax_x">' +
+  optsFor(axX) + '</select></label><label class="ax"><span>y</span><select id="ax_y">' +
+  optsFor(axY) + '</select></label></div>' +
+  '<div class="hint" id="lay_note"></div>';
+
+// The x and y pickers are the scatter's own controls, and mean nothing under a
+// layout that has no axes - so they appear with it and go away with it.
+function markLayoutBtns(){
+  document.querySelectorAll("#phys button.lay").forEach(b =>
+    b.classList.toggle("on", b.dataset.l === layout));
+  document.getElementById("ph_axes").hidden = layout !== "scatter";
+}
+function updLayNote(){
+  const el = document.getElementById("lay_note"); if (!el) return;
+  el.textContent = layout ? layNote
+    : "the simulation has the positions now — pick an arrangement to take them back";
+}
+document.querySelectorAll("#phys button.lay").forEach(b =>
+  b.onclick = () => applyLayout(b.dataset.l));
+["ax_x", "ax_y"].forEach(id => document.getElementById(id).onchange = e => {
+  if (id === "ax_x") axX = e.target.value; else axY = e.target.value;
+  saveLay(); applyLayout("scatter");
+});
+markLayoutBtns(); updLayNote();
+
+// ---- project tempo and key -------------------------------------------------
+// Two settings the whole library gets judged against: what a sample's tempo would
+// have to become, whether its key belongs, and - with `at tempo` on - what it
+// sounds like once it has been moved. Both persist, because a project outlives a
+// tab. This block sits here rather than beside PROJ itself because it needs
+// KEYORDER, which the arrangement fields build.
+const bpmIn = document.getElementById("pbpm"), keySel = document.getElementById("pkey");
+const rateBtn = document.getElementById("trate"), fitBtn = document.getElementById("ffit");
+const fitStat = document.getElementById("sfit"), fitNum = document.getElementById("nfit");
+keySel.innerHTML = '<option value="">any key</option>' + KEYORDER.map(k =>
+  '<option value="'+k+'"'+(k === PROJ.key ? " selected" : "")+'>'+k+'</option>').join("");
+if (PROJ.bpm) bpmIn.value = PROJ.bpm;
+rateBtn.classList.toggle("on", atTempo);
+
+// KEYORDER is twelve minors then twelve majors, so index%12 is the pitch class
+// and index>=12 is the mode. Compatible means: the same key, its relative major
+// or minor, or a semitone either side - a producer will pitch a one-shot a
+// semitone without blinking, and the relative shares every note in the scale.
+// Anything further out is a different key, not a near miss.
+function keyFits(n){
+  if (!PROJ.key || !n.ko || !n.key) return false;
+  const a = KEYIDX[n.key], b = KEYIDX[PROJ.key];
+  if (a === undefined || b === undefined) return false;
+  const pa = a%12, pb = b%12, majA = a >= 12, majB = b >= 12;
+  if (majA === majB) return Math.abs(((pa - pb + 18) % 12) - 6) <= 1;
+  return pa === (majB ? (pb + 9) % 12 : (pb + 3) % 12);
+}
+// The same relationship in words, for the tooltip. Semitones are signed toward
+// the project: "+2 st" means pitch this sample up two to land on it.
+function keyToProject(k){
+  const a = KEYIDX[k], b = KEYIDX[PROJ.key];
+  if (a === undefined || b === undefined) return null;
+  const pa = a%12, pb = b%12, majA = a >= 12, majB = b >= 12;
+  if (pa === pb && majA === majB) return "same key";
+  if (majA !== majB && pb === (majA ? (pa + 9) % 12 : (pa + 3) % 12))
+    return "relative " + (majA ? "major" : "minor") + " of " + PROJ.key;
+  const d = ((pb - pa + 18) % 12) - 6;
+  if (!d) return "same root as " + PROJ.key;
+  return (d > 0 ? "+" : "") + d + " st to " + PROJ.key;
+}
+// Only about a fifth of the library has a key worth trusting, so the surviving
+// count is worth stating before anyone wonders where the graph went.
+function updFits(){
+  fitBtn.disabled = !PROJ.key;
+  if (!PROJ.key){
+    fitStat.hidden = true;
+    if (only.fits){ only.fits = false; fitBtn.classList.remove("on"); }
+    return;
+  }
+  let c = 0;
+  for (let i=0;i<N.length;i++) if (N[i].k === "sample" && keyFits(N[i])) c++;
+  fitNum.textContent = c.toLocaleString();
+  fitStat.hidden = false;
+}
+bpmIn.addEventListener("input", () => {
+  const v = Math.round(+bpmIn.value);
+  PROJ.bpm = (isFinite(v) && v >= 20 && v <= 300) ? v : 0;
+  try { localStorage.setItem("fs-proj-bpm", String(PROJ.bpm)); } catch(e){}
+  applyRate();
+});
+keySel.addEventListener("change", () => {
+  PROJ.key = keySel.value;
+  try { localStorage.setItem("fs-proj-key", PROJ.key); } catch(e){}
+  const filtering = only.fits;
+  updFits();
+  if (filtering) refresh();       // the surviving set changed under the filter
+});
+rateBtn.onclick = () => setAtTempo(!atTempo);
+updFits();
+
+// ---- the basket panel ------------------------------------------------------
+// Auditioning forty and keeping six is the actual workflow, and until now the
+// six existed nowhere. This is the list of them: click a row to hear it again,
+// drag it into a DAW, or zip the lot with the credits that make it usable.
+const bkPanel = document.getElementById("basket"), bkBtn = document.getElementById("tbask");
+const bkStat = document.getElementById("sbask"), bkNum = document.getElementById("nbask");
+const fbaskBtn = document.getElementById("fbask");
+const htmlEsc = s => String(s === null || s === undefined ? "" : s)
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+
+bkPanel.innerHTML =
+  '<h2>basket &middot; <span id="bk_n">0</span></h2>' +
+  '<div class="btns"><button id="bk_zip">&#10515; basket</button>' +
+  '<button id="bk_clear">clear</button></div>' +
+  '<div id="bk_list"></div>' +
+  '<div class="hint" id="bk_miss" hidden></div>' +
+  '<div class="hint">S keeps or drops the sample under the cursor. A row plays on ' +
+  'click and can be dragged into Ableton, FL or onto the desktop &mdash; that drag ' +
+  'is a Chromium feature, and Firefox and Safari ignore it.</div>';
+
+const bkList = document.getElementById("bk_list");
+function renderBasket(){
+  const ns = basketNodes(), miss = basketMissing();
+  document.getElementById("bk_n").textContent = ns.length;
+  document.getElementById("bk_zip").disabled = !ns.length || zipping;
+  const mEl = document.getElementById("bk_miss");
+  mEl.hidden = !miss;
+  mEl.textContent = miss + " kept sample" + (miss===1?" is":"s are") +
+    " not in this build of the library. They are still saved.";
+  if (!ns.length){
+    bkList.innerHTML = '<div class="none">Nothing kept yet \u2014 hover a sample and press S.</div>';
+    return; }
+  // Only what is trusted is printed: an untrusted key is the one the analyser
+  // gave a car crash, and in a one-line row there is no room to say so.
+  bkList.innerHTML = ns.map(n => {
+    const mus = [n.bo ? n.bpm+" BPM" : "", n.ko ? n.key : ""].filter(Boolean).join(" \u00b7 ");
+    return '<div class="bkr" draggable="true" data-i="' + ID2IX.get(n.i) +
+      '" title="' + htmlEsc(n.l) + '"><span class="nm">' + htmlEsc(n.l) + '</span>' +
+      (mus ? '<span class="mt">' + htmlEsc(mus) + '</span>' : '') +
+      '<span class="lic ' + (n.g === "CC0" ? "cc0" : "by") + '">' +
+      (n.g === "CC0" ? "CC0" : "BY") + '</span>' +
+      '<button class="x" title="remove from the basket">&times;</button></div>';
+  }).join("");
+}
+// `quiet` is for the one call at startup, before the canvas has been sized:
+// there is nothing to redraw yet and refresh() would run the whole subgraph sync
+// for a basket nobody has touched.
+function updBasket(quiet){
+  const ns = basketNodes().length;
+  bkNum.textContent = ns; bkStat.hidden = !ns;
+  const wasFiltering = only.basket;
+  // Same shape as updFits: a filter with nothing behind it stands aside rather
+  // than emptying the graph.
+  if (!ns && only.basket){ only.basket = false; fbaskBtn.classList.remove("on"); }
+  fbaskBtn.disabled = !ns;
+  renderBasket();
+  if (quiet) return;
+  if (wasFiltering || only.basket) refresh(); else draw();
+}
+function toggleBasket(i){
+  const n = N[i];
+  if (!n || n.k !== "sample"){
+    setNow("Nothing to keep \u2014 hover a sample first", true); holdBar(2600); return; }
+  if (BASKET.has(n.i)){ BASKET.delete(n.i); setNow("Dropped " + n.l + " from the basket"); }
+  else { BASKET.set(n.i, i);
+         setNow("Kept " + n.l + "  \u00b7  " + basketNodes().length + " in the basket"); }
+  holdBar(2600);
+  saveBasket(); updBasket();
+}
+bkBtn.onclick = () => { bkPanel.hidden = !bkPanel.hidden;
+  bkBtn.classList.toggle("on", !bkPanel.hidden);
+  if (!bkPanel.hidden) renderBasket(); };
+document.getElementById("bk_zip").onclick = downloadBasket;
+document.getElementById("bk_clear").onclick = () => {
+  const c = BASKET.size; if (!c) return;
+  // The only thing on this page that cannot be got back, so it is the only thing
+  // that asks first.
+  if (!confirm("Clear the basket? " + c + " kept sample" + (c===1?"":"s") +
+               " \u2014 this cannot be undone.")) return;
+  BASKET.clear(); saveBasket(); updBasket();
+  setNow("Basket cleared"); holdBar(2600);
+};
+// Delegated, because the rows are rebuilt from scratch on every change.
+bkList.addEventListener("click", e => {
+  const row = e.target.closest && e.target.closest(".bkr"); if (!row) return;
+  const i = +row.dataset.i;
+  if (e.target.classList.contains("x")){ toggleBasket(i); return; }
+  playNode(i);
+});
+bkList.addEventListener("dragstart", e => {
+  const row = e.target.closest && e.target.closest(".bkr"); if (!row) return;
+  if (!setDragData(e, N[+row.dataset.i])) e.preventDefault();
+});
+// The footer chip is the second drag source: whatever is playing is usually the
+// thing you want in the DAW, and reaching for the panel first loses the hover.
+nowEl.addEventListener("dragstart", e => {
+  if (barNode < 0 || !setDragData(e, N[barNode])) e.preventDefault();
+});
+updBasket(true);
+
+// ---- walking the similarity edges ------------------------------------------
+// The CLAP ranking is the only edge kind that claims two SOUNDS are alike, and
+// until now the only way to use it was to spot a thick line and mouse to the far
+// end. This is that ranking on the keyboard: Tab hops to the next neighbour and
+// plays it, Backspace comes back the way you came.
+//
+// CSR rather than an array of arrays. It is built once and read on every frame
+// of every draw; 7,214 little arrays is 7,214 allocations and a pointer chase per
+// lookup, where two typed arrays and a run of a flat third is a cache line.
+const SIMOFF = new Int32Array(NN + 1);
+const SIMNB = (() => {
+  let m = 0;
+  for (let i=0;i<E.length;i++){ const e = E[i];
+    if (e[2] !== 1) continue;
+    if (e[0] < 0 || e[0] >= NN || e[1] < 0 || e[1] >= NN) continue;
+    SIMOFF[e[0]+1]++; SIMOFF[e[1]+1]++; m += 2; }
+  for (let i=0;i<NN;i++) SIMOFF[i+1] += SIMOFF[i];
+  const nb = new Int32Array(m), at = SIMOFF.slice(0, NN);
+  for (let i=0;i<E.length;i++){ const e = E[i];
+    if (e[2] !== 1) continue;
+    if (e[0] < 0 || e[0] >= NN || e[1] < 0 || e[1] >= NN) continue;
+    nb[at[e[0]]++] = e[1]; nb[at[e[1]]++] = e[0]; }
+  return nb;
+})();
+// Clicking asks a different question from walking: not "what else sounds like
+// this" but "what is this joined to at all", which includes the tag and family
+// hairlines the walk deliberately ignores. Same CSR idiom as above and for the
+// same reasons, but holding EDGE indices rather than neighbours, because the
+// highlight draws the two kinds differently and needs E[e][2] to tell them apart.
+const ADJOFF = new Int32Array(NN + 1);
+const ADJE = (() => {
+  let m = 0;
+  for (let i=0;i<E.length;i++){ const e = E[i];
+    if (e[0] < 0 || e[0] >= NN || e[1] < 0 || e[1] >= NN) continue;
+    ADJOFF[e[0]+1]++; ADJOFF[e[1]+1]++; m += 2; }
+  for (let i=0;i<NN;i++) ADJOFF[i+1] += ADJOFF[i];
+  const a = new Int32Array(m), at = ADJOFF.slice(0, NN);
+  for (let i=0;i<E.length;i++){ const e = E[i];
+    if (e[0] < 0 || e[0] >= NN || e[1] < 0 || e[1] >= NN) continue;
+    a[at[e[0]]++] = i; a[at[e[1]]++] = i; }
+  return a;
+})();
+const farEnd = (e, i) => E[e][0] === i ? E[e][1] : E[e][0];
+
+// ---- what is in hand -------------------------------------------------------
+// The graph has few edges on purpose, and one node's are still invisible among
+// 29,520 hairlines until they are lit. A click lights them and rings whatever is
+// on the far end. Kept as one index rather than a set of neighbours: the far
+// ends are cheap to walk out of the CSR and a stored set would go stale the
+// moment a filter moved.
+let selNode = -1;
+function selectNode(i){ if (i !== selNode){ selNode = i; draw(); } }
+function selClear(){ if (selNode >= 0){ selNode = -1; draw(); } }
+
+// The edge pass in draw() needs one node's neighbours and nothing else, so it
+// gets a named function rather than an arrow rebuilt 60 times a second.
+function litSimEdges(i){
+  const a = N[i]; if (!shown(a)) return;
+  const ax = sx(a), ay = sy(a);
+  for (let k=SIMOFF[i], e=SIMOFF[i+1]; k<e; k++){ const b = N[SIMNB[k]];
+    if (!shown(b)) continue;
+    ctx.moveTo(ax, ay); ctx.lineTo(sx(b), sy(b)); }
+}
+
+// Nearest-first in the CURRENT layout. The payload carries no similarity score -
+// Freesound returns a ranked list and the builder keeps the edge, not the number
+// - so there is no stored rank to walk. What there is instead is the layout,
+// which the attraction along these very edges has already sorted: two sounds the
+// ranking called close are pulled together, so "nearest on screen" is that
+// ranking read back off the picture. It also means the walk agrees with what the
+// eye can see, which a hidden rank would not. Index breaks ties, so the same
+// graph in the same arrangement always walks the same way.
+function simNeighbours(i, from){
+  const a = SIMOFF[i], b = SIMOFF[i+1];
+  if (b <= a) return [];
+  const n = N[i], seen = new Set(), out = [];
+  for (let k=a;k<b;k++){ const j = SIMNB[k];
+    // `from` is left out because Backspace is what goes back: without this, the
+    // nearest thing to the sound you just landed on is almost always the one you
+    // came from, and Tab twice is a ping-pong rather than a walk.
+    if (j === i || j === from || seen.has(j)) continue;
+    seen.add(j);
+    if (!shown(N[j])) continue;          // shown() is the truth about the screen
+    const dx = N[j].x - n.x, dy = N[j].y - n.y;
+    out.push([j, dx*dx + dy*dy]); }
+  out.sort((p, q) => p[1] - q[1] || p[0] - q[0]);
+  for (let k=0;k<out.length;k++) out[k] = out[k][0];
+  return out;
+}
+
+// Frames rather than bare indices: coming back has to put the cursor back where
+// it was, or Backspace-then-Tab would take the branch you just took again.
+const WALK = { f: [] };
+const WALK_MAX = 400;              // a path, not a log; nobody backspaces 400 times
+function walkNode(){ const f = WALK.f; return f.length ? f[f.length-1].i : -1; }
+function walkClear(){ if (WALK.f.length){ WALK.f.length = 0; draw(); } }
+// Where a walk starts when there is not one yet: the sound holding the footer
+// bar, then the hovered node. The walk's own node is the last resort rather than
+// the first, so clicking a sample moves the walk to it - but a bar that has timed
+// out with the mouse off the canvas does not throw the path away.
+function walkAnchor(){
+  if (barNode >= 0 && N[barNode] && N[barNode].k === "sample") return barNode;
+  if (hover >= 0 && N[hover] && N[hover].k === "sample") return hover;
+  return walkNode();
+}
+function walkFrame(){
+  const f = WALK.f, a = walkAnchor();
+  if (a < 0 || !N[a] || N[a].k !== "sample") return null;
+  const top = f.length ? f[f.length-1] : null;
+  if (top && top.i === a){
+    // Same node, but the filters have moved: re-order rather than restart, and
+    // drop the cursor because the list it indexed no longer exists.
+    if (top.gen !== walkGen){ top.nb = simNeighbours(a, top.from); top.sel = -1; top.gen = walkGen; }
+    return top; }
+  f.length = 0;                    // standing somewhere else is a new path
+  const nf = { i:a, from:-1, nb:simNeighbours(a, -1), sel:-1, gen:walkGen };
+  f.push(nf);
+  return nf;
+}
+function walkStep(dir){
+  const f = walkFrame();
+  if (!f){ setNow("Nothing to walk from \u2014 hover a sample or play one", true);
+           holdBar(2600); return; }
+  if (!f.nb.length){
+    setNow(SIMOFF[f.i+1] > SIMOFF[f.i]
+      ? "Every similarity neighbour of " + N[f.i].l + " is filtered out"
+      : N[f.i].l + " has no similarity neighbours", true);
+    holdBar(2600); draw(); return; }
+  const len = f.nb.length;
+  f.sel = ((f.sel + dir) % len + len) % len;
+  const j = f.nb[f.sel];
+  WALK.f.push({ i:j, from:f.i, nb:simNeighbours(j, f.i), sel:-1, gen:walkGen });
+  if (WALK.f.length > WALK_MAX) WALK.f.splice(0, WALK.f.length - WALK_MAX);
+  walkArrive(j);
+}
+function walkBack(){
+  if (WALK.f.length < 2){ setNow("Nowhere to go back to"); holdBar(2000); return; }
+  WALK.f.pop();
+  walkArrive(WALK.f[WALK.f.length-1].i);
+}
+function walkArrive(i){
+  panTo(i);
+  // playNode() toggles a sound off when it is asked for the one already playing,
+  // which is right for a click and wrong for arriving somewhere.
+  if (playing === i) draw(); else playNode(i);
+}
+// Which of the neighbours this was, printed on the now-playing line - the only
+// place with room for it, and the answer to "is there another one behind this".
+function walkLabel(){
+  const f = WALK.f; if (f.length < 2) return "";
+  const p = f[f.length-2];
+  return "similar " + (p.sel+1) + "/" + p.nb.length + " \u00b7 step " + (f.length-1);
+}
+
+// Ease to what you landed on, at the zoom you are already at. A walk is a user
+// gesture like the wheel or a drag, so it takes auto-fit off rather than leaving
+// the two of them to argue over the camera every frame.
+function panTo(i){
+  if (!W || i < 0) return;
+  setAutoFit(false); panI = i;
+  if (!panRaf) panRaf = requestAnimationFrame(panFrame);
+}
+function panStop(){ panI = -1; if (panRaf){ cancelAnimationFrame(panRaf); panRaf = 0; } }
+// 0.22 a frame lands it in about twelve - short enough not to be a wait, long
+// enough to see which way the graph went, which is the whole point of easing
+// rather than jumping. Re-targeted every frame, so it still tracks a node the
+// simulation is moving underneath it.
+function panFrame(){
+  panRaf = 0;
+  if (panI < 0 || !N[panI]) return;
+  const n = N[panI], tx = W/2 - n.x*scale, ty = H/2 - n.y*scale;
+  const dx = tx - ox, dy = ty - oy;
+  const busy = running || tweening;           // those loops do their own drawing
+  if (Math.abs(dx) < 0.4 && Math.abs(dy) < 0.4){
+    ox = tx; oy = ty; panI = -1; if (!busy) draw(); return; }
+  ox += dx*0.22; oy += dy*0.22;
+  if (!busy) draw();
+  panRaf = requestAnimationFrame(panFrame);
+}
+
+// ---- input -----------------------------------------------------------------
+document.querySelectorAll("button[data-k]").forEach(b => b.onclick = () => {
+  kinds[b.dataset.k] = !kinds[b.dataset.k]; b.classList.toggle("on", kinds[b.dataset.k]); refresh(); });
+document.querySelectorAll("button[data-col]").forEach(b => b.onclick = () => {
+  colourBy = b.dataset.col;
+  document.querySelectorAll("button[data-col]").forEach(o => o.classList.toggle("on", o === b));
+  drawLegend(); draw(); });
+const onlyBtn = (id, key) => { const b = document.getElementById(id);
+  b.onclick = () => { only[key] = !only[key]; b.classList.toggle("on", only[key]); refresh(); }; };
+onlyBtn("fcc0","cc0"); onlyBtn("floop","loop"); onlyBtn("fone","one");
+onlyBtn("fkey","key"); onlyBtn("ftempo","tempo"); onlyBtn("flink","link");
+onlyBtn("ffit","fits");           // disabled without a project key, so it cannot fire
+onlyBtn("fbask","basket");        // disabled while the basket is empty, likewise
+const linkBtn = (id, get, set) => { const b = document.getElementById(id);
+  b.onclick = () => { set(!get()); b.classList.toggle("on", get()); refresh(); }; };
+linkBtn("tclap", () => showClap, v => showClap = v);
+document.getElementById("dlvis").onclick = downloadVisible;
+document.getElementById("dlone").onclick = () => downloadOne(N[barNode]);
+// The button does what L does by calling it: one behaviour, two ways in. Painted
+// once from here, which is after barNode exists, so the footer opens showing the
+// loop preference it just restored rather than an empty pill.
+loopEl.onclick = () => toggleLoop();
+showLoop();
+
+let dragging=false,lx=0,ly=0,downX=0,downY=0,dragNode=-1,dragKeep=false;
+// Screen back into the physics world, so a dragged node stays under the cursor
+// at any zoom.
+const wpx = mx => (mx-ox)/scale*WORLD, wpy = my => (my-oy)/scale*WORLD;
+function pinNode(i,on){ PIN[i]=on?1:0; if(on) PINNED.add(i); else PINNED.delete(i); }
+cv.addEventListener("mousedown",e=>{
+  const r=cv.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top;
+  lx=e.clientX; ly=e.clientY; downX=e.clientX; downY=e.clientY;
+  panStop();                     // taking hold of the view outranks easing it
+  // With the simulation running the graph is something you can take hold of.
+  // Paused, a node has nowhere to be put, so the drag stays a pan as before.
+  const i = running ? pick(mx,my) : -1;
+  if(i>=0){ dragNode=i; dragKeep=e.shiftKey; pinNode(i,true); VX[i]=0; VY[i]=0; }
+  else { dragging=true; cv.classList.add("drag"); }
+});
+window.addEventListener("mouseup",e=>{
+  const wasNode=dragNode, wasDrag=dragging;
+  if(dragNode>=0){ pinNode(dragNode, dragKeep); dragNode=-1; updMeta(); draw(); }
+  dragging=false; cv.classList.remove("drag");
+  if(!wasDrag && wasNode<0) return;
+  // 5px of slop: a mouse rarely stays perfectly still between down and up.
+  if(Math.abs(e.clientX-downX)>5 || Math.abs(e.clientY-downY)>5) return;
+  const r=cv.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top;
+  if(mx<0||my<0||mx>W||my>H) return;
+  // Selecting is not playing: a tag or a family has nothing to play, and asking
+  // what one holds is the whole reason they are on the canvas. Clicking nothing
+  // puts the graph back.
+  const i=pick(mx,my);
+  if(i>=0){ selectNode(i); playNode(i); } else selClear();
+});
+window.addEventListener("mousemove",e=>{
+  const r=cv.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top;
+  if(dragNode>=0){ setWorld(dragNode, wpx(mx), wpy(my));
+    if(alpha<0.2) alpha=0.2;              // a shove wakes the neighbourhood up
+    tip.style.display="none"; hover=-1; if(!running) draw(); return; }
+  if(dragging){ ox+=e.clientX-lx; oy+=e.clientY-ly; lx=e.clientX; ly=e.clientY;
+    setAutoFit(false);
+    tip.style.display="none"; hover=-1; draw(); return; }
+  if(mx<0||my<0||mx>W||my>H){ tip.style.display="none"; return; }
+  const i=pick(mx,my);
+  cv.style.cursor = i<0 ? "grab" : running ? "move"
+                  : (N[i].k==="sample" && N[i].p) ? "pointer" : "grab";
+  if(i!==hover){ hover=i;
+    if(i<0) tip.style.display="none";
+    else { tip.innerHTML = tipHtml(N[i]); tip.style.display="block";
+      tip.style.left=Math.min(mx+14,W-400)+"px"; tip.style.top=Math.min(my+14,H-190)+"px"; }
+    draw(); } });
+cv.addEventListener("wheel",e=>{ e.preventDefault();
+  setAutoFit(false); panStop();
+  const r=cv.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top;
+  const ns=Math.max(120,Math.min(60000,scale*Math.exp(-e.deltaY*0.0016)));
+  ox=mx-(mx-ox)*(ns/scale); oy=my-(my-oy)*(ns/scale); scale=ns; draw(); },{passive:false});
+window.addEventListener("keydown", e => {
+  if(e.target.tagName==="INPUT" || e.target.tagName==="SELECT" || e.target.tagName==="A") return;
+  if(e.key==="d"||e.key==="D"){ e.preventDefault(); downloadOne(N[barNode>=0?barNode:hover]); return; }
+  // Hover first, bar second - the mirror of D, which is usually pressed for the
+  // sound already playing, where S is usually pressed for the one under the mouse.
+  if(e.key==="s"||e.key==="S"){ e.preventDefault(); toggleBasket(hover>=0?hover:barNode); return; }
+  if(e.key==="f"||e.key==="F"){ e.preventDefault(); fit(); draw(); return; }
+  if(e.key==="p"||e.key==="P"){ e.preventDefault(); setRun(!running); return; }
+  if(e.key==="b"||e.key==="B"){ e.preventDefault(); resetBaked(); return; }
+  if(e.key==="l"||e.key==="L"){ e.preventDefault(); toggleLoop(); return; }
+  if(e.key==="t"||e.key==="T"){ e.preventDefault(); setAtTempo(!atTempo); return; }
+  // Tab is the browser's focus key, so it is only taken when the focus is on the
+  // page itself and there is something to walk from. Focus a header button or the
+  // query box and Tab still moves focus; with nothing hovered and nothing playing
+  // it falls through as well, so there is always a way out of the canvas.
+  if(e.key==="Tab" && (e.target===document.body || e.target===cv)){
+    if(walkAnchor() < 0) return;
+    e.preventDefault(); walkStep(e.shiftKey ? -1 : 1); return; }
+  // The same walk without the focus argument, for anyone who would rather not
+  // fight their screen reader for Tab. The page never scrolls, so these are free.
+  if(e.key==="ArrowRight"){ e.preventDefault(); walkStep(1); return; }
+  if(e.key==="ArrowLeft"){ e.preventDefault(); walkStep(-1); return; }
+  if(e.key==="Backspace"){ e.preventDefault(); walkBack(); return; }
+  if(e.key>="1" && e.key<="3"){ e.preventDefault(); applyLayout(LAY_ORDER[+e.key-1]); return; }
+  // Esc is "stop and get out of the way", and the trail is part of the way.
+  if(e.key==="Escape"){ stopAudio(); walkClear(); selClear(); }
+  else if(e.code==="Space"){ e.preventDefault();
+    if(playing>=0) stopAudio(); else if(hover>=0) playNode(hover); }
+});
+const hits=document.getElementById("hits");
+// ---- the query -------------------------------------------------------------
+// `String.includes` over a handful of fields is not how anyone hunts for a snare.
+// A bare term still does exactly what it did - substring, now over the tags as
+// well - and a term of the form field:value is typed instead. Terms are ANDed,
+// and a leading - drops whatever the term would have matched.
+//
+// A term that does not parse is matched as text rather than matching nothing:
+// "C#" is a key to one person and half a filename to another, and a box that
+// silently returns zero teaches nobody anything. The hits area says so.
+function qTokens(s){
+  const out = [];
+  let i = 0;
+  while (i < s.length){
+    while (i < s.length && s[i] === " ") i++;
+    let t = "", q = false;
+    for (; i < s.length; i++){
+      const c = s[i];
+      if (c === '"'){ q = !q; continue; }   // quotes vanish: key:"A minor"
+      if (c === " " && !q) break;
+      t += c;
+    }
+    if (t) out.push(t);
+  }
+  return out;
+}
+// >, >=, <, <=, a range, or a bare number for exactly that value. null means the
+// text was not a number at all, which is what sends the term back to being text.
+// The bounds may be negative - loudness is - so a range's separator is a hyphen
+// between two numbers and a sign is written as part of its own number.
+function qCmp(v){
+  let m = /^(>=|<=|>|<)\s*(-?\d+(?:\.\d+)?)$/.exec(v);
+  if (m){ const x = +m[2];
+    return m[1] === ">"  ? (n => n >  x) : m[1] === ">=" ? (n => n >= x)
+         : m[1] === "<"  ? (n => n <  x) : (n => n <= x); }
+  m = /^(-?\d+(?:\.\d+)?)\s*(?:\.\.|-)\s*(-?\d+(?:\.\d+)?)$/.exec(v);
+  if (m){ const a = +m[1], b = +m[2], lo = Math.min(a,b), hi = Math.max(a,b);
+    return n => n >= lo && n <= hi; }
+  if (/^-?\d+(?:\.\d+)?$/.test(v)){ const x = +v; return n => n === x; }
+  return null;
+}
+// "amin", "a minor", "a#m", "bb", "c". A bare pitch matches both modes, because
+// "in C" is a thing people say and "C major" is not always what they mean. Flats
+// fold onto the sharps KEYORDER is written in. Everything arrives lowercased, so
+// the mode has to be spelled out rather than carried by the case of an M.
+const QFLAT = { Db:"C#", Eb:"D#", Gb:"F#", Ab:"G#", Bb:"A#" };
+function qKey(v){
+  const m = /^([a-g])(#|b)?\s*(.*)$/.exec(v.trim());
+  if (!m) return null;
+  let p = m[1].toUpperCase() + (m[2] || "");
+  if (m[2] === "b") p = QFLAT[p] || p;
+  const rest = (m[3] || "").replace(/[\s.]/g, "");
+  let mode = "";
+  if (rest){
+    if (/^(m|min|minor)$/.test(rest)) mode = "minor";
+    else if (/^(maj|major)$/.test(rest)) mode = "major";
+    else return null;
+  }
+  return k => {
+    const sp = k.indexOf(" ");
+    if ((sp < 0 ? k : k.slice(0, sp)) !== p) return false;
+    return !mode || k.slice(sp+1) === mode;
+  };
+}
+// Bare-term reach. The first seven are what it always was; the tags are new, and
+// are the whole reason `tg` exists.
+function qText(n, s){
+  if (n.l.toLowerCase().includes(s)) return true;
+  if ((n.u&&n.u.toLowerCase().includes(s)) || (n.key&&n.key.toLowerCase().includes(s)) ||
+      (n.sub&&n.sub.toLowerCase().includes(s)) || (n.fam&&n.fam.includes(s)) ||
+      (n.bpm&&String(n.bpm).includes(s)) || (n.note&&n.note.toLowerCase()===s) ||
+      (n.pk&&n.pk.toLowerCase().includes(s))) return true;
+  const t = n.tg;
+  if (TAGV.length && Array.isArray(t))
+    for (let i=0;i<t.length;i++){ const g = TAGV[t[i]]; if (g && g.includes(s)) return true; }
+  return false;
+}
+// Numeric terms read the trusted value or nothing. The analyser emits a key for a
+// car crash, so an untrusted reading is not a value and must never answer a
+// question about one - the same rule the axes and the zip manifest already keep.
+// `ld` and `dr` come through fnum(), so a build without them matches nothing.
+const QNUMF = {
+  bpm:  n => n.bo ? n.bpm : null,
+  dur:  n => n.k === "sample" ? n.s : null,
+  dl:   n => n.k === "sample" ? n.n : null,
+  rate: n => n.k === "sample" && n.r ? n.r : null,
+  loud: n => fnum(n.ld),
+  dyn:  n => fnum(n.dr),
+};
+const QTXTF = { by: n => n.u, pack: n => n.pk, fam: n => n.fam, sub: n => n.sub };
+function qCompile(raw){
+  let neg = false, t = raw;
+  if (t[0] === "-" && t.length > 1){ neg = true; t = t.slice(1); }
+  const asText = bad => { const s = t.toLowerCase();
+    return { f: n => qText(n, s), neg: neg, bad: bad }; };
+  const c = t.indexOf(":");
+  if (c <= 0 || c === t.length-1) return asText(null);
+  const fld = t.slice(0, c).toLowerCase(), v = t.slice(c+1);
+  if (QNUMF[fld]){
+    const p = qCmp(v.toLowerCase()); if (!p) return asText(raw);
+    const g = QNUMF[fld];
+    return { f: n => { const x = g(n); return x !== null && x !== undefined && p(x); },
+             neg: neg, bad: null }; }
+  if (fld === "key"){
+    const p = qKey(v.toLowerCase()); if (!p) return asText(raw);
+    return { f: n => !!(n.ko && n.key && p(n.key)), neg: neg, bad: null }; }
+  if (fld === "tag"){
+    const s = v.toLowerCase();
+    return { f: n => { const g = n.tg;
+      if (!TAGV.length || !Array.isArray(g)) return false;
+      for (let i=0;i<g.length;i++){ const x = TAGV[g[i]]; if (x && x.includes(s)) return true; }
+      return false; }, neg: neg, bad: null }; }
+  if (QTXTF[fld]){
+    const s = v.toLowerCase(), g = QTXTF[fld];
+    return { f: n => { const x = g(n); return !!x && String(x).toLowerCase().includes(s); },
+             neg: neg, bad: null }; }
+  return asText(raw);
+}
+function runQuery(raw){
+  const s = raw.trim();
+  const terms = s ? qTokens(s).map(qCompile) : [];
+  if (!terms.length){ matches = null; hits.textContent = ""; draw(); return; }
+  const bad = terms.filter(t => t.bad).map(t => t.bad);
+  matches = new Set();
+  for (let i=0;i<N.length;i++){ const n = N[i];
+    let ok = true;
+    for (let k=0;k<terms.length;k++){ const t = terms[k];
+      // !== rather than a branch each way: a term keeps a node when what it
+      // matched is not what the leading - asked to drop.
+      if (t.f(n) === t.neg){ ok = false; break; } }
+    if (ok) matches.add(i); }
+  hits.textContent = matches.size + " match" + (matches.size===1?"":"es") +
+    (bad.length ? "  \u00b7  " + bad.map(b => '"'+b+'"').join(", ") + " read as text" : "");
+  draw();
+}
+const qEl = document.getElementById("q");
+qEl.addEventListener("input", e => runQuery(e.target.value));
+qEl.addEventListener("focus", () => { footEl.textContent = FOOT_QUERY; });
+qEl.addEventListener("blur",  () => { footEl.textContent = FOOT_KEYS; });
+
+function paintOriginals(){
+  const el = document.getElementById("sorig");
+  if (!el) return;
+  if (!ORIG_STATE){ el.hidden = true; return; }
+  el.hidden = false;
+  el.onclick = null; el.style.cursor = "default"; el.title = "";
+  if (ORIGINALS){
+    const h = Math.floor((ORIG_STATE.expires_in || 0)/3600);
+    el.innerHTML = "<b>originals</b> on" + (h ? " · " + h + "h left" : "");
+    el.title = "Downloads and drags serve the uploader's file, not the preview.";
+  } else if (ORIG_STATE.configured){
+    el.innerHTML = "<b>originals</b> — connect";
+    el.style.cursor = "pointer";
+    el.title = "Sign in to Freesound so downloads serve the original file.";
+    el.onclick = () => window.open("/api/auth/start", "_blank");
+  } else {
+    el.innerHTML = "<b>originals</b> — not set up";
+    el.title = "Add freesound-oauth.key beside serve_originals.py.";
+  }
+}
+// Re-probed on focus because authorising happens in another tab: without this
+// the chip still reads "connect" after you have just connected.
+window.addEventListener("focus", () => { probeOriginals(); });
+probeOriginals();
+
+drawLegend();
+new ResizeObserver(() => { resize(); openOnRun(); }).observe(document.getElementById("main"));
+window.addEventListener("resize",resize);
+resize();
+openOnRun();
+</script>

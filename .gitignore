@@ -1,0 +1,17 @@
+# Credentials. freesound.key is the "Client secret/Api key" from the credential
+# page and doubles as the OAuth2 client secret; the token file holds a live
+# session. Neither belongs anywhere near a remote.
+freesound.key
+freesound-oauth.key
+freesound-oauth-token.json
+
+# Build output. Regenerated from freesound-raw.json in about ten minutes, and
+# four megabytes of inlined payload does not want a revision each time. The
+# cache itself IS committed - it is thousands of API requests and the one thing
+# here that cannot simply be rebuilt.
+producer-graph.html
+index.html
+
+*.log
+__pycache__/
+.venv/

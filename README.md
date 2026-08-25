@@ -296,17 +296,34 @@ D major at 139, most for C# minor at 339.
 
 ### Keeping and exporting
 
-`S` keeps the sample under the cursor. The basket persists as **Freesound ids,
-not node indices** - the corpus grew by 500 samples in this very change and every
-index moved - so a basket survives a rebuild, and an id the new build no longer
-carries stays in storage rather than being quietly dropped. The panel lists what
-you have, plays a row on click, and zips the lot.
+`S` keeps the sample under the cursor, and so does **`+ keep`** in the footer
+beside `save`: the sample that has just played is the one being decided about,
+and its bar is already on screen. The same button drops what it kept, so it is
+painted `✓ kept` while the sample is in the basket rather than labelled once.
 
-Those ids are strings on both sides of `localStorage`, which is not a detail:
-one arithmetic `+` on the restore path is enough to hand a map keyed by
-`"160213"` a lookup for `160213`, and that reads not as a wrong lookup but as
-every kept sample quietly reported as one this build does not carry - on exactly
-the reload the basket exists to survive.
+The basket persists as **Freesound ids, not node indices** - the corpus grew by
+500 samples in this very change and every index moved - so a basket survives a
+rebuild, and an id the new build no longer carries stays in storage rather than
+being quietly dropped. Those ids are strings on both sides of `localStorage`,
+which is not a detail: one arithmetic `+` on the restore path is enough to hand
+a map keyed by `"160213"` a lookup for `160213`, and that reads not as a wrong
+lookup but as every kept sample quietly reported as one this build does not
+carry - on exactly the reload the basket exists to survive.
+
+The panel raises itself the first time anything is kept, because otherwise the
+basket is a number in the header and a keystroke described in a footer nobody is
+reading. After that its open state is remembered as well: closing it means closed
+on the next load, and nothing later drags it back up.
+
+The panel lists what you have, plays a row on click, and zips the lot.
+**`↗ freesound`** opens every kept sample's page on freesound.org, and each row
+carries its own `↗`. The zip holds preview mp3s; the uploader's original file,
+the full licence text and the pack it came out of are on that page and nowhere
+else. Ids again rather than nodes, so the kept samples this build does not carry
+are opened alongside the ones it does. Above eight it asks first, and when a
+pop-up blocker eats tabs two through two hundred - the ordinary case, not a
+failure worth reporting and walking away from - the addresses go to the clipboard
+so the basket can still be worked through by hand.
 
 A row, and the now-playing chip, can be **dragged straight into a DAW** or onto
 the desktop: the drag carries a `DownloadURL`, which is a Chromium behaviour and

@@ -122,7 +122,7 @@
   /* Still turning, because a ring that stopped would say loaded - just not at a
      speed that pulls the eye off the graph. */
   @media (prefers-reduced-motion:reduce) { #load { animation-duration:2.2s; } }
-  #dlone { padding:2px 8px; font-size:12px; }
+  #dlone, #bkone { padding:2px 8px; font-size:12px; }
   /* The footer is the one place a link is actually clickable: #tip is
      pointer-events:none, and reaching for it changes which node is hovered. */
   #note { color:#7d8590; white-space:nowrap; flex:none; }
@@ -215,6 +215,13 @@
   .bkr .lic { flex:none; font-size:10px; font-weight:600; }
   .bkr .lic.cc0 { color:#57a773; }
   .bkr .lic.by { color:#e0823d; }
+  /* The row's own way back to freesound.org, where the uploader's original
+     file and the full licence live. An anchor rather than a button so it can be
+     middle-clicked and copied like any other link, and draggable is off because
+     the row around it is already a drag source for the audio. */
+  .bkr .go { flex:none; padding:0 2px; font-size:11px; line-height:1.2;
+    color:#6e7681; text-decoration:none; }
+  .bkr .go:hover { color:#4b8bd6; }
   .bkr .x { flex:none; padding:0 3px; font-size:12px; line-height:1.2;
     background:transparent; border:0; color:#6e7681; }
   .bkr .x:hover { color:#d1655b; }
@@ -275,7 +282,7 @@
        rel="noopener noreferrer" title="Buy me a coffee - opens in a new tab">buy me a coffee</a>
   </header>
   <div id="main"><canvas id="cv"></canvas><div id="legend"></div><div id="phys" hidden></div><div id="basket" hidden></div><div id="tip"></div></div>
-  <footer><span id="now" draggable="true"></span><span id="load" role="status" aria-label="loading"></span><canvas id="wave"></canvas><button id="loopst"></button><button id="dlone" hidden>&#10515; save</button><span id="note"></span><span id="foot"></span></footer>
+  <footer><span id="now" draggable="true"></span><span id="load" role="status" aria-label="loading"></span><canvas id="wave"></canvas><button id="loopst"></button><button id="dlone" hidden>&#10515; save</button><button id="bkone" hidden></button><span id="note"></span><span id="foot"></span></footer>
 <dialog id="getapp-dl">
   <form method="dialog" class="bd">
     <h2>Desktop app for your library</h2>
@@ -1097,6 +1104,7 @@ function downloadBasket(){
 // ---- playback --------------------------------------------------------------
 const nowEl = document.getElementById("now"), noteEl = document.getElementById("note");
 const dlOneBtn = document.getElementById("dlone"), loopEl = document.getElementById("loopst");
+const bkOneBtn = document.getElementById("bkone");
 let audio=null, playing=-1, pulse=0, rafId=0, lastPulse=0;
 
 // Playback runs through WebAudio - element -> gain -> limiter -> out - so the
@@ -1253,6 +1261,7 @@ function barExpired(){
 // The waveform and the loop state are furniture of the BAR, not of the sound, so
 // they go when it goes and survive a sound that has already finished.
 function clearBar(){ cancelBarTimer(); barNode = -1; dlOneBtn.hidden = true;
+  bkOneBtn.hidden = true;
   hideWave(); showLoop(); setNow(""); setNote(""); }
 function setNow(text, isErr){ nowEl.textContent = text || ""; nowEl.classList.toggle("err", !!isErr); }
 // A download hands over the PREVIEW mp3, not the uploader's original - that needs
@@ -1337,7 +1346,7 @@ function playNode(i){
   loopOn = loopDefault && !!n.lp;
   playRate = rateFor(n);
   playing = i; barNode = i; playStart = Date.now(); lastPulse = 0;
-  dlOneBtn.hidden = false; showLoop(); draw();
+  dlOneBtn.hidden = false; bkOneBtn.hidden = false; updKeepBtn(); showLoop(); draw();
   rafId = requestAnimationFrame(pulseLoop);
   showLoading();
   startAudio(i, n, true);
@@ -2572,22 +2581,31 @@ const htmlEsc = s => String(s === null || s === undefined ? "" : s)
 bkPanel.innerHTML =
   '<h2>basket &middot; <span id="bk_n">0</span></h2>' +
   '<div class="btns"><button id="bk_zip">&#10515; basket</button>' +
+  '<button id="bk_open" title="open every kept sample on freesound.org">' +
+  '&#8599; freesound</button>' +
   '<button id="bk_clear">clear</button></div>' +
   '<div id="bk_list"></div>' +
   '<div class="hint" id="bk_miss" hidden></div>' +
-  '<div class="hint">S keeps or drops the sample under the cursor. A row plays on ' +
-  'click and can be dragged into Ableton, FL or onto the desktop &mdash; that drag ' +
-  'is a Chromium feature, and Firefox and Safari ignore it.</div>';
+  '<div class="hint">S keeps or drops the sample under the cursor, and so does the ' +
+  'button beside save in the footer. A row plays on click and can be dragged into ' +
+  'Ableton, FL or onto the desktop &mdash; that drag is a Chromium feature, and ' +
+  'Firefox and Safari ignore it. &#8599; opens a sample on freesound.org, where ' +
+  'the uploader&rsquo;s original file and the full licence are.</div>';
 
 const bkList = document.getElementById("bk_list");
 function renderBasket(){
   const ns = basketNodes(), miss = basketMissing();
   document.getElementById("bk_n").textContent = ns.length;
   document.getElementById("bk_zip").disabled = !ns.length || zipping;
+  // Enabled on what is STORED rather than on what is on screen: a page opens
+  // from an id alone, so the kept samples this build does not carry still have
+  // somewhere to go.
+  document.getElementById("bk_open").disabled = !BASKET.size;
   const mEl = document.getElementById("bk_miss");
   mEl.hidden = !miss;
   mEl.textContent = miss + " kept sample" + (miss===1?" is":"s are") +
-    " not in this build of the library. They are still saved.";
+    " not in this build of the library. They are still saved, and \u2197 still " +
+    "opens them.";
   if (!ns.length){
     bkList.innerHTML = '<div class="none">Nothing kept yet \u2014 hover a sample and press S.</div>';
     return; }
@@ -2600,6 +2618,8 @@ function renderBasket(){
       (mus ? '<span class="mt">' + htmlEsc(mus) + '</span>' : '') +
       '<span class="lic ' + (n.g === "CC0" ? "cc0" : "by") + '">' +
       (n.g === "CC0" ? "CC0" : "BY") + '</span>' +
+      '<a class="go" href="' + fsUrl(n) + '" target="_blank" rel="noopener noreferrer" ' +
+      'draggable="false" title="open this sample on freesound.org">&#8599;</a>' +
       '<button class="x" title="remove from the basket">&times;</button></div>';
   }).join("");
 }
@@ -2615,6 +2635,7 @@ function updBasket(quiet){
   if (!ns && only.basket){ only.basket = false; fbaskBtn.classList.remove("on"); }
   fbaskBtn.disabled = !ns;
   renderBasket();
+  updKeepBtn();
   if (quiet) return;
   if (wasFiltering || only.basket) refresh(); else draw();
 }
@@ -2625,13 +2646,110 @@ function toggleBasket(i){
   if (BASKET.has(sid(n.i))){ BASKET.delete(sid(n.i));
                              setNow("Dropped " + n.l + " from the basket"); }
   else { BASKET.set(sid(n.i), i);
-         setNow("Kept " + n.l + "  \u00b7  " + basketNodes().length + " in the basket"); }
+         setNow("Kept " + n.l + "  \u00b7  " + basketNodes().length + " in the basket");
+         // The first thing ever kept, with no opinion stored about the panel:
+         // show it, once. Without this the basket is a number in the header and
+         // a keystroke described in a footer nobody is reading.
+         if (bkPref === null){ bkPref = "1"; setBasketOpen(true, true); } }
   holdBar(2600);
   saveBasket(); updBasket();
 }
-bkBtn.onclick = () => { bkPanel.hidden = !bkPanel.hidden;
-  bkBtn.classList.toggle("on", !bkPanel.hidden);
-  if (!bkPanel.hidden) renderBasket(); };
+// The footer's own keep button, beside save. S already does this, and S is a
+// keystroke someone has to have read a footer to know about; the sample that has
+// just played is exactly the one being decided about, and its bar is already on
+// screen. Painted on every change rather than labelled once, because the same
+// button drops what it kept.
+function updKeepBtn(){
+  const n = barNode >= 0 ? N[barNode] : null;
+  const kept = !!(n && n.k === "sample" && BASKET.has(sid(n.i)));
+  bkOneBtn.textContent = kept ? "\u2713 kept" : "+ keep";
+  bkOneBtn.title = kept ? "drop this sample from the basket (S)"
+                        : "keep this sample in the basket (S)";
+  bkOneBtn.classList.toggle("on", kept);
+}
+bkOneBtn.onclick = () => toggleBasket(barNode);
+
+// Neither half of a copy is guaranteed - the async clipboard wants a secure
+// context and a permission, the old path wants a live selection - so both are
+// tried and the caller is only ever told whether one of them worked.
+function copyTextFallback(text){
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.setAttribute("readonly", "");
+    ta.style.cssText = "position:fixed;top:-1000px;opacity:0";
+    document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch(e){ return false; }
+}
+function copyText(text){
+  if (navigator.clipboard && navigator.clipboard.writeText)
+    return navigator.clipboard.writeText(text)
+      .then(() => true, () => copyTextFallback(text));
+  return Promise.resolve(copyTextFallback(text));
+}
+
+// Every kept sample's page on freesound.org. The zip holds preview mp3s; the
+// uploader's original file, the full licence text, the pack it came out of and
+// whatever else they have posted are all on that page and nowhere else - so this
+// is the one button that hands the whole basket back to the site it came from.
+//
+// Ids, not nodes: an id is all a page needs, so the kept samples this build does
+// not carry are opened alongside the ones it does.
+const OPEN_ASK = 8;
+function openBasketPages(){
+  const ids = [...BASKET.keys()];
+  if (!ids.length){ setNow("The basket is empty \u2014 hover a sample and press S", true);
+                    holdBar(3200); return; }
+  const urls = ids.map(id => "https://freesound.org/s/" + id + "/");
+  // Eight is about where a row of tabs stops being a row of tabs. Below it the
+  // button is instant and asking would be in the way; above it, a basket built
+  // over an afternoon is a lot of windows to arrive unannounced.
+  if (ids.length > OPEN_ASK &&
+      !confirm("Open " + ids.length + " freesound.org pages in new tabs?")) return;
+  let blocked = 0;
+  for (const u of urls){
+    // Not window.open(u, "_blank", "noopener"): given that third argument
+    // Chromium returns null whether the tab opened or the blocker ate it, and
+    // then nothing below can tell which happened. Opened plainly and severed
+    // immediately is the same isolation with an answer attached.
+    let w = null;
+    try { w = window.open(u, "_blank"); } catch(e){}
+    if (w){ try { w.opener = null; } catch(e){} } else blocked++;
+  }
+  if (!blocked){
+    setNow("Opened " + ids.length + " freesound page" + (ids.length===1?"":"s"));
+    setNote(""); holdBar(NOTE_MS); return;
+  }
+  // A blocker stopping tabs two through two hundred is the ordinary case, not a
+  // failure worth reporting and walking away from: the addresses go to the
+  // clipboard so the basket can still be worked through by hand.
+  setNow(blocked + " of " + ids.length + " blocked by the browser", true);
+  copyText(urls.join("\n")).then(ok => {
+    setNote(ok ? "all " + ids.length + " links copied \u00b7 paste them, or allow pop-ups here and press it again"
+               : "allow pop-ups for this page and press it again");
+    holdBar(NOTE_MS);
+  });
+  holdBar(NOTE_MS);
+}
+
+// Whether the panel is up is itself worth remembering. Someone who works with it
+// open wants it open next time, and someone who closed it does not want it back.
+// Three states rather than two: nothing stored means no one has said either way,
+// and that is what lets the first kept sample raise the panel once, on its own.
+const BKOPEN_KEY = "fs-basket-open";
+function setBasketOpen(open, remember){
+  bkPanel.hidden = !open;
+  bkBtn.classList.toggle("on", open);
+  if (open) renderBasket();
+  if (remember){ try { localStorage.setItem(BKOPEN_KEY, open ? "1" : "0"); } catch(e){} }
+}
+let bkPref = null;
+try { bkPref = localStorage.getItem(BKOPEN_KEY); } catch(e){}
+setBasketOpen(bkPref === "1", false);
+bkBtn.onclick = () => setBasketOpen(bkPanel.hidden, true);
+document.getElementById("bk_open").onclick = openBasketPages;
 document.getElementById("bk_zip").onclick = downloadBasket;
 document.getElementById("bk_clear").onclick = () => {
   const c = BASKET.size; if (!c) return;
@@ -2647,6 +2765,7 @@ bkList.addEventListener("click", e => {
   const row = e.target.closest && e.target.closest(".bkr"); if (!row) return;
   const i = +row.dataset.i;
   if (e.target.classList.contains("x")){ toggleBasket(i); return; }
+  if (e.target.closest("a")) return;   // the freesound link is not a play click
   playNode(i);
 });
 bkList.addEventListener("dragstart", e => {

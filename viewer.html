@@ -70,6 +70,25 @@
     font-weight:600; white-space:nowrap; }
   #getapp-dl .get a:hover { background:#1f6feb55; }
   #getapp-dl .get .m { color:#7d8590; font-size:11px; font-variant-numeric:tabular-nums; }
+  /* The three-way switch above the download. It is what lets the panel be read
+     on a machine it is not going to be installed on - and the reason the whole
+     of the guidance below it is three blocks rather than one. */
+  #getapp-dl .pick { display:flex; gap:6px; margin:0 0 11px; }
+  #getapp-dl .pick button { flex:1; background:#0b0e14; border:1px solid #21262d;
+    color:#7d8590; padding:5px 0; border-radius:6px; font:inherit; font-size:12px;
+    cursor:pointer; }
+  #getapp-dl .pick button:hover { color:#c9d1d9; border-color:#30363d; }
+  #getapp-dl .pick button.on { background:#1f6feb22; border-color:#4b8bd6; color:#e6edf3; }
+  /* The second file on a platform that ships two. Under the button rather than
+     beside it: it is the answer to a question most people do not have. */
+  #getapp-dl .alt { margin:8px 1px 0; font-size:11px; color:#6e7681; }
+  /* Said when download.json has answered and had nothing for the platform being
+     asked about. Grey rather than yellow: the yellow rule means "measured, not
+     vouched for", and there is no file here to say either about. */
+  #getapp-dl .none { margin:10px 1px 0; font-size:12px; line-height:1.55;
+    color:#9aa4b0; border-left:2px solid #30363d; padding-left:11px; }
+  #getapp-dl .alt a { color:#7d8590; }
+  #getapp-dl .alt a:hover { color:#c9d1d9; }
   /* The yellow rule is the page's own "measured, not vouched for" colour, which
      is the right thing to say about a binary nobody has signed. */
   #getapp-dl .warn { border-left:2px solid #d4b03c; padding-left:11px; }
@@ -277,7 +296,7 @@
            title="Terms are ANDed. A leading - drops what the term matches.&#10;&#10;bpm:120-130  bpm:&gt;100  bpm:&lt;90  bpm:128&#10;key:Amin  key:&quot;A minor&quot;  key:C&#10;dur:&lt;2  dur:0.5-4&#10;dl:&gt;1000  rate:&gt;4&#10;tag:vinyl  by:username  pack:...  fam:...  sub:...&#10;loud:&gt;-14  dyn:&gt;6&#10;&#10;Anything else is matched as text, over the name, uploader,&#10;pack, family and every tag on the sample.&#10;Only trusted key and BPM readings are ever matched.">
     <span class="stat" id="hits"></span>
     <a id="getapp" href="https://github.com/AlexM1010/visualise-music/releases"
-       title="The same map over your own folder of audio. Windows installer.">&#10515; desktop app for your library</a>
+       title="The same map over your own folder of audio. Windows, macOS or Linux.">&#10515; desktop app for your library</a>
     <a id="bmc" href="https://buymeacoffee.com/alexm1010" target="_blank"
        rel="noopener noreferrer" title="Buy me a coffee - opens in a new tab">buy me a coffee</a>
   </header>
@@ -291,35 +310,93 @@
       after the first run it touches the network only to check for its own
       updates.</p>
 
+    <div class="pick" id="dl_pick" role="group" aria-label="operating system">
+      <button type="button" data-os="windows">Windows</button>
+      <button type="button" data-os="macos">macOS</button>
+      <button type="button" data-os="linux">Linux</button>
+    </div>
+
     <div class="get">
       <a id="dl_link" href="https://github.com/AlexM1010/visualise-music/releases"><span
          aria-hidden="true">&#10515;</span> <span id="dl_label">Download from GitHub</span></a>
       <span class="m" id="dl_meta">Windows 10 or 11, 64-bit</span>
     </div>
+    <p class="alt" id="dl_alt" hidden></p>
+    <p class="none" id="dl_none" hidden></p>
 
-    <h3>Windows will warn you, and here is why</h3>
-    <div class="warn">
-      <p>What you get is an installer, and it is <b>not signed</b>. A
-        code-signing certificate is bought rather than earned, and this one has
-        not been bought yet &mdash; so Microsoft Defender SmartScreen does not
-        recognise the publisher, and says so before it will run the file:</p>
-      <ol>
-        <li>Your browser may stop the download itself. Choose <b>Keep</b>.</li>
-        <li>Running it raises a blue <b>Windows protected your PC</b> box whose
-          only button is <b>Don&rsquo;t run</b>. Click <b>More info</b>.</li>
-        <li>Click <b>Run anyway</b>.</li>
-      </ol>
-      <p>That box means SmartScreen has not seen this publisher before. It is not
-        a report of anything found in the file &mdash; but it is not nothing
-        either, and every release publishes a checksum so that you can check what
-        you downloaded rather than take this paragraph&rsquo;s word for it. The
-        installer writes to your own user account, so Windows will not ask for an
-        administrator.</p>
+    <div class="os" id="os_windows">
+      <h3>Windows will warn you, and here is why</h3>
+      <div class="warn">
+        <p>What you get is an installer, and it is <b>not signed</b>. A
+          code-signing certificate is bought rather than earned, and this one has
+          not been bought yet &mdash; so Microsoft Defender SmartScreen does not
+          recognise the publisher, and says so before it will run the file:</p>
+        <ol>
+          <li>Your browser may stop the download itself. Choose <b>Keep</b>.</li>
+          <li>Running it raises a blue <b>Windows protected your PC</b> box whose
+            only button is <b>Don&rsquo;t run</b>. Click <b>More info</b>.</li>
+          <li>Click <b>Run anyway</b>.</li>
+        </ol>
+        <p>That box means SmartScreen has not seen this publisher before. It is not
+          a report of anything found in the file &mdash; but it is not nothing
+          either, and every release publishes a checksum so that you can check what
+          you downloaded rather than take this paragraph&rsquo;s word for it. The
+          installer writes to your own user account, so Windows will not ask for an
+          administrator.</p>
+      </div>
+    </div>
+
+    <div class="os" id="os_macos" hidden>
+      <h3>macOS will refuse to open it, and here is why</h3>
+      <div class="warn">
+        <p>What you get is a disk image, and the application in it is <b>not
+          notarised</b>. Notarising needs a Developer ID, which is rented from
+          Apple by the year rather than earned, and this one has not been rented
+          yet &mdash; so Gatekeeper will not open the app on the grounds that it
+          cannot say who made it:</p>
+        <ol>
+          <li>Open the <code>.dmg</code> and drag <b>Visualise Music</b> into
+            <b>Applications</b>, as usual.</li>
+          <li>Opening it raises <b>&ldquo;Visualise Music&rdquo; cannot be opened
+            because the developer cannot be verified</b>. Click <b>Cancel</b>,
+            never <b>Move to Bin</b>.</li>
+          <li>Open <b>System Settings &rarr; Privacy &amp; Security</b>, scroll to
+            the bottom, and click <b>Open Anyway</b> beside the app&rsquo;s name.
+            That button only appears for about an hour after the refusal, so if
+            it is not there, try opening the app again first.</li>
+        </ol>
+        <p>On macOS 14 and earlier there is a shorter route: right-click the app
+          in <b>Applications</b> and choose <b>Open</b>, which offers the same box
+          with an <b>Open</b> button on it. Either way it is asked once and never
+          again.</p>
+        <p>That refusal means Apple has never been shown this application. It is
+          not a report of anything found in it &mdash; but it is not nothing
+          either, and the checksum below is there so that you can check what you
+          downloaded rather than take this paragraph&rsquo;s word for it. Nothing
+          is installed outside <b>Applications</b> and your own user account.</p>
+      </div>
+    </div>
+
+    <div class="os" id="os_linux" hidden>
+      <h3>Two files, and which one you want</h3>
+      <div class="warn">
+        <p>The <b>AppImage</b> is one file that needs no installing and no root.
+          Mark it executable and run it &mdash; on some distributions it also
+          wants FUSE 2, which is <code>libfuse2</code> or <code>libfuse2t64</code>
+          in your package manager. The <b>.deb</b> is for Debian, Ubuntu and
+          anything built on them: <code>sudo apt install ./&lt;the file&gt;</code>,
+          and the app arrives in the menu like any other. Either can update
+          itself in place afterwards.</p>
+        <p>Linux will not warn you about any of this, which is worth saying out
+          loud rather than leaving as a pleasant surprise. Nothing here is signed
+          by a distribution, nobody has reviewed it into a repository, and the
+          checksum below is the whole of what stands in for that.</p>
+      </div>
     </div>
 
     <div id="dl_sha" hidden>
       <h3>Check what you downloaded</h3>
-      <p>In PowerShell, in the folder you saved it to:</p>
+      <p id="dl_where">In PowerShell, in the folder you saved it to:</p>
       <code class="cmd" id="dl_cmd"></code>
       <p>It should print this, ignoring case:</p>
       <code class="cmd" id="dl_hash"></code>
@@ -3388,21 +3465,159 @@ openOnRun();
 // The desktop application - the same map over a folder of your own audio - is
 // built by the desktop repository and published here - and the workflow that
 // publishes it writes download.json into this repository in the same run. So
-// the button asks its own origin what the newest installer is rather than
-// asking github.com, which would cost a CORS header this page cannot require
-// and a rate limit it cannot see.
+// the button asks its own origin what the newest build is rather than asking
+// github.com, which would cost a CORS header this page cannot require and a
+// rate limit it cannot see.
 //
 // Without that file - a clone, a local server, or any moment before the first
-// release - the link stays on the releases page. That is the honest answer, it
-// needs no JavaScript, and it is why the href is in the markup rather than
-// built here.
+// release - the link stays on the releases page, and the panel still says what
+// each operating system is going to do about a build nobody has signed. That is
+// the honest answer, it needs no JavaScript, and it is why the href and the
+// Windows block are in the markup rather than built here.
 const GETAPP_PREFIX = "https://github.com/AlexM1010/visualise-music/releases/download/";
+const GETAPP_RELEASES = "https://github.com/AlexM1010/visualise-music/releases";
 const getappDlg = document.getElementById("getapp-dl");
 
-// The button opens the panel rather than the file. The installer is unsigned,
-// and Windows is about to say so in a blue box whose only button is "Don't run"
-// - which is better said here first, by the people shipping it, than met as an
-// accusation from the operating system thirty seconds later. The href stays
+// One entry per operating system the release workflow builds for. `hash` is
+// there because the single thing this panel asks anybody to type is the one
+// thing that has three different spellings.
+const GETAPP_OS = {
+  windows: {
+    name: "Windows",
+    label: "Windows 10 or 11, 64-bit",
+    where: "In PowerShell, in the folder you saved it to:",
+    hash: name => "Get-FileHash " + name + " -Algorithm SHA256",
+  },
+  macos: {
+    name: "macOS",
+    label: "macOS 10.15 or later, Intel or Apple silicon",
+    where: "In Terminal, in the folder you saved it to:",
+    hash: name => "shasum -a 256 " + name,
+  },
+  linux: {
+    name: "Linux",
+    label: "Linux, 64-bit",
+    where: "In a terminal, in the folder you saved it to:",
+    hash: name => "sha256sum " + name,
+  },
+};
+
+// What to call a file on a platform that ships two of them, in the width of the
+// line under the button.
+const GETAPP_KIND = {exe: "installer", dmg: "disk image",
+                     appimage: "AppImage", deb: "deb package"};
+
+// The rows of download.json that survived the checks at the foot of this file,
+// and the version they belong to. Empty until - and unless - that file answers.
+let getappRows = [];
+let getappVersion = "";
+let getappOS = null;
+// Whether download.json answered at all, which is a different question from
+// whether it had anything for a given platform - and the difference is the only
+// thing that separates "not built yet" from "cannot tell from here".
+let getappAnswered = false;
+
+// Which of the three this is being read on, or null for anything else.
+function getappHost() {
+  const d = navigator.userAgentData;
+  const s = (((d && d.platform) || navigator.platform || "") + " " +
+             (navigator.userAgent || "")).toLowerCase();
+  // Asked first and answered with nothing. A phone says Linux, and handing it
+  // an AppImage it cannot run is worse than handing it the choice.
+  if (/android|iphone|ipad|ipod/.test(s)) return null;
+  if (s.includes("win")) return "windows";
+  if (s.includes("mac")) return "macos";
+  if (s.includes("linux") || s.includes("x11") || s.includes("bsd")) return "linux";
+  return null;
+}
+
+// Point the whole panel - the link, the line under it, the warning, the
+// checksum command - at one operating system. Everything that differs between
+// the three differs here, in one place, rather than in three copies of a panel.
+function getappShow(os) {
+  getappOS = os;
+  const meta = GETAPP_OS[os];
+  for (const b of document.querySelectorAll("#dl_pick button")) {
+    b.classList.toggle("on", b.dataset.os === os);
+  }
+  for (const k of Object.keys(GETAPP_OS)) {
+    document.getElementById("os_" + k).hidden = k !== os;
+  }
+
+  const rows = getappRows.filter(r => r.os === os);
+  const first = rows[0], second = rows[1];
+  const link = document.getElementById("dl_link");
+  const alt = document.getElementById("dl_alt");
+  const none = document.getElementById("dl_none");
+  const sha = document.getElementById("dl_sha");
+
+  // Nothing for this platform. The link goes where it went before any of this
+  // ran, which is a page listing every file there is.
+  if (!first) {
+    link.href = GETAPP_RELEASES;
+    document.getElementById("dl_label").textContent = "Download from GitHub";
+    document.getElementById("dl_meta").textContent = meta.label;
+    alt.hidden = true;
+    sha.hidden = true;
+    // Two different silences. If download.json answered and had no row for this
+    // platform, there is no build for it and saying so is the whole answer -
+    // and the guidance above is hidden with it, because it describes getting
+    // past a warning about a file that does not exist. If it did not answer at
+    // all - a clone, a local server, before the first release - then nothing
+    // here knows what is published, and the guidance is still the best thing on
+    // screen.
+    none.hidden = !getappAnswered;
+    if (getappAnswered) {
+      none.textContent = "There is no " + meta.name + " build yet. The releases "
+        + "page has the ones there are.";
+      document.getElementById("os_" + os).hidden = true;
+    }
+    return;
+  }
+  none.hidden = true;
+
+  const mb = n => (n / 1048576).toFixed(1) + " MB";
+  link.href = first.url;
+  document.getElementById("dl_label").textContent = "Download " + getappVersion;
+  // The kind is named only where there is a second file to tell it apart from.
+  // On Windows and macOS there is one, and calling it "installer" is a word
+  // spent saying what the button already says.
+  document.getElementById("dl_meta").textContent = [
+    meta.label,
+    second ? GETAPP_KIND[first.kind] : null,
+    first.size ? mb(first.size) : null,
+  ].filter(Boolean).join("  \u00b7  ");
+
+  alt.hidden = !second;
+  if (second) {
+    // A node rather than a string of markup. The URL came off a fetched file:
+    // it has been checked against the prefix above, and a link that hands
+    // somebody an executable is still not where to start trusting text.
+    const a = document.createElement("a");
+    a.href = second.url;
+    a.textContent = "or the " + GETAPP_KIND[second.kind] +
+      (second.size ? ", " + mb(second.size) : "");
+    alt.replaceChildren(a);
+  }
+
+  // Only offer the check when there is something to check against. Half of it
+  // - a command with no expected answer beside it - is worse than not having
+  // raised the subject.
+  if (/^[0-9a-f]{64}$/.test(String(first.sha256 || ""))) {
+    document.getElementById("dl_where").textContent = meta.where;
+    document.getElementById("dl_cmd").textContent =
+      meta.hash(first.url.slice(first.url.lastIndexOf("/") + 1));
+    document.getElementById("dl_hash").textContent = first.sha256;
+    sha.hidden = false;
+  } else {
+    sha.hidden = true;
+  }
+}
+
+// The button opens the panel rather than the file. Nothing here is signed, and
+// two of the three operating systems are about to say so in a box whose only
+// obvious button refuses - which is better said here first, by the people
+// shipping it, than met as an accusation thirty seconds later. The href stays
 // real underneath, so a middle-click, a ctrl-click and a page whose script
 // never ran all still reach the releases page.
 document.getElementById("getapp").addEventListener("click", e => {
@@ -3411,7 +3626,16 @@ document.getElementById("getapp").addEventListener("click", e => {
   getappDlg.showModal();
 });
 
+document.getElementById("dl_pick").addEventListener("click", e => {
+  const b = e.target.closest("button[data-os]");
+  if (b) getappShow(b.dataset.os);
+});
+
 (async () => {
+  // Before the fetch, not after it: a page with no download.json should still
+  // open on the guidance for the machine it is being read on, and Windows is
+  // the fallback only for the machines that are none of the three.
+  getappShow(getappHost() || "windows");
   try {
     const r = await fetch("download.json", {cache:"no-store"});
     if (!r.ok) return;
@@ -3419,21 +3643,18 @@ document.getElementById("getapp").addEventListener("click", e => {
     // download.json is written by CI and served from this origin, so this is
     // not a trust boundary so much as a seatbelt: the link that hands somebody
     // an executable should not become an arbitrary destination because a file
-    // was garbled or a token went somewhere it should not have.
-    if (!String(d.url || "").startsWith(GETAPP_PREFIX)) return;
-    document.getElementById("dl_link").href = d.url;
-    document.getElementById("dl_label").textContent = "Download " + d.version;
-    document.getElementById("dl_meta").textContent = "Windows 10 or 11, 64-bit"
-      + (d.size ? "  \u00b7  " + (d.size / 1048576).toFixed(1) + " MB" : "");
-    // Only offer the check when there is something to check against. Half of it
-    // - a command with no expected answer beside it - is worse than not having
-    // raised the subject.
-    if (/^[0-9a-f]{64}$/.test(String(d.sha256 || ""))) {
-      document.getElementById("dl_cmd").textContent =
-        "Get-FileHash " + d.url.slice(d.url.lastIndexOf("/") + 1) + " -Algorithm SHA256";
-      document.getElementById("dl_hash").textContent = d.sha256;
-      document.getElementById("dl_sha").hidden = false;
-    }
+    // was garbled or a token went somewhere it should not have. A row that
+    // fails it is dropped, and its platform falls back to the releases page on
+    // its own rather than the whole panel doing so.
+    getappVersion = String(d.version || "");
+    getappRows = (Array.isArray(d.downloads) ? d.downloads : [])
+      .filter(x => GETAPP_OS[x.os] && String(x.url || "").startsWith(GETAPP_PREFIX));
+    // Answered, not necessarily answered *with something*. A release that
+    // builds two of the three platforms is a file this page can read and act
+    // on, and the third one being absent from it is information rather than a
+    // failure to fetch.
+    getappAnswered = !!getappVersion;
+    if (getappAnswered) getappShow(getappOS);
   } catch (e) { /* offline, or no such file: the markup already answers */ }
 })();
 </script>

@@ -5,6 +5,13 @@ Nothing rebuilds it on push, so the only thing standing between an edit to
 viewer.html and a site that does not have it is somebody remembering. This is
 that somebody.
 
+It also reads any download.json beside them. That file is written by the desktop
+repository's release workflow, and it now names a file per platform rather than
+one installer - so there is more in it that can be wrong, and the page's answer
+to all of it is the same silent shrug: a row it does not recognise is dropped and
+that platform falls back to the releases page. Silent is right in a browser and
+wrong here, where somebody is looking.
+
 Deliberately no regular expressions and no dependencies: it runs on a bare
 runner and the things it looks for are literal.
 """
@@ -15,6 +22,19 @@ import sys
 
 REPO = "AlexM1010/visualise-music"
 PREFIX = "https://github.com/" + REPO + "/releases/download/"
+
+# Every platform the page has words for, and what it is allowed to call a file.
+# Both lists are the page's own, in `GETAPP_OS` and `GETAPP_KIND`: a row using
+# anything else is a row the page silently drops.
+OSES = ("windows", "macos", "linux")
+KINDS = ("exe", "dmg", "appimage", "deb")
+
+# The subset the release workflow actually builds. macOS is in OSES and not in
+# here on purpose: the page keeps its panel and, when download.json answers with
+# no macOS row, says there is no macOS build rather than offering one. Add it
+# here in the same commit that uncomments the matrix entry in the desktop
+# repository's release.yml, which carries the same list.
+BUILT = ("windows", "linux")
 
 viewer = pathlib.Path("viewer.html").read_text(encoding="utf-8")
 index = pathlib.Path("index.html").read_text(encoding="utf-8")
@@ -33,11 +53,16 @@ def block(text, opener, closer):
 # Verbatim rather than merely present. A stale index.html can hold an older
 # version of the same block, which is the failure worth catching: the button is
 # there, it looks right, and it points somewhere that stopped being true.
+#
+# The dialog is one span, so everything inside it - the picker, all three
+# warnings, the checksum block - is covered by that one entry. The others are
+# the pieces that live outside it.
 PIECES = [
     ("the anchor", '<a id="getapp"', "</a>"),
     ("its stylesheet rule", "#getapp {", "}"),
     ("the panel it opens", '<dialog id="getapp-dl">', "</dialog>"),
     ("the coffee link beside it", '<a id="bmc"', "</a>"),
+    ("the platform switch", 'document.getElementById("dl_pick")', "});"),
     ("the fetch that names the newest release", 'fetch("download.json"', ")"),
 ]
 
@@ -50,16 +75,26 @@ for what, opener, closer in PIECES:
                    "writes it. Rebuild it: python -u producer_graph.py")
 
 # The panel is the whole point of the button: it is where somebody is told, in
-# advance, that Windows is about to accuse the installer of being unrecognised.
-# Losing that wording and keeping the download is the bad half to keep.
-for phrase in ("not signed", "More info", "Run anyway", "SmartScreen"):
-    if phrase not in viewer:
-        bad.append("viewer.html no longer warns about " + repr(phrase) + ", so "
-                   "the panel no longer says what Windows is going to do.")
+# advance, what their own machine is about to accuse this of being. Losing that
+# wording and keeping the download is the bad half to keep - and now there are
+# three sets of it, only one of which is ever on screen at a time, so losing one
+# is a thing nobody looking at the page would see.
+#
+# All three, including the platform not being built yet. Wording that rots while
+# nobody is publishing for it is wording that is wrong on the day somebody does.
+WORDING = {
+    "windows": ("not signed", "More info", "Run anyway", "SmartScreen"),
+    "macOS": ("notarised", "Gatekeeper", "cannot be verified", "Open Anyway",
+              "Privacy &amp; Security"),
+    "Linux": ("AppImage", "libfuse2", "sudo apt install"),
+}
+for os_name, phrases in WORDING.items():
+    for phrase in phrases:
+        if phrase not in viewer:
+            bad.append("viewer.html no longer says " + repr(phrase) + ", so the "
+                       "panel no longer says what " + os_name + " is going to do.")
 
-# download.json is written by the desktop repository's release workflow. The
-# page ignores one it does not recognise, which is safe and silent - so say so
-# here instead, where somebody is looking.
+# download.json is written by the desktop repository's release workflow.
 path = pathlib.Path("download.json")
 if not path.exists():
     print("No download.json. The button points at the releases page, which is "
@@ -72,27 +107,75 @@ else:
         d = None
 
     if isinstance(d, dict):
-        for key in ("version", "tag", "url", "sha256", "size"):
+        for key in ("version", "tag", "downloads"):
             if key not in d:
                 bad.append("download.json has no " + repr(key) + ".")
 
-        url, sha = str(d.get("url", "")), str(d.get("sha256", ""))
         version = str(d.get("version", ""))
+        rows = d.get("downloads")
 
-        if not url.startswith(PREFIX):
-            bad.append("download.json url is not a release download on " + REPO
-                       + ", so the page will ignore it and keep the fallback.")
-        elif version not in url:
-            bad.append("download.json says " + version + " and links to " + url
-                       + ", which does not name that version.")
+        if not isinstance(rows, list) or not rows:
+            bad.append("download.json lists no downloads, so the button has "
+                       "nothing to offer on any platform.")
+            rows = []
 
-        if len(sha) != 64 or sha.strip("0123456789abcdef"):
-            bad.append("download.json sha256 is not a lowercase sha256.")
+        for n, row in enumerate(rows):
+            where = "download.json row " + str(n)
+            if not isinstance(row, dict):
+                bad.append(where + " is not an object.")
+                continue
 
-        if not isinstance(d.get("size"), int):
-            bad.append("download.json size is not a number of bytes.")
+            if row.get("os") not in OSES:
+                bad.append(where + " is for " + repr(row.get("os")) + ", which "
+                           "the page has no panel for and will drop.")
+            if row.get("kind") not in KINDS:
+                bad.append(where + " is a " + repr(row.get("kind")) + ", which "
+                           "the page has no name for.")
 
-        print("download.json offers " + version + " at " + url)
+            url, sha = str(row.get("url", "")), str(row.get("sha256", ""))
+            if not url.startswith(PREFIX):
+                bad.append(where + " is not a release download on " + REPO
+                           + ", so the page will drop it and that platform "
+                             "falls back to the releases page.")
+            elif version not in url:
+                bad.append(where + " links to " + url + ", which does not name "
+                           "version " + version + ".")
+
+            if len(sha) != 64 or sha.strip("0123456789abcdef"):
+                bad.append(where + " sha256 is not a lowercase sha256, so the "
+                           "page will offer the file with no way to check it.")
+
+            if not isinstance(row.get("size"), int):
+                bad.append(where + " size is not a number of bytes.")
+
+        have = [r.get("os") for r in rows if isinstance(r, dict)]
+        for os_name in BUILT:
+            if os_name not in have:
+                bad.append("download.json offers nothing for " + os_name + ". "
+                           "The release workflow publishes every platform it "
+                           "builds or none of them, so this file has been "
+                           "edited by hand.")
+        for os_name in OSES:
+            if os_name not in BUILT and os_name in have:
+                print("download.json has a " + os_name + " row, which is more "
+                      "than the workflow builds. Add it to BUILT here so its "
+                      "absence starts being an error.")
+
+        # The page offers the *first* row for a platform and puts any others on
+        # the quiet line underneath. On Linux that order is a decision: the
+        # AppImage needs no install and no root and runs on everything, so it is
+        # the one to hand somebody who has not said which they want.
+        linux = [r for r in rows if isinstance(r, dict) and r.get("os") == "linux"]
+        if linux and linux[0].get("kind") != "appimage":
+            bad.append("download.json offers the " + str(linux[0].get("kind"))
+                       + " before the AppImage on Linux, so that is the one the "
+                         "button hands over.")
+
+        for row in rows:
+            if isinstance(row, dict):
+                print("download.json offers " + version + " for "
+                      + str(row.get("os")) + " as " + str(row.get("kind"))
+                      + ": " + str(row.get("url")))
     elif d is not None:
         bad.append("download.json is not an object.")
 

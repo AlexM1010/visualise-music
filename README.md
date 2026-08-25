@@ -36,16 +36,42 @@ then <http://127.0.0.1:8973/>.
 ## The download button, and the coffee link
 
 **desktop app for your library**, at the right-hand end of the header. It does
-not start a download. It opens a panel, because the installer is unsigned and
-Windows is about to say so in a blue box whose only button is *Don't run* — and
-that is better said first, here, by the people shipping it, than met thirty
+not start a download. It opens a panel, because nothing published here is signed
+and two of the three operating systems are about to say so — Windows in a blue
+box whose only button is *Don't run*, macOS by refusing to open the app at all —
+and that is better said first, here, by the people shipping it, than met thirty
 seconds later as an accusation from the operating system. The panel carries the
-download, what SmartScreen will do and how to get past it, and the checksum to
-check the file against.
+download, what that machine is going to do and how to get past it, and the
+checksum to check the file against.
+
+The panel is per-platform, and it guesses. A three-way switch across the top —
+Windows, macOS, Linux — starts on whatever the page thinks it is being read on,
+and everything under it follows: the file offered, the size, the warning, and
+the one command the panel asks anybody to type, which is the same check spelled
+three ways (`Get-FileHash`, `shasum -a 256`, `sha256sum`). Anything that is none
+of the three, a phone included, gets Windows and the switch. Linux is the one
+platform with two files; the AppImage is offered and the `.deb` sits on a quiet
+line under it, because the AppImage needs no install and no root.
+
+**There are three panels and, for now, two builds.** Only Windows and Linux are
+published. The page does not know that because anybody wrote it here — it reads
+`download.json`, finds no macOS row in it, and says *there is no macOS build
+yet* instead of offering one, hiding the Gatekeeper guidance with it, because
+that guidance is about getting past a warning on a file that does not exist. The
+day a release includes macOS the panel lights up with no edit to this page. The
+wording is still checked while nobody is building for it: wording that rots
+unwatched is wording that is wrong on the day it is needed.
+
+That is a different silence from *no `download.json` at all* — a clone, a local
+server, anything before the first release. There the page has no idea what is
+published, so it keeps all three sets of guidance and points every one of them
+at the releases page.
 
 The button is still an `<a>` with a real `href` — the releases page — so a
 middle-click, a ctrl-click and a page whose script never ran all still go
-somewhere sensible. Only a plain left-click is taken.
+somewhere sensible. Only a plain left-click is taken. With no script at all the
+markup shows the Windows guidance, which is a guess rather than a detection and
+is the only honest one available without running anything.
 
 **buy me a coffee** sits beside it and is an ordinary outbound link to
 <https://buymeacoffee.com/alexm1010>, opened in a new tab because the map is a
@@ -60,17 +86,30 @@ The panel fills itself in from `download.json`, beside `index.html`:
 {
   "version": "0.2.0",
   "tag": "v0.2.0",
-  "url": "https://github.com/AlexM1010/visualise-music/releases/download/v0.2.0/visualise-music_0.2.0_x64-setup.exe",
-  "sha256": "429ea9…",
-  "size": 8123456
+  "downloads": [
+    { "os": "windows", "arch": "x86_64",    "kind": "exe",
+      "url": "https://github.com/…/visualise-music_0.2.0_x64-setup.exe",
+      "sha256": "429ea9…", "size": 8123456 },
+    { "os": "macos",   "arch": "universal", "kind": "dmg",   "…": "…" },
+    { "os": "linux",   "arch": "x86_64",    "kind": "appimage", "…": "…" },
+    { "os": "linux",   "arch": "x86_64",    "kind": "deb",   "…": "…" }
+  ]
 }
 ```
 
+Facts only. There is no wording in that file — no "Windows 10 or 11, 64-bit", no
+"disk image" — because wording belongs in the page, where it can be reworded
+without cutting a release. The page offers the **first** row for a platform and
+puts any others on the quiet line beneath, which is why the order of that list
+is a decision and not a detail; `.github/check_site.py` holds it to it.
+
 **Nothing writes that file by hand.** The desktop repository's release workflow
-publishes the installer to *this* repository — it holds the downloads as well as
-the site — and in the same run commits the `download.json` naming it. So the
-newest release is the one the button offers, and a version number never has to
-be edited here.
+builds on one runner per platform, publishes every file to *this* repository —
+it holds the downloads as well as the site — and in the same run commits the
+`download.json` naming them. So the newest release is the one the button offers,
+and a version number never has to be edited here. It publishes every platform it
+builds or none of them: a release that failed to build somewhere leaves this
+file untouched and the button on the version before it.
 
 The file is read from this page's own origin rather than from `github.com`,
 which would cost a CORS header the page cannot require and a rate limit it
@@ -79,10 +118,12 @@ before the first release — the panel still opens and still gives the warning,
 the download falls back to the releases page, and the checksum section stays
 hidden rather than offering a command with nothing to compare against.
 
-The link is only replaced if the URL in the file is a release download on this
-repository. It is a file this origin serves and CI wrote, so that check is a
-seatbelt rather than a boundary: the one outbound link on the page should not
-become an arbitrary destination because something was garbled.
+A row is only used if its URL is a release download on this repository and its
+`os` is one the panel has words for. It is a file this origin serves and CI
+wrote, so that check is a seatbelt rather than a boundary: the one outbound link
+on the page should not become an arbitrary destination because something was
+garbled. A row that fails it is dropped on its own — that platform falls back to
+the releases page while the other two carry on.
 
 The panel is a `<dialog>`, so Esc closes it and the browser handles the focus.
 One thing it does need from the page: the map's single-key shortcuts are bound
@@ -93,12 +134,13 @@ not — so the handler returns early while it is open, or reading it would work
 `viewer.html` holds all of this, so a **rebuild carries it into `index.html`** —
 and a hand-edit of `index.html` alone does not survive the next build. That is
 the one way this can quietly break, so `.github/workflows/site.yml` checks it on
-every push: the button, its stylesheet rule, the panel, the coffee link and the
-fetch all have to be in `index.html` byte for byte as `viewer.html` now writes
-them, the panel has
-to still contain the words that warn about SmartScreen, and any `download.json`
-beside them has to be one the page would accept. It needs no secrets and
-touches no network.
+every push: the button, its stylesheet rule, the panel, the coffee link, the
+platform switch and the fetch all have to be in `index.html` byte for byte as
+`viewer.html` now writes them, the panel has to still contain the words that
+warn about SmartScreen, about Gatekeeper, and about Linux warning you of nothing
+— only one of those three is ever on screen, so losing one is a thing nobody
+reading the page would see — and any `download.json` beside them has to be one
+the page would accept. It needs no secrets and touches no network.
 
 ## Rebuilding
 

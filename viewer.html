@@ -1,5 +1,12 @@
 <!doctype html>
 <meta charset="utf-8">
+<!-- Without this a phone lays the page out at 980px and then shrinks it to fit,
+     which makes every pinch a page zoom and leaves the map drawn at a third of
+     the resolution it asked for. The canvas keeps a pinch of its own - see #cv
+     in the stylesheet and the touch handlers at the foot of the script - so
+     nothing here needs user-scalable=no, and the header and footer can still be
+     zoomed by anyone who needs them bigger. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Freesound sample library</title>
 <!-- The tab gets one of the records off the map. make_favicon.py draws it. -->
 <link rel="icon" href="favicon.ico" sizes="16x16 24x24 32x32 48x48 64x64">
@@ -7,6 +14,7 @@
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
   html, body { margin:0; height:100%; background:#0b0e14; color:#c9d1d9;
+    overscroll-behavior:none; -webkit-text-size-adjust:100%;
     font:13px/1.5 ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif; }
   #wrap { position:fixed; inset:0; display:flex; flex-direction:column; }
   header { padding:8px 13px; border-bottom:1px solid #1e2530; display:flex; gap:11px;
@@ -115,17 +123,43 @@
   #main { flex:1; position:relative; min-height:0; }
   canvas { display:block; width:100%; height:100%; cursor:grab; }
   canvas.drag { cursor:grabbing; }
+  /* The map takes its touches off the browser. Left to it, a pinch zooms the
+     document - header, footer, the lot - while the graph underneath never
+     moves; one finger tries to scroll a page that is position:fixed and
+     cannot; and a double tap zooms again. The touch handlers at the foot of
+     the script do all three against the camera instead. Scoped to #cv so the
+     waveform scrubber in the footer keeps the browser's own behaviour, and
+     user-select/callout because a press on a canvas otherwise raises the
+     text-selection loupe in the middle of a drag. */
+  #cv { touch-action:none; -webkit-user-select:none; user-select:none;
+    -webkit-touch-callout:none; }
   #legend { position:absolute; top:11px; left:11px; background:rgba(13,17,23,.93);
     border:1px solid #1e2530; border-radius:8px; padding:8px 10px; max-width:225px;
     max-height:calc(100% - 22px); overflow:auto; }
   #legend div.row { display:flex; align-items:center; gap:6px; padding:1px 0; color:#9aa4b0; }
+  /* On a phone the key is a third of the map, sat over the corner of it, and
+     the map is the point. What it says is still in the toolbar - the colour
+     button that is lit is the scheme being read - so the key is what goes.
+     Coarse pointer as well as narrow, so a half-width desktop window keeps it:
+     there the key can be read without covering anything worth seeing. */
+  @media (max-width:700px) and (pointer:coarse) {
+    #legend { display:none; }
+    /* The toolbar was laid out for a window. At 375px a row of eight filters is
+       468px wide and the last of them hang off the right-hand edge, where no
+       finger can reach them - so the groups break instead. That costs height,
+       and height is what the map is made of, hence the ceiling: past it the
+       toolbar scrolls and the map keeps the rest of the screen. */
+    header .grp { flex-wrap:wrap; }
+    header { max-height:36vh; overflow-y:auto; }
+  }
   .sw { width:9px; height:9px; border-radius:2px; flex:none; }
   .nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ct { color:#6e7681; font-variant-numeric:tabular-nums; margin-left:auto; padding-left:8px; }
   #ramp { height:10px; border-radius:3px; margin:5px 0 3px; }
   #legend .ends { display:flex; justify-content:space-between; color:#6e7681; font-size:11px; }
   #tip { position:absolute; pointer-events:none; background:#161b22; border:1px solid #30363d;
-    border-radius:7px; padding:9px 11px; max-width:390px; display:none; z-index:5;
+    border-radius:7px; padding:9px 11px; display:none; z-index:5;
+    max-width:min(390px, calc(100vw - 22px));
     box-shadow:0 6px 24px rgba(0,0,0,.6); }
   #tip b { color:#e6edf3; display:block; margin-bottom:3px; word-break:break-word; }
   #tip .row { color:#7d8590; font-size:12px; }
@@ -3313,6 +3347,125 @@ cv.addEventListener("wheel",e=>{ e.preventDefault();
   const r=cv.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top;
   const ns=Math.max(120,Math.min(60000,scale*Math.exp(-e.deltaY*0.0016)));
   ox=mx-(mx-ox)*(ns/scale); oy=my-(my-oy)*(ns/scale); scale=ns; draw(); },{passive:false});
+
+// ---- touch -----------------------------------------------------------------
+// Nothing above this line happens on a phone: a canvas with no touch handlers
+// hands every touch to the browser, so the wheel zoom has no counterpart and a
+// pinch resizes the whole document. `touch-action:none` in the stylesheet gets
+// the touches back; Safari's pinch arrives as a `gesture*` event that ignores
+// touch-action, so that one is refused by hand below. What is left is pan,
+// pinch and tap, driven against the same ox/oy/scale the mouse drives - one
+// camera, three ways in.
+const TSLOP = 12;   // a fingertip is wider and shakier than a mouse; the 5px of
+                    // slop a click gets is not enough to tell a tap from a drag
+const TTAP  = 400;  // longer than this with a finger down is a press, not a tap
+let tId = -1,       // identifier of the finger the one-finger gestures follow
+    tPan = false, tNode = -1,
+    tLX = 0, tLY = 0, tDX = 0, tDY = 0, tT0 = 0, tMoved = false,
+    tPinch = 0;     // finger separation when the pinch began; 0 = not pinching
+const tAt = t => { const r = cv.getBoundingClientRect();
+  return [t.clientX - r.left, t.clientY - r.top]; };
+const tGap = (a,b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+// The point a pinch zooms about, and the point a two-finger drag pans by: the
+// midpoint does both, which is why it is tracked between moves.
+const tMid = (a,b) => { const r = cv.getBoundingClientRect();
+  return [(a.clientX + b.clientX)/2 - r.left, (a.clientY + b.clientY)/2 - r.top]; };
+const tFind = list => { for (let i=0;i<list.length;i++)
+  if (list[i].identifier === tId) return list[i]; return null; };
+// Same landing as a mouse-up: the node keeps its pin only if it was meant to,
+// which on a touchscreen - no shift key to hold - is never.
+function tDrop(){ if (tNode < 0) return;
+  pinNode(tNode, false); tNode = -1; updMeta(); draw(); }
+
+cv.addEventListener("touchstart", e => {
+  e.preventDefault(); panStop();
+  if (e.touches.length >= 2){
+    // A second finger turns whatever was happening into a pinch, and puts back
+    // any node the first one had hold of - otherwise the graph is left holding
+    // a pin nobody asked for.
+    tDrop(); tPan = false; tId = -1; tMoved = true;   // a pinch is never a tap
+    tPinch = tGap(e.touches[0], e.touches[1]);
+    const m = tMid(e.touches[0], e.touches[1]); tLX = m[0]; tLY = m[1];
+    return;
+  }
+  const t = e.changedTouches[0]; tId = t.identifier;
+  const p = tAt(t), mx = p[0], my = p[1];
+  tLX = tDX = mx; tLY = tDY = my; tT0 = e.timeStamp; tMoved = false;
+  // Same rule as the mouse: running, the graph is something you can take hold
+  // of; paused, a node has nowhere to be put and the drag stays a pan.
+  const i = running ? pick(mx, my) : -1;
+  if (i >= 0){ tNode = i; pinNode(i, true); VX[i] = 0; VY[i] = 0; }
+  else tPan = true;
+}, {passive:false});
+
+cv.addEventListener("touchmove", e => {
+  e.preventDefault();
+  if (tPinch && e.touches.length >= 2){
+    const d = tGap(e.touches[0], e.touches[1]), m = tMid(e.touches[0], e.touches[1]);
+    // A ratio, not a delta: fingers twice as far apart mean twice the zoom, at
+    // whatever scale the map is already at. Clamped where the wheel clamps.
+    if (d > 0){
+      const ns = Math.max(120, Math.min(60000, scale * d / tPinch));
+      ox = m[0]-(m[0]-ox)*(ns/scale); oy = m[1]-(m[1]-oy)*(ns/scale);
+      scale = ns; tPinch = d;
+    }
+    // Two fingers moving together pan, so a pinch can place what it magnifies
+    // without a second gesture.
+    ox += m[0]-tLX; oy += m[1]-tLY; tLX = m[0]; tLY = m[1];
+    setAutoFit(false); tip.style.display = "none"; draw();
+    return;
+  }
+  const t = tFind(e.changedTouches); if (!t) return;
+  const p = tAt(t), mx = p[0], my = p[1];
+  if (!tMoved && Math.hypot(mx-tDX, my-tDY) > TSLOP) tMoved = true;
+  if (tNode >= 0){ setWorld(tNode, wpx(mx), wpy(my));
+    if (alpha < 0.2) alpha = 0.2;                 // a shove wakes the neighbours
+    tip.style.display = "none"; hover = -1; if (!running) draw(); }
+  else if (tPan){ ox += mx-tLX; oy += my-tLY; setAutoFit(false);
+    tip.style.display = "none"; hover = -1; draw(); }
+  tLX = mx; tLY = my;
+}, {passive:false});
+
+cv.addEventListener("touchend", e => {
+  // Refusing the touchend also cancels the click the browser would synthesise
+  // from it, so the mouse handlers never run this tap a second time.
+  e.preventDefault();
+  if (e.touches.length >= 2){    // three fingers down, one lifted: still a pinch
+    tPinch = tGap(e.touches[0], e.touches[1]);
+    const m = tMid(e.touches[0], e.touches[1]); tLX = m[0]; tLY = m[1]; return; }
+  if (e.touches.length === 1){
+    // Down to one finger. Hand it the pan rather than ending the gesture, or
+    // the map jumps whenever the second finger leaves first.
+    const p = tAt(e.touches[0]); tLX = p[0]; tLY = p[1];
+    tId = e.touches[0].identifier; tPinch = 0; tPan = true; tMoved = true; return; }
+  const tap = !tMoved && (e.timeStamp - tT0) < TTAP;
+  tDrop(); tPan = false; tPinch = 0; tId = -1;
+  const t = e.changedTouches[0];
+  if (!tap || !t) return;
+  const p = tAt(t), mx = p[0], my = p[1];
+  if (mx<0 || my<0 || mx>W || my>H) return;
+  const i = pick(mx, my);
+  // A tap is the click: select and play. It is also the only hover a phone
+  // has, so it leaves the card up as well - there is nowhere else on a narrow
+  // screen to read what the node is. Tapping the background puts both back.
+  if (i >= 0){ selectNode(i); playNode(i); hover = i;
+    tip.innerHTML = tipHtml(N[i]); tip.style.display = "block";
+    tip.style.left = Math.max(4, Math.min(mx+14, W-tip.offsetWidth-4))+"px";
+    tip.style.top  = Math.max(4, Math.min(my+14, H-tip.offsetHeight-4))+"px"; }
+  else { selClear(); hover = -1; tip.style.display = "none"; draw(); }
+}, {passive:false});
+
+// A call, a notification or a fourth finger ends the gesture without a tap.
+cv.addEventListener("touchcancel", () => {
+  tDrop(); tPan = false; tPinch = 0; tId = -1; tMoved = true; }, {passive:false});
+
+// Safari only, and the reason touch-action alone is not enough there: it reads
+// a two-finger pinch as a document gesture and zooms the page even while the
+// touch events above are being handled. Refused on the canvas only, so the
+// rest of the page can still be zoomed by anyone who needs it bigger.
+for (const g of ["gesturestart","gesturechange","gestureend"])
+  cv.addEventListener(g, e => e.preventDefault(), {passive:false});
+
 window.addEventListener("keydown", e => {
   // The download panel is modal, and the test below only clears keystrokes that
   // landed on a control. Click its prose and the target is a <p>, which would

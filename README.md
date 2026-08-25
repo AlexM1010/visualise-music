@@ -33,6 +33,63 @@ python -m http.server 8973 --bind 127.0.0.1
 
 then <http://127.0.0.1:8973/>.
 
+## The download button, and the coffee link
+
+**desktop app for your library**, at the right-hand end of the header. It does
+not start a download. It opens a panel, because the installer is unsigned and
+Windows is about to say so in a blue box whose only button is *Don't run* — and
+that is better said first, here, by the people shipping it, than met thirty
+seconds later as an accusation from the operating system. The panel carries the
+download, what SmartScreen will do and how to get past it, and the checksum to
+check the file against.
+
+The button is still an `<a>` with a real `href` — the releases page — so a
+middle-click, a ctrl-click and a page whose script never ran all still go
+somewhere sensible. Only a plain left-click is taken.
+
+**buy me a coffee** sits beside it and is an ordinary outbound link to
+<https://buymeacoffee.com/alexm1010>, opened in a new tab because the map is a
+working session — a basket, a query, a running layout — and navigating away from
+it loses all three. It is styled like the rest of the toolbar rather than like
+the download: a tip jar that competes with the thing being offered is a tip jar
+in the way.
+
+The panel fills itself in from `download.json`, beside `index.html`:
+
+```json
+{
+  "version": "0.2.0",
+  "tag": "v0.2.0",
+  "url": "https://github.com/AlexM1010/visualise-music/releases/download/v0.2.0/visualise-music_0.2.0_x64-setup.exe",
+  "sha256": "429ea9…",
+  "size": 8123456
+}
+```
+
+**Nothing writes that file by hand.** The desktop repository's release workflow
+publishes the installer to *this* repository — it holds the downloads as well as
+the site — and in the same run commits the `download.json` naming it. So the
+newest release is the one the button offers, and a version number never has to
+be edited here.
+
+The file is read from this page's own origin rather than from `github.com`,
+which would cost a CORS header the page cannot require and a rate limit it
+cannot see. Absent — in a clone, behind `serve_originals.py`, or at any moment
+before the first release — the panel still opens and still gives the warning,
+the download falls back to the releases page, and the checksum section stays
+hidden rather than offering a command with nothing to compare against.
+
+The link is only replaced if the URL in the file is a release download on this
+repository. It is a file this origin serves and CI wrote, so that check is a
+seatbelt rather than a boundary: the one outbound link on the page should not
+become an arbitrary destination because something was garbled.
+
+The panel is a `<dialog>`, so Esc closes it and the browser handles the focus.
+One thing it does need from the page: the map's single-key shortcuts are bound
+on `window` and skip keystrokes aimed at a control, which the panel's prose is
+not — so the handler returns early while it is open, or reading it would work
+`S` and `D` on a map nobody can see.
+
 ## Rebuilding
 
 Only needed if you change `viewer.html` or the builder. `numpy` and `networkx`

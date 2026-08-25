@@ -33,6 +33,54 @@
   button.on { background:#1f6feb33; border-color:#4b8bd6; color:#e6edf3; }
   button.cc.on { background:#57a77333; border-color:#57a773; }
   button:disabled { opacity:.5; cursor:default; }
+  /* The desktop build is what the page is for once somebody has a library of
+     their own, so it is the one control here that is not grey. Its href is the
+     releases page until download.json answers - see the foot of the script. */
+  #getapp { margin-left:auto; background:#1f6feb33; border:1px solid #4b8bd6;
+    color:#e6edf3; padding:3px 9px; border-radius:6px; font:inherit; font-size:12px;
+    text-decoration:none; white-space:nowrap; }
+  #getapp:hover { background:#1f6feb55; }
+  #getapp .v { color:#9aa4b0; font-variant-numeric:tabular-nums; }
+  /* Beside it, and deliberately quieter. The download is the thing being
+     offered; this is a tip jar, and a tip jar that competes with it is a tip
+     jar in the way. Grey like the rest of the toolbar until it is hovered. */
+  #bmc { background:#161b22; border:1px solid #30363d; color:#9aa4b0;
+    padding:3px 9px; border-radius:6px; font:inherit; font-size:12px;
+    text-decoration:none; white-space:nowrap; }
+  #bmc:hover { border-color:#d4b03c; color:#e6edf3; }
+  /* What the button opens. A dialog rather than another corner panel: it is
+     read once, on the way out of the page, and what it has to say about an
+     unsigned installer does not fit in a 272px column beside the graph. */
+  #getapp-dl { width:min(540px, calc(100vw - 28px)); padding:0; color:#c9d1d9;
+    background:#0d1117; border:1px solid #30363d; border-radius:10px; font:inherit; }
+  #getapp-dl::backdrop { background:rgba(3,5,9,.74); }
+  #getapp-dl .bd { padding:16px 18px 14px; max-height:min(78vh, 720px); overflow:auto; }
+  #getapp-dl h2 { font-size:15px; margin:0 0 4px; color:#e6edf3; font-weight:600; }
+  #getapp-dl .sub { color:#7d8590; font-size:12px; margin:0 0 14px; line-height:1.5; }
+  #getapp-dl h3 { font-size:10px; margin:16px 0 7px; color:#6e7681; font-weight:600;
+    text-transform:uppercase; letter-spacing:.05em; }
+  #getapp-dl p { margin:0 0 8px; font-size:12px; line-height:1.55; color:#9aa4b0; }
+  #getapp-dl ol { margin:0 0 8px; padding-left:19px; font-size:12px;
+    line-height:1.65; color:#9aa4b0; }
+  #getapp-dl b { color:#e6edf3; font-weight:600; }
+  #getapp-dl .get { display:flex; align-items:center; gap:11px; flex-wrap:wrap;
+    padding:12px 13px; background:#0b0e14; border:1px solid #30363d; border-radius:8px; }
+  #getapp-dl .get a { background:#1f6feb33; border:1px solid #4b8bd6; color:#e6edf3;
+    padding:5px 13px; border-radius:6px; text-decoration:none; font-size:13px;
+    font-weight:600; white-space:nowrap; }
+  #getapp-dl .get a:hover { background:#1f6feb55; }
+  #getapp-dl .get .m { color:#7d8590; font-size:11px; font-variant-numeric:tabular-nums; }
+  /* The yellow rule is the page's own "measured, not vouched for" colour, which
+     is the right thing to say about a binary nobody has signed. */
+  #getapp-dl .warn { border-left:2px solid #d4b03c; padding-left:11px; }
+  #getapp-dl code { font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;
+    font-size:11px; color:#c9d1d9; background:#0b0e14; border:1px solid #21262d;
+    border-radius:4px; padding:1px 5px; }
+  #getapp-dl .cmd { display:block; padding:7px 9px; margin:0 0 8px;
+    overflow-wrap:anywhere; line-height:1.5; }
+  #getapp-dl .ft { display:flex; justify-content:space-between; align-items:center;
+    gap:9px; margin-top:15px; padding-top:11px; border-top:1px solid #1e2530; }
+  #getapp-dl .ft a { color:#6e7681; font-size:11px; }
   #main { flex:1; position:relative; min-height:0; }
   canvas { display:block; width:100%; height:100%; cursor:grab; }
   canvas.drag { cursor:grabbing; }
@@ -221,9 +269,62 @@
     <input id="q" placeholder="snare, tag:vinyl, bpm:120-130&hellip;" autocomplete="off"
            title="Terms are ANDed. A leading - drops what the term matches.&#10;&#10;bpm:120-130  bpm:&gt;100  bpm:&lt;90  bpm:128&#10;key:Amin  key:&quot;A minor&quot;  key:C&#10;dur:&lt;2  dur:0.5-4&#10;dl:&gt;1000  rate:&gt;4&#10;tag:vinyl  by:username  pack:...  fam:...  sub:...&#10;loud:&gt;-14  dyn:&gt;6&#10;&#10;Anything else is matched as text, over the name, uploader,&#10;pack, family and every tag on the sample.&#10;Only trusted key and BPM readings are ever matched.">
     <span class="stat" id="hits"></span>
+    <a id="getapp" href="https://github.com/AlexM1010/visualise-music/releases"
+       title="The same map over your own folder of audio. Windows installer.">&#10515; desktop app for your library</a>
+    <a id="bmc" href="https://buymeacoffee.com/alexm1010" target="_blank"
+       rel="noopener noreferrer" title="Buy me a coffee - opens in a new tab">buy me a coffee</a>
   </header>
   <div id="main"><canvas id="cv"></canvas><div id="legend"></div><div id="phys" hidden></div><div id="basket" hidden></div><div id="tip"></div></div>
   <footer><span id="now" draggable="true"></span><span id="load" role="status" aria-label="loading"></span><canvas id="wave"></canvas><button id="loopst"></button><button id="dlone" hidden>&#10515; save</button><span id="note"></span><span id="foot"></span></footer>
+<dialog id="getapp-dl">
+  <form method="dialog" class="bd">
+    <h2>Desktop app for your library</h2>
+    <p class="sub">The same map, over your own folder of audio. It analyses every
+      file on your machine &mdash; no account, no API key, no quota &mdash; and
+      after the first run it touches the network only to check for its own
+      updates.</p>
+
+    <div class="get">
+      <a id="dl_link" href="https://github.com/AlexM1010/visualise-music/releases"><span
+         aria-hidden="true">&#10515;</span> <span id="dl_label">Download from GitHub</span></a>
+      <span class="m" id="dl_meta">Windows 10 or 11, 64-bit</span>
+    </div>
+
+    <h3>Windows will warn you, and here is why</h3>
+    <div class="warn">
+      <p>What you get is an installer, and it is <b>not signed</b>. A
+        code-signing certificate is bought rather than earned, and this one has
+        not been bought yet &mdash; so Microsoft Defender SmartScreen does not
+        recognise the publisher, and says so before it will run the file:</p>
+      <ol>
+        <li>Your browser may stop the download itself. Choose <b>Keep</b>.</li>
+        <li>Running it raises a blue <b>Windows protected your PC</b> box whose
+          only button is <b>Don&rsquo;t run</b>. Click <b>More info</b>.</li>
+        <li>Click <b>Run anyway</b>.</li>
+      </ol>
+      <p>That box means SmartScreen has not seen this publisher before. It is not
+        a report of anything found in the file &mdash; but it is not nothing
+        either, and every release publishes a checksum so that you can check what
+        you downloaded rather than take this paragraph&rsquo;s word for it. The
+        installer writes to your own user account, so Windows will not ask for an
+        administrator.</p>
+    </div>
+
+    <div id="dl_sha" hidden>
+      <h3>Check what you downloaded</h3>
+      <p>In PowerShell, in the folder you saved it to:</p>
+      <code class="cmd" id="dl_cmd"></code>
+      <p>It should print this, ignoring case:</p>
+      <code class="cmd" id="dl_hash"></code>
+    </div>
+
+    <div class="ft">
+      <a href="https://github.com/AlexM1010/visualise-music/releases">All versions,
+        checksums and signatures</a>
+      <button>close</button>
+    </div>
+  </form>
+</dialog>
 </div>
 <script>
 const DATA = __PAYLOAD__;
@@ -2883,6 +2984,11 @@ cv.addEventListener("wheel",e=>{ e.preventDefault();
   const ns=Math.max(120,Math.min(60000,scale*Math.exp(-e.deltaY*0.0016)));
   ox=mx-(mx-ox)*(ns/scale); oy=my-(my-oy)*(ns/scale); scale=ns; draw(); },{passive:false});
 window.addEventListener("keydown", e => {
+  // The download panel is modal, and the test below only clears keystrokes that
+  // landed on a control. Click its prose and the target is a <p>, which would
+  // put S and D back to work on a map nobody can currently see. Esc still
+  // closes it: that is the dialog's own doing, not this handler's.
+  if(getappDlg.open) return;
   if(e.target.tagName==="INPUT" || e.target.tagName==="SELECT" || e.target.tagName==="A") return;
   if(e.key==="d"||e.key==="D"){ e.preventDefault(); downloadOne(N[barNode>=0?barNode:hover]); return; }
   // Hover first, bar second - the mirror of D, which is usually pressed for the
@@ -3081,4 +3187,56 @@ new ResizeObserver(() => { resize(); openOnRun(); }).observe(document.getElement
 window.addEventListener("resize",resize);
 resize();
 openOnRun();
+
+// The desktop application - the same map over a folder of your own audio - is
+// built by the desktop repository and published here - and the workflow that
+// publishes it writes download.json into this repository in the same run. So
+// the button asks its own origin what the newest installer is rather than
+// asking github.com, which would cost a CORS header this page cannot require
+// and a rate limit it cannot see.
+//
+// Without that file - a clone, a local server, or any moment before the first
+// release - the link stays on the releases page. That is the honest answer, it
+// needs no JavaScript, and it is why the href is in the markup rather than
+// built here.
+const GETAPP_PREFIX = "https://github.com/AlexM1010/visualise-music/releases/download/";
+const getappDlg = document.getElementById("getapp-dl");
+
+// The button opens the panel rather than the file. The installer is unsigned,
+// and Windows is about to say so in a blue box whose only button is "Don't run"
+// - which is better said here first, by the people shipping it, than met as an
+// accusation from the operating system thirty seconds later. The href stays
+// real underneath, so a middle-click, a ctrl-click and a page whose script
+// never ran all still reach the releases page.
+document.getElementById("getapp").addEventListener("click", e => {
+  if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+  e.preventDefault();
+  getappDlg.showModal();
+});
+
+(async () => {
+  try {
+    const r = await fetch("download.json", {cache:"no-store"});
+    if (!r.ok) return;
+    const d = await r.json();
+    // download.json is written by CI and served from this origin, so this is
+    // not a trust boundary so much as a seatbelt: the link that hands somebody
+    // an executable should not become an arbitrary destination because a file
+    // was garbled or a token went somewhere it should not have.
+    if (!String(d.url || "").startsWith(GETAPP_PREFIX)) return;
+    document.getElementById("dl_link").href = d.url;
+    document.getElementById("dl_label").textContent = "Download " + d.version;
+    document.getElementById("dl_meta").textContent = "Windows 10 or 11, 64-bit"
+      + (d.size ? "  \u00b7  " + (d.size / 1048576).toFixed(1) + " MB" : "");
+    // Only offer the check when there is something to check against. Half of it
+    // - a command with no expected answer beside it - is worse than not having
+    // raised the subject.
+    if (/^[0-9a-f]{64}$/.test(String(d.sha256 || ""))) {
+      document.getElementById("dl_cmd").textContent =
+        "Get-FileHash " + d.url.slice(d.url.lastIndexOf("/") + 1) + " -Algorithm SHA256";
+      document.getElementById("dl_hash").textContent = d.sha256;
+      document.getElementById("dl_sha").hidden = false;
+    }
+  } catch (e) { /* offline, or no such file: the markup already answers */ }
+})();
 </script>

@@ -70,9 +70,9 @@
     font-weight:600; white-space:nowrap; }
   #getapp-dl .get a:hover { background:#1f6feb55; }
   #getapp-dl .get .m { color:#7d8590; font-size:11px; font-variant-numeric:tabular-nums; }
-  /* The three-way switch above the download. It is what lets the panel be read
-     on a machine it is not going to be installed on - and the reason the whole
-     of the guidance below it is three blocks rather than one. */
+  /* The switch above the download. It is what lets the panel be read on a
+     machine it is not going to be installed on - and the reason the guidance
+     below it is a block per platform rather than one. */
   #getapp-dl .pick { display:flex; gap:6px; margin:0 0 11px; }
   #getapp-dl .pick button { flex:1; background:#0b0e14; border:1px solid #21262d;
     color:#7d8590; padding:5px 0; border-radius:6px; font:inherit; font-size:12px;
@@ -100,6 +100,18 @@
   #getapp-dl .ft { display:flex; justify-content:space-between; align-items:center;
     gap:9px; margin-top:15px; padding-top:11px; border-top:1px solid #1e2530; }
   #getapp-dl .ft a { color:#6e7681; font-size:11px; }
+  /* The corner close. The panel scrolls, and the button at the foot of it is a
+     long way down from wherever the reader gave up - so this one is sticky at
+     the height of the heading, inside the content column so that it never sits
+     over the scrollbar. Zero-height wrapper: the button hangs out of it and the
+     heading keeps its own place in the flow. */
+  #getapp-dl .xw { position:sticky; top:16px; height:0; z-index:2;
+    display:flex; justify-content:flex-end; }
+  #getapp-dl .x { display:flex; align-items:center; justify-content:center;
+    width:22px; height:22px; padding:0; background:#0d1117; border:1px solid #21262d;
+    border-radius:6px; color:#7d8590; font:inherit; font-size:15px; line-height:1;
+    cursor:pointer; }
+  #getapp-dl .x:hover { color:#e6edf3; border-color:#30363d; }
   #main { flex:1; position:relative; min-height:0; }
   canvas { display:block; width:100%; height:100%; cursor:grab; }
   canvas.drag { cursor:grabbing; }
@@ -296,7 +308,7 @@
            title="Terms are ANDed. A leading - drops what the term matches.&#10;&#10;bpm:120-130  bpm:&gt;100  bpm:&lt;90  bpm:128&#10;key:Amin  key:&quot;A minor&quot;  key:C&#10;dur:&lt;2  dur:0.5-4&#10;dl:&gt;1000  rate:&gt;4&#10;tag:vinyl  by:username  pack:...  fam:...  sub:...&#10;loud:&gt;-14  dyn:&gt;6&#10;&#10;Anything else is matched as text, over the name, uploader,&#10;pack, family and every tag on the sample.&#10;Only trusted key and BPM readings are ever matched.">
     <span class="stat" id="hits"></span>
     <a id="getapp" href="https://github.com/AlexM1010/visualise-music/releases"
-       title="The same map over your own folder of audio. Windows, macOS or Linux.">&#10515; desktop app for your library</a>
+       title="The same map over your own folder of audio. Windows or Linux.">&#10515; desktop app for your library</a>
     <a id="bmc" href="https://buymeacoffee.com/alexm1010" target="_blank"
        rel="noopener noreferrer" title="Buy me a coffee - opens in a new tab">buy me a coffee</a>
   </header>
@@ -304,6 +316,7 @@
   <footer><span id="now" draggable="true"></span><span id="load" role="status" aria-label="loading"></span><canvas id="wave"></canvas><button id="loopst"></button><button id="dlone" hidden>&#10515; save</button><button id="bkone" hidden></button><span id="note"></span><span id="foot"></span></footer>
 <dialog id="getapp-dl">
   <form method="dialog" class="bd">
+    <div class="xw"><button class="x" aria-label="Close">&times;</button></div>
     <h2>Desktop app for your library</h2>
     <p class="sub">The same map, over your own folder of audio. It analyses every
       file on your machine &mdash; no account, no API key, no quota &mdash; and
@@ -312,7 +325,6 @@
 
     <div class="pick" id="dl_pick" role="group" aria-label="operating system">
       <button type="button" data-os="windows">Windows</button>
-      <button type="button" data-os="macos">macOS</button>
       <button type="button" data-os="linux">Linux</button>
     </div>
 
@@ -346,36 +358,6 @@
       </div>
     </div>
 
-    <div class="os" id="os_macos" hidden>
-      <h3>macOS will refuse to open it, and here is why</h3>
-      <div class="warn">
-        <p>What you get is a disk image, and the application in it is <b>not
-          notarised</b>. Notarising needs a Developer ID, which is rented from
-          Apple by the year rather than earned, and this one has not been rented
-          yet &mdash; so Gatekeeper will not open the app on the grounds that it
-          cannot say who made it:</p>
-        <ol>
-          <li>Open the <code>.dmg</code> and drag <b>Visualise Music</b> into
-            <b>Applications</b>, as usual.</li>
-          <li>Opening it raises <b>&ldquo;Visualise Music&rdquo; cannot be opened
-            because the developer cannot be verified</b>. Click <b>Cancel</b>,
-            never <b>Move to Bin</b>.</li>
-          <li>Open <b>System Settings &rarr; Privacy &amp; Security</b>, scroll to
-            the bottom, and click <b>Open Anyway</b> beside the app&rsquo;s name.
-            That button only appears for about an hour after the refusal, so if
-            it is not there, try opening the app again first.</li>
-        </ol>
-        <p>On macOS 14 and earlier there is a shorter route: right-click the app
-          in <b>Applications</b> and choose <b>Open</b>, which offers the same box
-          with an <b>Open</b> button on it. Either way it is asked once and never
-          again.</p>
-        <p>That refusal means Apple has never been shown this application. It is
-          not a report of anything found in it &mdash; but it is not nothing
-          either, and the checksum below is there so that you can check what you
-          downloaded rather than take this paragraph&rsquo;s word for it. Nothing
-          is installed outside <b>Applications</b> and your own user account.</p>
-      </div>
-    </div>
 
     <div class="os" id="os_linux" hidden>
       <h3>Two files, and which one you want</h3>
@@ -3480,19 +3462,13 @@ const getappDlg = document.getElementById("getapp-dl");
 
 // One entry per operating system the release workflow builds for. `hash` is
 // there because the single thing this panel asks anybody to type is the one
-// thing that has three different spellings.
+// thing each platform spells differently.
 const GETAPP_OS = {
   windows: {
     name: "Windows",
     label: "Windows 10 or 11, 64-bit",
     where: "In PowerShell, in the folder you saved it to:",
     hash: name => "Get-FileHash " + name + " -Algorithm SHA256",
-  },
-  macos: {
-    name: "macOS",
-    label: "macOS 10.15 or later, Intel or Apple silicon",
-    where: "In Terminal, in the folder you saved it to:",
-    hash: name => "shasum -a 256 " + name,
   },
   linux: {
     name: "Linux",
@@ -3504,8 +3480,7 @@ const GETAPP_OS = {
 
 // What to call a file on a platform that ships two of them, in the width of the
 // line under the button.
-const GETAPP_KIND = {exe: "installer", dmg: "disk image",
-                     appimage: "AppImage", deb: "deb package"};
+const GETAPP_KIND = {exe: "installer", appimage: "AppImage", deb: "deb package"};
 
 // The rows of download.json that survived the checks at the foot of this file,
 // and the version they belong to. Empty until - and unless - that file answers.
@@ -3517,7 +3492,8 @@ let getappOS = null;
 // thing that separates "not built yet" from "cannot tell from here".
 let getappAnswered = false;
 
-// Which of the three this is being read on, or null for anything else.
+// Which of the two this is being read on, or null for anything else - which
+// now includes a Mac, there being no build for one.
 function getappHost() {
   const d = navigator.userAgentData;
   const s = (((d && d.platform) || navigator.platform || "") + " " +
@@ -3526,14 +3502,13 @@ function getappHost() {
   // an AppImage it cannot run is worse than handing it the choice.
   if (/android|iphone|ipad|ipod/.test(s)) return null;
   if (s.includes("win")) return "windows";
-  if (s.includes("mac")) return "macos";
   if (s.includes("linux") || s.includes("x11") || s.includes("bsd")) return "linux";
   return null;
 }
 
 // Point the whole panel - the link, the line under it, the warning, the
 // checksum command - at one operating system. Everything that differs between
-// the three differs here, in one place, rather than in three copies of a panel.
+// them differs here, in one place, rather than in a copy of the panel each.
 function getappShow(os) {
   getappOS = os;
   const meta = GETAPP_OS[os];
@@ -3580,8 +3555,8 @@ function getappShow(os) {
   link.href = first.url;
   document.getElementById("dl_label").textContent = "Download " + getappVersion;
   // The kind is named only where there is a second file to tell it apart from.
-  // On Windows and macOS there is one, and calling it "installer" is a word
-  // spent saying what the button already says.
+  // On Windows there is one, and calling it "installer" is a word spent saying
+  // what the button already says.
   document.getElementById("dl_meta").textContent = [
     meta.label,
     second ? GETAPP_KIND[first.kind] : null,
@@ -3615,9 +3590,9 @@ function getappShow(os) {
 }
 
 // The button opens the panel rather than the file. Nothing here is signed, and
-// two of the three operating systems are about to say so in a box whose only
-// obvious button refuses - which is better said here first, by the people
-// shipping it, than met as an accusation thirty seconds later. The href stays
+// Windows is about to say so in a blue box whose only button is "Don't run" -
+// which is better said here first, by the people shipping it, than met as an
+// accusation thirty seconds later. The href stays
 // real underneath, so a middle-click, a ctrl-click and a page whose script
 // never ran all still reach the releases page.
 document.getElementById("getapp").addEventListener("click", e => {
@@ -3634,7 +3609,7 @@ document.getElementById("dl_pick").addEventListener("click", e => {
 (async () => {
   // Before the fetch, not after it: a page with no download.json should still
   // open on the guidance for the machine it is being read on, and Windows is
-  // the fallback only for the machines that are none of the three.
+  // the fallback only for the machines that are neither.
   getappShow(getappHost() || "windows");
   try {
     const r = await fetch("download.json", {cache:"no-store"});
@@ -3650,9 +3625,9 @@ document.getElementById("dl_pick").addEventListener("click", e => {
     getappRows = (Array.isArray(d.downloads) ? d.downloads : [])
       .filter(x => GETAPP_OS[x.os] && String(x.url || "").startsWith(GETAPP_PREFIX));
     // Answered, not necessarily answered *with something*. A release that
-    // builds two of the three platforms is a file this page can read and act
-    // on, and the third one being absent from it is information rather than a
-    // failure to fetch.
+    // built for one platform and not the other is a file this page can read and
+    // act on, and the missing one is information rather than a failure to
+    // fetch.
     getappAnswered = !!getappVersion;
     if (getappAnswered) getappShow(getappOS);
   } catch (e) { /* offline, or no such file: the markup already answers */ }

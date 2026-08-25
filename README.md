@@ -37,35 +37,31 @@ then <http://127.0.0.1:8973/>.
 
 **desktop app for your library**, at the right-hand end of the header. It does
 not start a download. It opens a panel, because nothing published here is signed
-and two of the three operating systems are about to say so — Windows in a blue
-box whose only button is *Don't run*, macOS by refusing to open the app at all —
+and Windows is about to say so in a blue box whose only button is *Don't run* —
 and that is better said first, here, by the people shipping it, than met thirty
 seconds later as an accusation from the operating system. The panel carries the
 download, what that machine is going to do and how to get past it, and the
 checksum to check the file against.
 
-The panel is per-platform, and it guesses. A three-way switch across the top —
-Windows, macOS, Linux — starts on whatever the page thinks it is being read on,
-and everything under it follows: the file offered, the size, the warning, and
-the one command the panel asks anybody to type, which is the same check spelled
-three ways (`Get-FileHash`, `shasum -a 256`, `sha256sum`). Anything that is none
-of the three, a phone included, gets Windows and the switch. Linux is the one
-platform with two files; the AppImage is offered and the `.deb` sits on a quiet
-line under it, because the AppImage needs no install and no root.
+The panel is per-platform, and it guesses. A switch across the top — Windows,
+Linux — starts on whatever the page thinks it is being read on, and everything
+under it follows: the file offered, the size, the warning, and the one command
+the panel asks anybody to type, which is the same check spelled two ways
+(`Get-FileHash`, `sha256sum`). Anything that is neither — a phone, a Mac — gets
+Windows and the switch. Linux is the one platform with two files; the AppImage
+is offered and the `.deb` sits on a quiet line under it, because the AppImage
+needs no install and no root.
 
-**There are three panels and, for now, two builds.** Only Windows and Linux are
-published. The page does not know that because anybody wrote it here — it reads
-`download.json`, finds no macOS row in it, and says *there is no macOS build
-yet* instead of offering one, hiding the Gatekeeper guidance with it, because
-that guidance is about getting past a warning on a file that does not exist. The
-day a release includes macOS the panel lights up with no edit to this page. The
-wording is still checked while nobody is building for it: wording that rots
-unwatched is wording that is wrong on the day it is needed.
+**A platform with no row in `download.json` is said so, not offered.** The page
+reads that file rather than being told here what is published, so a release that
+built for one platform and not the other leaves the missing one saying *there is
+no build yet*, with its guidance hidden alongside — that guidance is about
+getting past a warning on a file that does not exist.
 
 That is a different silence from *no `download.json` at all* — a clone, a local
 server, anything before the first release. There the page has no idea what is
-published, so it keeps all three sets of guidance and points every one of them
-at the releases page.
+published, so it keeps both sets of guidance and points them at the releases
+page.
 
 The button is still an `<a>` with a real `href` — the releases page — so a
 middle-click, a ctrl-click and a page whose script never ran all still go
@@ -90,7 +86,6 @@ The panel fills itself in from `download.json`, beside `index.html`:
     { "os": "windows", "arch": "x86_64",    "kind": "exe",
       "url": "https://github.com/…/visualise-music_0.2.0_x64-setup.exe",
       "sha256": "429ea9…", "size": 8123456 },
-    { "os": "macos",   "arch": "universal", "kind": "dmg",   "…": "…" },
     { "os": "linux",   "arch": "x86_64",    "kind": "appimage", "…": "…" },
     { "os": "linux",   "arch": "x86_64",    "kind": "deb",   "…": "…" }
   ]
@@ -98,7 +93,7 @@ The panel fills itself in from `download.json`, beside `index.html`:
 ```
 
 Facts only. There is no wording in that file — no "Windows 10 or 11, 64-bit", no
-"disk image" — because wording belongs in the page, where it can be reworded
+"deb package" — because wording belongs in the page, where it can be reworded
 without cutting a release. The page offers the **first** row for a platform and
 puts any others on the quiet line beneath, which is why the order of that list
 is a decision and not a detail; `.github/check_site.py` holds it to it.
@@ -123,7 +118,7 @@ A row is only used if its URL is a release download on this repository and its
 wrote, so that check is a seatbelt rather than a boundary: the one outbound link
 on the page should not become an arbitrary destination because something was
 garbled. A row that fails it is dropped on its own — that platform falls back to
-the releases page while the other two carry on.
+the releases page while the other carries on.
 
 The panel is a `<dialog>`, so Esc closes it and the browser handles the focus.
 One thing it does need from the page: the map's single-key shortcuts are bound
@@ -137,10 +132,10 @@ the one way this can quietly break, so `.github/workflows/site.yml` checks it on
 every push: the button, its stylesheet rule, the panel, the coffee link, the
 platform switch and the fetch all have to be in `index.html` byte for byte as
 `viewer.html` now writes them, the panel has to still contain the words that
-warn about SmartScreen, about Gatekeeper, and about Linux warning you of nothing
-— only one of those three is ever on screen, so losing one is a thing nobody
-reading the page would see — and any `download.json` beside them has to be one
-the page would accept. It needs no secrets and touches no network.
+warn about SmartScreen and about Linux warning you of nothing — only one of the
+two is ever on screen, so losing one is a thing nobody reading the page would
+see — and any `download.json` beside them has to be one the page would accept.
+It needs no secrets and touches no network.
 
 ## Rebuilding
 

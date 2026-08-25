@@ -25,16 +25,11 @@ PREFIX = "https://github.com/" + REPO + "/releases/download/"
 
 # Every platform the page has words for, and what it is allowed to call a file.
 # Both lists are the page's own, in `GETAPP_OS` and `GETAPP_KIND`: a row using
-# anything else is a row the page silently drops.
-OSES = ("windows", "macos", "linux")
-KINDS = ("exe", "dmg", "appimage", "deb")
-
-# The subset the release workflow actually builds. macOS is in OSES and not in
-# here on purpose: the page keeps its panel and, when download.json answers with
-# no macOS row, says there is no macOS build rather than offering one. Add it
-# here in the same commit that uncomments the matrix entry in the desktop
-# repository's release.yml, which carries the same list.
-BUILT = ("windows", "linux")
+# anything else is a row the page silently drops. The release workflow builds
+# for both, and the same list lives in its matrix - add a platform in one place
+# and it has to be added in the other two.
+OSES = ("windows", "linux")
+KINDS = ("exe", "appimage", "deb")
 
 viewer = pathlib.Path("viewer.html").read_text(encoding="utf-8")
 index = pathlib.Path("index.html").read_text(encoding="utf-8")
@@ -54,9 +49,9 @@ def block(text, opener, closer):
 # version of the same block, which is the failure worth catching: the button is
 # there, it looks right, and it points somewhere that stopped being true.
 #
-# The dialog is one span, so everything inside it - the picker, all three
-# warnings, the checksum block - is covered by that one entry. The others are
-# the pieces that live outside it.
+# The dialog is one span, so everything inside it - the picker, both warnings,
+# the checksum block - is covered by that one entry. The others are the pieces
+# that live outside it.
 PIECES = [
     ("the anchor", '<a id="getapp"', "</a>"),
     ("its stylesheet rule", "#getapp {", "}"),
@@ -76,16 +71,11 @@ for what, opener, closer in PIECES:
 
 # The panel is the whole point of the button: it is where somebody is told, in
 # advance, what their own machine is about to accuse this of being. Losing that
-# wording and keeping the download is the bad half to keep - and now there are
-# three sets of it, only one of which is ever on screen at a time, so losing one
-# is a thing nobody looking at the page would see.
-#
-# All three, including the platform not being built yet. Wording that rots while
-# nobody is publishing for it is wording that is wrong on the day somebody does.
+# wording and keeping the download is the bad half to keep - and there is a set
+# of it per platform, only one of which is ever on screen at a time, so losing
+# one is a thing nobody looking at the page would see.
 WORDING = {
     "windows": ("not signed", "More info", "Run anyway", "SmartScreen"),
-    "macOS": ("notarised", "Gatekeeper", "cannot be verified", "Open Anyway",
-              "Privacy &amp; Security"),
     "Linux": ("AppImage", "libfuse2", "sudo apt install"),
 }
 for os_name, phrases in WORDING.items():
@@ -149,17 +139,12 @@ else:
                 bad.append(where + " size is not a number of bytes.")
 
         have = [r.get("os") for r in rows if isinstance(r, dict)]
-        for os_name in BUILT:
+        for os_name in OSES:
             if os_name not in have:
                 bad.append("download.json offers nothing for " + os_name + ". "
                            "The release workflow publishes every platform it "
                            "builds or none of them, so this file has been "
                            "edited by hand.")
-        for os_name in OSES:
-            if os_name not in BUILT and os_name in have:
-                print("download.json has a " + os_name + " row, which is more "
-                      "than the workflow builds. Add it to BUILT here so its "
-                      "absence starts being an error.")
 
         # The page offers the *first* row for a platform and puts any others on
         # the quiet line underneath. On Linux that order is a decision: the

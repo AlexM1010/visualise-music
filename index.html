@@ -409,17 +409,29 @@ try { const b = Math.round(+(localStorage.getItem("fs-proj-bpm") || 0));
 // on each rebuild - the corpus just grew by 500 - so an index written today
 // points at a different sound tomorrow.
 const BASKET_KEY = "fs-basket";
+// A Freesound id is a string in the payload and a string again coming back out
+// of JSON, but it only takes one arithmetic + on one path to make it a number,
+// and a Map keyed by "160213" holds nothing at all under 160213. That is not a
+// wrong lookup that shows up as a wrong lookup: it is every kept sample quietly
+// reported as one this build does not carry, on the reload the basket exists to
+// survive. So both Maps are keyed through here, and neither can drift from the
+// other again.
+const sid = v => String(v);
 const ID2IX = new Map();
 for (let i=0;i<N.length;i++){ const n = N[i];
-  if (n.k === "sample" && n.i !== undefined && !ID2IX.has(n.i)) ID2IX.set(n.i, i); }
+  if (n.k === "sample" && n.i !== undefined && !ID2IX.has(sid(n.i)))
+    ID2IX.set(sid(n.i), i); }
 // id -> node index, or -1 for an id this build does not carry. Unknown ids are
 // kept rather than pruned: a filter change in the builder drops samples from one
 // build and brings them back in the next, and quietly eating someone's basket in
 // between is not a trade worth making. Insertion order is the panel's order.
 const BASKET = new Map();
 try { const raw = JSON.parse(localStorage.getItem(BASKET_KEY) || "[]");
-      if (Array.isArray(raw)) for (const v of raw){ const id = +v;
-        if (!isFinite(id) || BASKET.has(id)) continue;
+      // Digits only, which is what a Freesound id is. The check earns its keep
+      // on anything that ever shared this origin: whatever else is in there,
+      // it is not going into the basket as an id.
+      if (Array.isArray(raw)) for (const v of raw){ const id = sid(v).trim();
+        if (!/^\d+$/.test(id) || BASKET.has(id)) continue;
         BASKET.set(id, ID2IX.has(id) ? ID2IX.get(id) : -1); } } catch(e){}
 function saveBasket(){
   try { localStorage.setItem(BASKET_KEY, JSON.stringify([...BASKET.keys()])); } catch(e){}
@@ -478,7 +490,7 @@ function shown(n){
   if (only.link && !n.ln) return false;
   // Keyed off the Freesound id rather than the loop's index, because shown() is
   // handed a node and half its callers do not have an index to give it.
-  if (only.basket && !BASKET.has(n.i)) return false;
+  if (only.basket && !BASKET.has(sid(n.i))) return false;
   return true;
 }
 const rad = n => n.k==="family" ? Math.max(2.4,Math.min(8,1.9+Math.sqrt(n.d)*0.58))
@@ -2583,7 +2595,7 @@ function renderBasket(){
   // gave a car crash, and in a one-line row there is no room to say so.
   bkList.innerHTML = ns.map(n => {
     const mus = [n.bo ? n.bpm+" BPM" : "", n.ko ? n.key : ""].filter(Boolean).join(" \u00b7 ");
-    return '<div class="bkr" draggable="true" data-i="' + ID2IX.get(n.i) +
+    return '<div class="bkr" draggable="true" data-i="' + ID2IX.get(sid(n.i)) +
       '" title="' + htmlEsc(n.l) + '"><span class="nm">' + htmlEsc(n.l) + '</span>' +
       (mus ? '<span class="mt">' + htmlEsc(mus) + '</span>' : '') +
       '<span class="lic ' + (n.g === "CC0" ? "cc0" : "by") + '">' +
@@ -2610,8 +2622,9 @@ function toggleBasket(i){
   const n = N[i];
   if (!n || n.k !== "sample"){
     setNow("Nothing to keep \u2014 hover a sample first", true); holdBar(2600); return; }
-  if (BASKET.has(n.i)){ BASKET.delete(n.i); setNow("Dropped " + n.l + " from the basket"); }
-  else { BASKET.set(n.i, i);
+  if (BASKET.has(sid(n.i))){ BASKET.delete(sid(n.i));
+                             setNow("Dropped " + n.l + " from the basket"); }
+  else { BASKET.set(sid(n.i), i);
          setNow("Kept " + n.l + "  \u00b7  " + basketNodes().length + " in the basket"); }
   holdBar(2600);
   saveBasket(); updBasket();

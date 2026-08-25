@@ -433,7 +433,8 @@ document.getElementById("ntp").textContent = DATA.tempoed.toLocaleString();
 document.getElementById("nsi").textContent = DATA.sims.toLocaleString();
 const FOOT_KEYS =
   "Click a sample to play · Tab walks to the next similar sound, shift-Tab comes "
-  + "back the way you came · Space plays the hovered node · D downloads it · "
+  + "back the way you came · ctrl-Z goes back to the sound you were on before, "
+  + "ctrl-Y forward · Space plays the hovered node · D downloads it · "
   + "S saves it · L loops · F frames it · Esc stops";
 // The query grammar needs somewhere to be found that costs nothing once you know
 // it. The footer already ellipsises and never grows the layout, and it is only
@@ -1263,6 +1264,10 @@ function nowLine(n){
   let s = "♪ "+n.l+(n.bo?"  ·  "+n.bpm+" BPM":"")+(n.ko?"  ·  "+n.key:"")+"  ·  "+n.g;
   const w = walkNode() >= 0 && N[walkNode()] === n ? walkLabel() : "";
   if (w) s += "  ·  " + w;
+  // With no panel, this clause is the only answer to "how far back am I", and it
+  // is on the one line that is already about the sound in hand.
+  const h = histLabel();
+  if (h) s += "  ·  " + h;
   if (playRate !== 1){
     const st = 12*Math.log(playRate)/Math.LN2;
     s += "  ·  at "+PROJ.bpm+" BPM, pitched "+(st>0?"+":"")+st.toFixed(1)+" st";
@@ -1404,6 +1409,10 @@ function playNode(i){
   loopOn = loopDefault && !!n.lp;
   playRate = rateFor(n);
   playing = i; barNode = i; playStart = Date.now(); lastPulse = 0;
+  // The one place a preview actually begins, so the history is written here and
+  // nowhere else: a click, Space, a Tab walk and a basket row all arrive through
+  // this line without any of them having to remember to.
+  histPush(i);
   dlOneBtn.hidden = false; bkOneBtn.hidden = false; updKeepBtn(); showLoop(); draw();
   rafId = requestAnimationFrame(pulseLoop);
   showLoading();
@@ -2836,6 +2845,73 @@ nowEl.addEventListener("dragstart", e => {
 });
 updBasket(true);
 
+// ---- going back ------------------------------------------------------------
+// Auditioning is clicking, and clicking is easy to get wrong: one stray click on
+// the way to a node replaces the sound in hand, and the only way back was to
+// remember which of several thousand dots it had been. Everything that plays is
+// written here, and ctrl-Z walks it backwards.
+//
+// A browser's back rather than a logbook: going back and then playing something
+// else drops whatever was ahead, because what was ahead is the branch just left
+// - usually the stray click itself - and keeping it would mean the next ctrl-Z
+// landed on the accident. Nothing else is ever dropped.
+//
+// Node indices rather than ids, and memory rather than localStorage: a trail is
+// about where you have just been, and one restored into a library built from a
+// different corpus would point at other sounds. Esc does not clear it either -
+// it exists to undo exactly the kind of keystroke Esc is.
+const HIST = [];
+const HIST_MAX = 200;      // a long afternoon's auditioning, and nobody undoes 200
+let histAt = -1;           // which entry the sound in hand came from
+let histNav = false;       // set while histGo() is the one calling playNode()
+
+function histPush(i){
+  if (histNav) return;                              // moving the cursor, not adding to it
+  if (histAt >= 0 && HIST[histAt] === i) return;    // the same sound again is not a step
+  HIST.length = histAt + 1;                         // a new sound is a new branch
+  HIST.push(i);
+  // Dropping from the front moves every index under the cursor, which is why the
+  // cursor is recomputed from the end rather than incremented.
+  if (HIST.length > HIST_MAX) HIST.splice(0, HIST.length - HIST_MAX);
+  histAt = HIST.length - 1;
+}
+// Hear it, find it, and get back what the click that first played it gave you:
+// the pan and the lit edges are half of what "go back to it" means.
+function histGo(k){
+  if (k < 0 || k >= HIST.length) return;
+  const i = HIST[k], n = N[i]; if (!n) return;
+  histAt = k;
+  panTo(i); selectNode(i);
+  // playNode() toggles a sound off when it is asked for the one already playing,
+  // which is right for a click and wrong for arriving somewhere.
+  histNav = true;
+  try { if (playing === i) draw(); else playNode(i); } finally { histNav = false; }
+  // Said after playNode(), which clears the note on its way past, and as a note
+  // rather than the now line, which play() overwrites a tick later. A sound the
+  // filters have taken off the map still plays, and without this the pan lands
+  // on empty space for no stated reason.
+  if (!shown(n)) setNote("this one is off screen under the current filters");
+}
+function histBack(){
+  if (histAt <= 0){
+    setNow(HIST.length ? "This is the first thing you played" : "Nothing played yet");
+    holdBar(2200); return; }
+  histGo(histAt - 1);
+}
+function histFwd(){
+  if (histAt < 0 || histAt >= HIST.length - 1){
+    setNow(HIST.length ? "This is the newest thing you played" : "Nothing played yet");
+    holdBar(2200); return; }
+  histGo(histAt + 1);
+}
+// Silent at the end of the trail, which is where every ordinary click leaves it:
+// "back 0" on every sound would be noise on the one line the page has, and the
+// question only exists once an undo has been pressed.
+function histLabel(){
+  if (histAt < 0 || histAt >= HIST.length - 1) return "";
+  return "back " + (HIST.length - 1 - histAt) + " of " + (HIST.length - 1);
+}
+
 // ---- walking the similarity edges ------------------------------------------
 // The CLAP ranking is the only edge kind that claims two SOUNDS are alike, and
 // until now the only way to use it was to spot a thick line and mouse to the far
@@ -3238,19 +3314,32 @@ cv.addEventListener("wheel",e=>{ e.preventDefault();
   const ns=Math.max(120,Math.min(60000,scale*Math.exp(-e.deltaY*0.0016)));
   ox=mx-(mx-ox)*(ns/scale); oy=my-(my-oy)*(ns/scale); scale=ns; draw(); },{passive:false});
 window.addEventListener("keydown", e => {
-  // A modifier means the keystroke was meant for the browser rather than the
-  // map: without this, ctrl-F frames the graph instead of finding anything and
-  // ctrl-P runs the physics instead of printing. BUTTON joins the text controls
-  // in the second test because Space is how a focused button is pressed, and
-  // the Space branch below preventDefault()s it into pressing nothing.
-  if(e.ctrlKey || e.metaKey || e.altKey) return;
   // The download panel is modal, and the test below only clears keystrokes that
   // landed on a control. Click its prose and the target is a <p>, which would
   // put S and D back to work on a map nobody can currently see. Esc still
   // closes it: that is the dialog's own doing, not this handler's.
   if(getappDlg.open) return;
+  // BUTTON joins the text controls because Space is how a focused button is
+  // pressed, and the Space branch below preventDefault()s it into pressing
+  // nothing.
   const t = e.target.tagName;
   if(t==="INPUT" || t==="SELECT" || t==="A" || t==="BUTTON") return;
+  // The two keystrokes on this page that are MEANT to carry a modifier, so they
+  // are read before the rule that hands modified keys back to the browser. There
+  // is no text undo left for them to take: the query box is the only field on the
+  // page and it was let out on the line above. On the map an undo has exactly one
+  // thing it can mean, which is the sound you were on before the click that took
+  // you off it. Meta as well as ctrl, because that is the same key on a Mac, and
+  // shift-Z as well as Y, because redo is spelled both ways.
+  if((e.ctrlKey || e.metaKey) && !e.altKey){
+    const u = e.key.toLowerCase();
+    if(u === "z"){ e.preventDefault(); if(e.shiftKey) histFwd(); else histBack(); return; }
+    if(u === "y"){ e.preventDefault(); histFwd(); return; }
+  }
+  // Any other modifier means the keystroke was meant for the browser rather than
+  // the map: without this, ctrl-F frames the graph instead of finding anything
+  // and ctrl-P runs the physics instead of printing.
+  if(e.ctrlKey || e.metaKey || e.altKey) return;
   // Both of these mean the sample under the mouse, and fall back to the one in
   // the footer bar for a walk driven from the keyboard with the mouse away.
   if(e.key==="d"||e.key==="D"){ e.preventDefault(); downloadOne(N[hover>=0?hover:barNode]); return; }

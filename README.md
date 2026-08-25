@@ -347,6 +347,40 @@ peaky one-shot would clip. A 15ms ramp on stop kills the click. Every part of th
 chain falls back to a plain `Audio` element if it fails: the enhancement must
 never become a new way for the page to be silent.
 
+### Going back
+
+Auditioning is clicking, and clicking is easy to get wrong: one stray click on
+the way to a node replaces the sound in hand, and the only way back was to
+remember which of several thousand dots it had been. Everything that plays is
+now written to a **history**, and `ctrl-Z` walks it backwards - `ctrl-Y`, or
+`ctrl-shift-Z`, forward. Going back is the whole click again rather than just the
+sound: it pans the map to the sample and lights its edges, because "go back to
+it" means find it as much as it means hear it.
+
+There is no panel. The now-playing line says `back 2 of 6` while the cursor is
+standing behind the newest thing played, and says nothing at the end of the
+trail, which is where every ordinary click leaves it. A sample the filters have
+taken off the map since it was played still plays, and the footer says so rather
+than leaving the pan to land on empty space for no stated reason.
+
+It is a browser's back rather than a logbook. Going back and then playing
+something else drops whatever was ahead, because what was ahead is the branch
+just left - usually the stray click itself - and keeping it would mean the next
+`ctrl-Z` landed on the accident. Nothing else is ever dropped. It is held as node
+indices in memory and not saved: a trail is about where you have just been, and
+one restored into a library built from a different corpus would point at other
+sounds. `Esc` does not clear it either - it exists to undo exactly the kind of
+keystroke `Esc` is.
+
+Undo and redo are the only keystrokes here that are meant to carry a modifier, so
+they are read before the rule that hands modified keys back to the browser. There
+is no text undo for them to take: the query box is the only field on the page, and
+a keystroke that landed in it is let out one line earlier.
+
+The history is written in `playNode()` and nowhere else, which is the one place
+a preview actually begins - so a click, `Space`, a `Tab` walk and a basket row all
+arrive in it without any of them having to remember to.
+
 ### Your project's tempo and key
 
 Set both in the header and the page starts answering the question a producer
@@ -409,6 +443,7 @@ than in theory.
 |---|---|
 | `Tab` | walk to the next similar sound |
 | `shift-Tab` | come back up the path you took |
+| `ctrl-Z` / `ctrl-Y` | back and forward through what you have played |
 | `Space` | play the hovered node |
 | `D` | download the sample under the cursor |
 | `S` | keep it in the basket |

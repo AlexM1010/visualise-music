@@ -243,6 +243,30 @@ The adjacency is a CSR pair of typed arrays built once at load (9.6ms), because
 that is free until it is not. Lighting the current and hovered node's edges costs
 0.012ms a frame against a ~10.5ms frame.
 
+The other half of a `Tab` is the network. The next sound is knowable - it is
+whatever the cursor lands on next - so once you are walking it is fetched while
+the current one is still playing, and the press after this one has it already.
+The preview lives on Freesound's CDN and the loading symbol between the press and
+the sound is that fetch: cold, an element reaches `canplay` in 217ms from here;
+read ahead, 29ms. On a worse connection the gap is the same shape and wider.
+
+Nothing extra is downloaded: it is the same request moved earlier. It arms only
+on arrival, so someone who clicks around the map and never walks fetches nothing
+they did not ask for, and it goes one ahead rather than two - a walk that stops,
+or turns round with shift-`Tab`, wastes a single preview. It waits 300ms first so
+the sound in hand has the network to itself, it is rearmed on every arrival so
+tabbing quickly through a run never leaves a fetch behind for a sound nobody will
+hear, and `Escape` drops it with the rest of the walk.
+
+The guess is `walkNext()`, which reads the top frame exactly as `walkStep()` is
+about to and returns the same index - without calling `walkFrame()`, because a
+guess has no business starting a path or clearing the memory of one. It refuses
+to guess when the frame is about to be thrown away: a filter change re-sorts the
+list it read, and a sample under the cursor outranks the walk as the anchor.
+`crossOrigin` is set to whatever `startAudio()` will ask for, since a response
+cached without CORS is a different entry from the same response cached with it,
+and a read-ahead under the wrong mode buys nothing at all.
+
 ### Searching
 
 The box takes field terms, ANDed, with a leading `-` to negate any of them:

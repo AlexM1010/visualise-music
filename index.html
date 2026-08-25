@@ -2930,7 +2930,8 @@ function simNeighbours(i, from){
 const WALK = { f: [] };
 const WALK_MAX = 400;              // a path, not a log; nobody backspaces 400 times
 function walkNode(){ const f = WALK.f; return f.length ? f[f.length-1].i : -1; }
-function walkClear(){ seenClear(); if (WALK.f.length){ WALK.f.length = 0; draw(); } }
+function walkClear(){ seenClear(); readStop();
+  if (WALK.f.length){ WALK.f.length = 0; draw(); } }
 // Where a walk starts when there is not one yet: the sound holding the footer
 // bar, then the hovered node. The walk's own node is the last resort rather than
 // the first, so clicking a sample moves the walk to it - but a bar that has timed
@@ -2997,7 +2998,58 @@ function walkArrive(i){
   // playNode() toggles a sound off when it is asked for the one already playing,
   // which is right for a click and wrong for arriving somewhere.
   if (playing === i) draw(); else playNode(i);
+  readSoon();                      // and the one after it, while this one plays
 }
+
+// ---- reading ahead ---------------------------------------------------------
+// Tab is a keystroke and a network round trip: the preview sits on Freesound's
+// CDN, and the loading symbol between pressing it and hearing anything is that
+// fetch. The next sound is knowable, though - it is whatever the cursor lands on
+// next - so once someone is walking it is fetched while the current one plays,
+// and the press after this one has it already. Nothing extra is downloaded: it
+// is the same request moved earlier. A walk that stops, or turns round with
+// shift-Tab, wastes one preview.
+//
+// It arms itself on arrival, so it only ever runs for someone who has pressed
+// Tab at least once - clicking around the map fetches nothing it was not asked
+// for. Where a browser refuses to preload without a gesture of its own, iOS
+// most of it, this quietly does nothing and the walk is what it always was.
+let readEl = null, readFor = -1, readT = 0;
+const READ_WAIT = 300;    // ms of clear air for the sound in hand before it starts
+
+// What the next Tab would take, without the side effects of asking walkFrame():
+// a guess has no business starting a path or clearing the memory of one. The two
+// things that would make the guess worthless are checked instead - a filter
+// change re-sorts the list it reads, and standing somewhere else abandons it.
+function walkNext(){
+  const f = WALK.f; if (!f.length) return -1;
+  const top = f[f.length-1];
+  if (top.gen !== walkGen || !top.nb.length || walkAnchor() !== top.i) return -1;
+  const len = top.nb.length;
+  return top.nb[((top.sel + 1) % len + len) % len];
+}
+function readAhead(){
+  readT = 0;
+  const j = walkNext(); if (j < 0 || j === readFor) return;
+  const n = N[j]; if (!n || !n.p) return;
+  if (readEl) killEl(readEl);      // one ahead only; the last guess is spent
+  readEl = new Audio(); readFor = j;
+  // Exactly what startAudio() will ask for. A response cached without CORS is a
+  // different entry from the same response cached with it, so guessing wrong
+  // here buys nothing at all. AC rather than audioCtx(), because a guess must
+  // not be what builds the context: by now playNode() has made one, or there is
+  // none to be made.
+  if (AC) readEl.crossOrigin = "anonymous";
+  readEl.preload = "auto"; readEl.src = n.p;
+  try { readEl.load(); } catch(e){}
+}
+// Rearmed on every arrival, so tabbing quickly through a run of sounds never
+// leaves a fetch behind for one nobody is going to hear.
+function readSoon(){ clearTimeout(readT); readT = setTimeout(readAhead, READ_WAIT); }
+function readStop(){ clearTimeout(readT); readT = 0;
+  if (readEl) killEl(readEl);
+  readEl = null; readFor = -1; }
+
 // Which of the neighbours this was, printed on the now-playing line - the only
 // place with room for it, and the answer to "is there another one behind this".
 function walkLabel(){

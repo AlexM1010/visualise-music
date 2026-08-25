@@ -1,0 +1,27 @@
+# index.html is a committed build artefact - viewer.html with the payload
+# inlined - and nothing regenerates it on push. So the two can drift, and they
+# have: an index.html built before an edit to viewer.html silently serves the
+# older page. The download button is exactly the kind of small block that would
+# go missing that way and not be noticed until somebody cut a release and the
+# site went on offering nothing.
+#
+# This checks the button is in the page that is actually served, byte for byte
+# as viewer.html now writes it, and that any download.json beside it is one the
+# page will accept. No secrets, no network.
+
+name: Site
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: The download button is in the page that is served
+        run: python3 .github/check_site.py

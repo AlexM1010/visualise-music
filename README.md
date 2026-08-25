@@ -90,6 +90,16 @@ on `window` and skip keystrokes aimed at a control, which the panel's prose is
 not — so the handler returns early while it is open, or reading it would work
 `S` and `D` on a map nobody can see.
 
+`viewer.html` holds all of this, so a **rebuild carries it into `index.html`** —
+and a hand-edit of `index.html` alone does not survive the next build. That is
+the one way this can quietly break, so `.github/workflows/site.yml` checks it on
+every push: the button, its stylesheet rule, the panel, the coffee link and the
+fetch all have to be in `index.html` byte for byte as `viewer.html` now writes
+them, the panel has
+to still contain the words that warn about SmartScreen, and any `download.json`
+beside them has to be one the page would accept. It needs no secrets and
+touches no network.
+
 ## Rebuilding
 
 Only needed if you change `viewer.html` or the builder. `numpy` and `networkx`

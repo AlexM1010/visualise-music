@@ -180,9 +180,9 @@ The map is the index. This is the part that gets a sound into a track.
 The CLAP ranking is the only thing in this graph that knows two sounds are alike,
 and until it could be walked it was decoration: you had to spot a thick line by
 eye and mouse to the far end of it. `Tab` plays the next similarity neighbour of
-whatever is playing, shift-`Tab` the previous, `Backspace` comes back up the path
-you actually took. The trail is drawn behind you and the neighbours you have not
-taken are marked, so a walk is a visible thing rather than a sequence of jumps.
+whatever is playing, and shift-`Tab` comes back up the path you actually took.
+The trail is drawn behind you and the neighbours you have not taken are marked,
+so a walk is a visible thing rather than a sequence of jumps.
 
 Neighbours are visited nearest-first *in the current layout*, which is the only
 ordering that matches what you can see - the next sound is the one your eye was
@@ -221,16 +221,23 @@ small rather than a rule chasing its own tail.
 
 The memory is an LRU `Map`: delete-then-set moves a key to the end of it, so the
 oldest is whatever `keys()` hands back first, and the value doubles as the age
-the old-ground sort needs. It is 400 deep, which is as far back as `Backspace`
+the old-ground sort needs. It is 400 deep, which is as far back as shift-`Tab`
 goes, and it is cleared when a walk is - `Escape`, or clicking somewhere else and
 starting a new path.
 
-shift-`Tab` had to be told about the ordering too. Backwards from a step you have
-not branched from yet means the far end of the list, and the far end of the list
-is now precisely where the sounds you have just heard are - so holding it walked
-4 distinct sounds in a hundred presses. Backwards from cold takes the far end of
-the *fresh* ground instead, the other side of the ring rather than a lap of the
-old one, and walks 38. (It was also off by one, landing on the last but one.)
+shift-`Tab` retraces the path, because it is the key the hand reaches for to undo
+a `Tab` and being taken somewhere new is the walk losing its thread. The anchor
+is checked as the walk itself checks it, so clicking a sample off the path and
+pressing shift-`Tab` starts a walk from where you are standing rather than
+retracing one you have already stepped off.
+
+Only at the start of a walk is there no path to retrace, and there it means the
+other side of the ring - which had to be told about the ordering. Backwards from
+a step you have not branched from yet would take the far end of the list, and the
+far end of the list is now precisely where the sounds you have just heard are -
+so holding it walked 4 distinct sounds in a hundred presses. Backwards from cold
+takes the far end of the *fresh* ground instead, and walks 38. (It was also off
+by one, landing on the last but one.)
 
 Anything past the first ring says so on the now-playing line, `2 hops 1/6` rather
 than `similar 1/6`: a sound two edges away is a weaker claim than one the ranking
@@ -307,10 +314,10 @@ never become a new way for the page to be silent.
 
 Set both in the header and the page starts answering the question a producer
 actually has. The tooltip gains the distance to them - `+6.7% to 137`, `-3 st to
-A minor`. `T` auditions at the project tempo by resampling, which shifts pitch, so
-the footer says by how much: `at 140 BPM, pitched +5.7 st`. Calling that
-time-stretching would be a lie, and which one you are hearing is exactly what
-decides whether the loop is usable. Ratios past an octave are left alone.
+A minor`. `at tempo` auditions at the project tempo by resampling, which shifts
+pitch, so the footer says by how much: `at 140 BPM, pitched +5.7 st`. Calling
+that time-stretching would be a lie, and which one you are hearing is exactly
+what decides whether the loop is usable. Ratios past an octave are left alone.
 
 `fits` filters to keys compatible with the project: the same key, its relative
 major or minor, and a semitone either side, because nobody thinks twice about
@@ -363,35 +370,43 @@ than in theory.
 
 | key | |
 |---|---|
-| `Tab` / `shift-Tab` | walk to the next / previous similar sound |
-| `Backspace` | back up the path you took |
+| `Tab` | walk to the next similar sound |
+| `shift-Tab` | come back up the path you took |
 | `Space` | play the hovered node |
-| `D` | save the current sample |
+| `D` | download the sample under the cursor |
 | `S` | keep it in the basket |
 | `L` | loop |
-| `T` | audition at the project tempo |
-| `Esc` | stop, and clear the trail |
-| `1`-`3` | pick an arrangement |
-| `P` | run / pause the simulation |
-| `B` | back to the baked layout |
 | `F` | fit to what is on screen |
+| `Esc` | stop, and clear the trail |
+
+`→` and `←` walk the same way as `Tab` and shift-`Tab`, for anyone who would
+rather not fight their screen reader for `Tab`. Otherwise that is the whole list,
+and it is what the footer prints.
+
+`B`, `P`, `T` and `1`-`3` used to be here as well. Each of them has a control in
+the header that does the same thing and says what it is, and a single letter that
+silently re-runs the physics or swaps the arrangement is a footgun for anyone who
+clicks the canvas and then types. A keystroke carrying ctrl, meta or alt is left
+to the browser, so `ctrl-F` finds rather than frames and `ctrl-P` prints rather
+than running the simulation.
 
 ## Arrangements
 
-`arrange` in the header opens the panel. `1`-`3` switch between the three, each
-animating from wherever the last one left off — including from wherever the
-simulation has got to. **Only what is on screen is arranged**, so filtering first and
-arranging second is the intended order — and every arrangement re-runs when a
-filter changes.
+`arrange` in the header opens the panel, and the three buttons at the top of it
+switch between the arrangements, each animating from wherever the last one left
+off — including from wherever the simulation has got to. **Only what is on screen
+is arranged**, so filtering first and arranging second is the intended order —
+and every arrangement re-runs when a filter changes.
 
-The baked layout is not one of them: it is `B`, "undo all of this", and it never
-moves. Re-normalising the reference to whatever survived a filter would make the
-one fixed layout the least stable on the page. It is also the only thing that
-puts the *hidden* nodes back — and through the same transform the visible ones
-went through. Placing them raw was a bug you could only see after filtering: every
-layout is normalised into a shared box, so the survivors came back at 2.2× the
-scale of the 5,164 that had been filtered out, which returned as a clump in the
-middle of their own graph.
+The baked layout is not one of them: it is the state the page opens holding
+rather than something you can pick, and nothing now comes back to it. It never
+moves — re-normalising it to whatever survived a filter would make the one fixed
+layout the least stable on the page. It is also the only one that places the
+*hidden* nodes — and through the same transform the visible ones went through.
+Placing them raw was a bug you could only see after filtering: every layout is
+normalised into a shared box, so the survivors came back at 2.2× the scale of the
+5,164 that had been filtered out, which returned as a clump in the middle of
+their own graph.
 
 | | |
 |---|---|
@@ -402,8 +417,8 @@ middle of their own graph.
 Each is a pure function from the active subgraph to positions, scaled uniformly
 into the same world the physics uses — never stretched to the window, because
 a scatter graph squashed to an aspect ratio is lying about both of its axes.
-Pressing `P` from any of them starts the simulation there and retires the
-arrangement.
+`▶ run`, lower down the same panel, starts the simulation from any of them and
+retires the arrangement.
 
 ### The scatter graph
 
@@ -446,10 +461,10 @@ turned a 30ms pass into 925ms.
 **This is what the page opens on.** It loads holding the builder's layout and
 immediately settles it under ForceAtlas2 on its defaults — about 150 ticks, some
 four seconds, with auto-fit following it out — so the first thing you see is the
-graph arranging itself rather than a still. `P` stops it and `B` puts the
-baked layout back. Someone who has asked for reduced motion gets the same layout
-without watching it arrive: the same ticks, eight to a frame, painted once at
-the end.
+graph arranging itself rather than a still. `▶ run` in the arrange panel stops
+it and starts it again. Someone who has asked for reduced motion gets the same
+layout without watching it arrive: the same ticks, eight to a frame, painted
+once at the end.
 
 **It used to take 357 ticks and about nine.** The stop test asks whether mean
 per-node motion has fallen below a share of the graph's own size, which is the
@@ -458,7 +473,8 @@ build, motion falls to 0.036% of span by tick 100 and 0.014% by 150, and only
 reaches the old threshold of 0.002% at tick 357 — so more than half the run went
 on resolving movement of about a fifth of a pixel a frame, while the span was
 already within 3% of final by tick 150. `QUIET` is now 2e-4 and it stops where
-the picture stops changing. Anyone who wants the last 0.01% presses `P`.
+the picture stops changing. Anyone who wants the last 0.01% presses `▶ run`
+again.
 
 Raising the tolerance was tried instead and is worse in both directions: at
 `tol` 2 it saves 25 ticks and each tick costs 70ms against 19, because bigger

@@ -260,7 +260,7 @@
     <div class="grp"><span class="lbl">project</span>
       <input id="pbpm" type="number" min="20" max="300" step="1" placeholder="BPM" autocomplete="off">
       <select id="pkey"></select>
-      <button id="trate" title="audition at the project tempo (T)">at tempo</button>
+      <button id="trate" title="audition at the project tempo">at tempo</button>
     </div>
     <div class="grp"><span class="lbl">colour</span>
       <button data-col="cluster" class="on">cluster</button>
@@ -272,7 +272,7 @@
     <div class="grp"><span class="lbl">layout</span>
       <button id="tphys">arrange</button>
     </div>
-    <div class="grp"><button id="tbask" title="open the basket (S keeps the hovered sample)">&#9776; basket</button><button id="dlvis">&#10515; visible</button></div>
+    <div class="grp"><button id="tbask" title="open the basket (S saves the hovered sample)">&#9776; basket</button><button id="dlvis">&#10515; visible</button></div>
     <input id="q" placeholder="snare, tag:vinyl, bpm:120-130&hellip;" autocomplete="off"
            title="Terms are ANDed. A leading - drops what the term matches.&#10;&#10;bpm:120-130  bpm:&gt;100  bpm:&lt;90  bpm:128&#10;key:Amin  key:&quot;A minor&quot;  key:C&#10;dur:&lt;2  dur:0.5-4&#10;dl:&gt;1000  rate:&gt;4&#10;tag:vinyl  by:username  pack:...  fam:...  sub:...&#10;loud:&gt;-14  dyn:&gt;6&#10;&#10;Anything else is matched as text, over the name, uploader,&#10;pack, family and every tag on the sample.&#10;Only trusted key and BPM readings are ever matched.">
     <span class="stat" id="hits"></span>
@@ -373,10 +373,9 @@ document.getElementById("nky").textContent = DATA.keyed.toLocaleString();
 document.getElementById("ntp").textContent = DATA.tempoed.toLocaleString();
 document.getElementById("nsi").textContent = DATA.sims.toLocaleString();
 const FOOT_KEYS =
-  "Click a sample to play · Tab walks to the next similar sound, shift-Tab the previous, "
-  + "Backspace comes back · D saves it · S keeps it · Esc stops · Space plays the hovered "
-  + "node · L loops · T auditions at the project tempo · 1-3 arrange · "
-  + "P runs the physics · F frames it";
+  "Click a sample to play · Tab walks to the next similar sound, shift-Tab comes "
+  + "back the way you came · Space plays the hovered node · D downloads it · "
+  + "S saves it · L loops · F frames it · Esc stops";
 // The query grammar needs somewhere to be found that costs nothing once you know
 // it. The footer already ellipsises and never grows the layout, and it is only
 // standing in for the key list while someone is actually typing a query.
@@ -1923,7 +1922,7 @@ function reheat(){ heat(); actDirty = true;
 
 // The opening view is the simulation, not the still. The page loads holding the
 // builder's layout and immediately settles it under ForceAtlas2, which takes
-// about 370 ticks. `B` puts the baked layout back, and P stops it.
+// about 370 ticks. The arrange panel holds the run/pause and the arrangements.
 //
 // Fired from the ResizeObserver as well as directly, because a page laid out
 // while its pane is hidden measures 0x0 and there is nothing to settle into yet.
@@ -1949,13 +1948,12 @@ function settleQuietly(){
   };
   requestAnimationFrame(chunk);
 }
-function resetBaked(){ PIN.fill(0); PINNED.clear(); applyLayout("baked"); }
 function unpinAll(){ PIN.fill(0); PINNED.clear(); draw(); updMeta(); }
 // A filter changes the subgraph, not only what is drawn: the simulation picks
 // it up on the next tick, and an arrangement is re-run over what is left. The
-// baked layout - reachable with `B` rather than as an arrangement - is exempt:
-// it is the fixed reference, and re-normalising it to whatever survives the
-// filters would move the one layout that is supposed to stay put.
+// baked layout is exempt: it is what the page opens holding rather than one of
+// the arrangements, and re-normalising it to whatever survives the filters would
+// move the one layout that is supposed to stay put.
 function refresh(){
   syncActive();
   if (layout && layout !== "baked"){ applyLayout(layout); return; }
@@ -2237,8 +2235,8 @@ function byCommunity(){
   return gs;
 }
 const LAYOUTS = {
-  // The builder's own spring_layout. Not one of the arrangements - it is what
-  // `B` comes back to, so it is here for resetBaked() and not in LAY_ORDER.
+  // The builder's own spring_layout. Not one of the arrangements - it is the
+  // state the page opens holding, so it is named here and not in LAY_ORDER.
   baked(){ for (let q=0;q<ACTN;q++){ const i = ACT[q]; TX[i] = BX[i]; TY[i] = BY[i]; }
     layNote = BAKED_NOTE; },
 
@@ -2783,7 +2781,7 @@ updBasket(true);
 // The CLAP ranking is the only edge kind that claims two SOUNDS are alike, and
 // until now the only way to use it was to spot a thick line and mouse to the far
 // end. This is that ranking on the keyboard: Tab hops to the next neighbour and
-// plays it, Backspace comes back the way you came.
+// plays it, shift-Tab comes back the way you came.
 //
 // CSR rather than an array of arrays. It is built once and read on every frame
 // of every draw; 7,214 little arrays is 7,214 allocations and a pointer chase per
@@ -2876,7 +2874,7 @@ function litSimEdges(i){
 //
 // A Map is the LRU: delete-then-set moves a key to the end of it, so the oldest
 // is whatever keys() hands back first, and the value doubles as the age the
-// old-ground sort needs. It remembers as far back as Backspace can walk you and
+// old-ground sort needs. It remembers as far back as shift-Tab can walk you and
 // no further.
 const SEEN_MAX = 400;              // WALK_MAX, the length of the path itself
 const SEEN = new Map();            // node -> the step it was last heard on
@@ -2906,7 +2904,7 @@ function simNeighbours(i, from){
         if (seen.has(j)) continue;
         seen.add(j);
         next.push(j);                      // a road, whether or not it is a stop
-        // `from` is left out because Backspace is what goes back: without this,
+        // `from` is left out because shift-Tab is what goes back: without this,
         // the nearest thing to the sound you just landed on is almost always the
         // one you came from, and Tab twice is a ping-pong rather than a walk.
         if (j === from) continue;
@@ -2926,7 +2924,7 @@ function simNeighbours(i, from){
 }
 
 // Frames rather than bare indices: coming back has to put the cursor back where
-// it was, or Backspace-then-Tab would take the branch you just took again.
+// it was, or shift-Tab-then-Tab would take the branch you just took again.
 const WALK = { f: [] };
 const WALK_MAX = 400;              // a path, not a log; nobody backspaces 400 times
 function walkNode(){ const f = WALK.f; return f.length ? f[f.length-1].i : -1; }
@@ -2975,8 +2973,9 @@ function walkStep(dir){
   // Backwards it wants the far end of the list - the modulo alone gave the last
   // but one - but the far end of the list is where the sounds already heard have
   // been put, so backwards from cold is the far end of the FRESH ground instead.
-  // shift-Tab is the other side of the ring, not a trip round the old ground:
-  // ending it on the most recently heard sound is what a ping-pong is made of.
+  // Turning round at the start of a walk is meant to be the other side of the
+  // ring, not a trip round the old ground: ending it on the most recently heard
+  // sound is what a ping-pong is made of.
   f.sel = f.sel < 0 && dir < 0 ? (f.fresh ? f.fresh : len) - 1
                                : ((f.sel + dir) % len + len) % len;
   const j = f.nb[f.sel];
@@ -2992,9 +2991,21 @@ function walkBack(){
   WALK.f.pop();
   walkArrive(WALK.f[WALK.f.length-1].i);
 }
+// shift-Tab is the key the hand reaches for to undo a Tab, and reaching for it
+// and being taken somewhere new is the walk losing its thread. So it retraces
+// whenever there is a path behind you. Only when there is not - standing where
+// a walk has not started, or on its first sound - does it mean the other side
+// of the ring instead, which is the one place walkStep(-1)'s cold-frame reading
+// ever applied anyway.
+//
+// The anchor is checked as walkFrame() checks it, so that clicking a sample off
+// the path and pressing shift-Tab starts a walk from where you are standing
+// rather than retracing a path you have already stepped off.
+function walkPrev(){ const f = WALK.f;
+  if (f.length > 1 && walkAnchor() === f[f.length-1].i) walkBack(); else walkStep(-1); }
 function walkArrive(i){
   panTo(i);
-  seenMark(i);                     // heard is heard, whether Tab or Backspace got you there
+  seenMark(i);                     // heard is heard, whether Tab or shift-Tab got you there
   // playNode() toggles a sound off when it is asked for the one already playing,
   // which is right for a click and wrong for arriving somewhere.
   if (playing === i) draw(); else playNode(i);
@@ -3168,34 +3179,36 @@ cv.addEventListener("wheel",e=>{ e.preventDefault();
   const ns=Math.max(120,Math.min(60000,scale*Math.exp(-e.deltaY*0.0016)));
   ox=mx-(mx-ox)*(ns/scale); oy=my-(my-oy)*(ns/scale); scale=ns; draw(); },{passive:false});
 window.addEventListener("keydown", e => {
+  // A modifier means the keystroke was meant for the browser rather than the
+  // map: without this, ctrl-F frames the graph instead of finding anything and
+  // ctrl-P runs the physics instead of printing. BUTTON joins the text controls
+  // in the second test because Space is how a focused button is pressed, and
+  // the Space branch below preventDefault()s it into pressing nothing.
+  if(e.ctrlKey || e.metaKey || e.altKey) return;
   // The download panel is modal, and the test below only clears keystrokes that
   // landed on a control. Click its prose and the target is a <p>, which would
   // put S and D back to work on a map nobody can currently see. Esc still
   // closes it: that is the dialog's own doing, not this handler's.
   if(getappDlg.open) return;
-  if(e.target.tagName==="INPUT" || e.target.tagName==="SELECT" || e.target.tagName==="A") return;
-  if(e.key==="d"||e.key==="D"){ e.preventDefault(); downloadOne(N[barNode>=0?barNode:hover]); return; }
-  // Hover first, bar second - the mirror of D, which is usually pressed for the
-  // sound already playing, where S is usually pressed for the one under the mouse.
+  const t = e.target.tagName;
+  if(t==="INPUT" || t==="SELECT" || t==="A" || t==="BUTTON") return;
+  // Both of these mean the sample under the mouse, and fall back to the one in
+  // the footer bar for a walk driven from the keyboard with the mouse away.
+  if(e.key==="d"||e.key==="D"){ e.preventDefault(); downloadOne(N[hover>=0?hover:barNode]); return; }
   if(e.key==="s"||e.key==="S"){ e.preventDefault(); toggleBasket(hover>=0?hover:barNode); return; }
   if(e.key==="f"||e.key==="F"){ e.preventDefault(); fit(); draw(); return; }
-  if(e.key==="p"||e.key==="P"){ e.preventDefault(); setRun(!running); return; }
-  if(e.key==="b"||e.key==="B"){ e.preventDefault(); resetBaked(); return; }
   if(e.key==="l"||e.key==="L"){ e.preventDefault(); toggleLoop(); return; }
-  if(e.key==="t"||e.key==="T"){ e.preventDefault(); setAtTempo(!atTempo); return; }
   // Tab is the browser's focus key, so it is only taken when the focus is on the
   // page itself and there is something to walk from. Focus a header button or the
   // query box and Tab still moves focus; with nothing hovered and nothing playing
   // it falls through as well, so there is always a way out of the canvas.
   if(e.key==="Tab" && (e.target===document.body || e.target===cv)){
     if(walkAnchor() < 0) return;
-    e.preventDefault(); walkStep(e.shiftKey ? -1 : 1); return; }
+    e.preventDefault(); if(e.shiftKey) walkPrev(); else walkStep(1); return; }
   // The same walk without the focus argument, for anyone who would rather not
   // fight their screen reader for Tab. The page never scrolls, so these are free.
   if(e.key==="ArrowRight"){ e.preventDefault(); walkStep(1); return; }
-  if(e.key==="ArrowLeft"){ e.preventDefault(); walkStep(-1); return; }
-  if(e.key==="Backspace"){ e.preventDefault(); walkBack(); return; }
-  if(e.key>="1" && e.key<="3"){ e.preventDefault(); applyLayout(LAY_ORDER[+e.key-1]); return; }
+  if(e.key==="ArrowLeft"){ e.preventDefault(); walkPrev(); return; }
   // Esc is "stop and get out of the way", and the trail is part of the way.
   if(e.key==="Escape"){ stopAudio(); walkClear(); selClear(); }
   else if(e.code==="Space"){ e.preventDefault();

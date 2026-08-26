@@ -1,0 +1,51 @@
+# The site used to go out through the legacy Pages pipeline, which builds
+# whatever is on main without telling you much about it. On 26 Aug an Actions
+# outage left a build wedged in "building" for five hours; it held the per-repo
+# build lock, every later push queued behind it, and the live site quietly went
+# on serving the day before's page. Deleting the failed run deleted the only
+# evidence with it.
+#
+# This does the deploy as an ordinary job instead, so a stuck or failed deploy
+# is a run you can open, read and re-run. It also means no Jekyll: the files go
+# up as they are on disk, which is what a committed index.html wants anyway.
+
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# A superseded deploy is worth nothing, so let a newer push cancel it rather
+# than queue behind it. Queueing is what went wrong last time.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v5
+
+      # The repo root is the site - index.html, CNAME, favicon. The action
+      # leaves .git and .github out of the tarball of its own accord.
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

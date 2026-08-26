@@ -1,30 +1,30 @@
 {
-  "version": "0.1.1",
-  "tag": "v0.1.1",
+  "version": "0.1.2",
+  "tag": "v0.1.2",
   "downloads": [
     {
       "os": "windows",
       "arch": "x86_64",
       "kind": "exe",
-      "url": "https://github.com/AlexM1010/visualise-music/releases/download/v0.1.1/visualise-music_0.1.1_x64-setup.exe",
-      "sha256": "0eab4f6f7bc1fd5844bf4c98f3f122eff18d020175a0635bef03fc610bd54470",
-      "size": 2011689
+      "url": "https://github.com/AlexM1010/visualise-music/releases/download/v0.1.2/visualise-music_0.1.2_x64-setup.exe",
+      "sha256": "fe78001b4e21bfd155c69e4c8b950eb41b1002c071333590aa9c95eea714cb41",
+      "size": 2021673
     },
     {
       "os": "linux",
       "arch": "x86_64",
       "kind": "appimage",
-      "url": "https://github.com/AlexM1010/visualise-music/releases/download/v0.1.1/visualise-music_0.1.1_amd64.AppImage",
-      "sha256": "27283f21ebb4815716900430364d43f81b45c15cbfd68f414971a9c0103cae8d",
-      "size": 80325112
+      "url": "https://github.com/AlexM1010/visualise-music/releases/download/v0.1.2/visualise-music_0.1.2_amd64.AppImage",
+      "sha256": "415e5f3261af71bb9d2b02c0a65c4730cc0afcc8a04b6c5a9defc837709329ab",
+      "size": 80333304
     },
     {
       "os": "linux",
       "arch": "x86_64",
       "kind": "deb",
-      "url": "https://github.com/AlexM1010/visualise-music/releases/download/v0.1.1/visualise-music_0.1.1_amd64.deb",
-      "sha256": "3e2654a5e56ce2e378bc1aa53c21499d84f868d25cdc8b8773fd8369c4f95bf8",
-      "size": 2611234
+      "url": "https://github.com/AlexM1010/visualise-music/releases/download/v0.1.2/visualise-music_0.1.2_amd64.deb",
+      "sha256": "f05f9618765653cab3dc7ddae0f80634d11563b9e279d9f58ac55c26c9107125",
+      "size": 2626586
     }
   ]
 }

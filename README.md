@@ -35,7 +35,7 @@ then <http://127.0.0.1:8973/>.
 
 ## The download button, and the coffee link
 
-**desktop app for your library**, at the right-hand end of the header. It does
+**map your own samples**, at the right-hand end of the header. It does
 not start a download. It opens a panel, because nothing published here is signed
 and Windows is about to say so in a blue box whose only button is *Don't run* —
 and that is better said first, here, by the people shipping it, than met thirty

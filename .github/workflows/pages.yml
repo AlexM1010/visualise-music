@@ -37,7 +37,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The same check the Site workflow runs, before anything is uploaded. A
       # page that fails it is a page with no download button on it, and putting
@@ -48,13 +48,15 @@ jobs:
       - name: The download button is in the page that is served
         run: python3 .github/check_site.py
 
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
 
       # The repo root is the site - index.html, CNAME, favicon. The action
-      # leaves .git and .github out of the tarball of its own accord.
-      - uses: actions/upload-pages-artifact@v3
+      # leaves .git, .github and, since v4, every other dotfile out of the
+      # tarball of its own accord. Nothing here that needs serving starts
+      # with a dot, so that suits; include-hidden-files: true if it ever does.
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: .
 
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

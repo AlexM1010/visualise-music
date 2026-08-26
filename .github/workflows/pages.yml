@@ -39,6 +39,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The same check the Site workflow runs, before anything is uploaded. A
+      # page that fails it is a page with no download button on it, and putting
+      # that live is worse than not deploying at all. Six seconds, and it means
+      # the drift check cannot be green on a commit whose page is already out.
+      # The Site workflow still runs it too, for pull requests and tags, which
+      # this trigger never sees.
+      - name: The download button is in the page that is served
+        run: python3 .github/check_site.py
+
       - uses: actions/configure-pages@v5
 
       # The repo root is the site - index.html, CNAME, favicon. The action

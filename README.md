@@ -403,6 +403,29 @@ list it read, and a sample under the cursor outranks the walk as the anchor.
 cached without CORS is a different entry from the same response cached with it,
 and a read-ahead under the wrong mode buys nothing at all.
 
+### Walking a tag
+
+A tag or family node has nothing to play, and clicking one used to say exactly
+that and stop. But it is a list of sounds - every sample joined to it by a
+hairline - and that list is often the question: everything tagged `vinyl`, the
+whole of `Percussion`. So clicking one makes it the hub, the footer says how many
+samples it holds on screen, and `Tab` plays through all of them, nearest to the
+hub first, reading the layout the same way the similarity walk does. shift-`Tab`
+steps back along the list, and both directions wrap. The hub stays selected, so
+its hairlines stay lit and the ring moves along them, and the now-playing line
+carries `tag synthetic 2/39` where a walk would carry its step.
+
+The list is what is on screen, so the filters narrow it, and a filter change
+keeps the cursor on the sound in hand if that sound survived it. Playing a sample
+any other way - clicking it, Space, the basket, ctrl-Z - is standing somewhere
+else, and `Tab` goes back to walking similarity from there; `Esc` clears the hub
+with the rest.
+
+Nothing about this needed a sound in hand, and the key handler had assumed one:
+`Tab` falls through to the browser when there is nothing to walk from, and a
+fresh page with a tag clicked and nothing played had nothing to walk from by that
+test. A hub counts now.
+
 ### Searching
 
 The box takes field terms, ANDed, with a leading `-` to negate any of them:
@@ -429,8 +452,15 @@ question about numbers.
 
 A preview is up to 30 seconds and used to audition as its first one. The footer
 now draws its waveform - decoded once and cached as peaks for the last 40 sounds,
-because a walk revisits - and clicking it seeks. `L` loops; a sample flagged
-`loopable` loops by default and a one-shot does not.
+because a walk revisits - and clicking it seeks. `L` loops.
+
+It is one switch for everything, and it holds while you move. It used to follow
+each sample's `loopable` flag, so a walk from a loop to a one-shot and back flipped
+it under you three times - and whether a sound repeats while you judge it is a
+way of listening, not a property of the file. `L` sets it whether or not anything
+is playing, the sound in hand follows at once, and it is remembered. It starts
+off: most of this library is one-shots, and a hat on repeat is not what anyone
+expects a first click to do.
 
 Playback runs through a gain node set from the sample's own loudness, so browsing
 7,000 sounds is not a volume rollercoaster, with a limiter behind it because
@@ -549,13 +579,13 @@ than in theory.
 
 | key | |
 |---|---|
-| `Tab` | walk to the next similar sound |
-| `shift-Tab` | come back up the path you took |
+| `Tab` | walk to the next similar sound - or, with a tag or family clicked, the next sample on it |
+| `shift-Tab` | come back up the path you took, or back along the tag |
 | `ctrl-Z` / `ctrl-Y` | back and forward through what you have played |
 | `Space` | play the hovered node |
 | `D` | download the sample under the cursor |
 | `S` | keep it in the basket |
-| `L` | loop |
+| `L` | loop, or play once - for every sample until pressed again |
 | `F` | fit to what is on screen |
 | `Esc` | stop, and clear the trail |
 

@@ -692,7 +692,7 @@ const FOOT_KEYS = matchMedia("(hover:none) and (pointer:coarse)").matches
   ? "Tap a sample to play it · drag to move around · pinch to zoom · "
     + "tap the background to clear"
   : "Click a sample to play · Tab walks to the next similar sound, shift-Tab comes "
-  + "back the way you came · ctrl-Z goes back to the sound you were on before, "
+  + "back the way you came, or through every sample on a clicked tag · ctrl-Z goes back to the sound you were on before, "
   + "ctrl-Y forward · Space plays the hovered node · D downloads it · "
   + "S saves it · L loops · F frames it · Esc stops";
 // The query grammar needs somewhere to be found that costs nothing once you know
@@ -1525,7 +1525,7 @@ function applyRate(){
 }
 function nowLine(n){
   let s = "♪ "+n.l+(n.bo?"  ·  "+n.bpm+" BPM":"")+(n.ko?"  ·  "+n.key:"")+"  ·  "+n.g;
-  const w = walkNode() >= 0 && N[walkNode()] === n ? walkLabel() : "";
+  const w = hubLabel(n) || (walkNode() >= 0 && N[walkNode()] === n ? walkLabel() : "");
   if (w) s += "  ·  " + w;
   // With no panel, this clause is the only answer to "how far back am I", and it
   // is on the one line that is already about the sound in hand.
@@ -1540,33 +1540,33 @@ function nowLine(n){
   return s;
 }
 
-// Loopables loop and one-shots do not, which is right nine times in ten. L
-// overrides it for the sound in hand; L with nothing playing moves the standing
-// preference instead, which is the only place that choice could live - a loop
-// toggle with no sound to apply it to is a dead key.
-let loopDefault = true, loopOn = false;
-try { loopDefault = localStorage.getItem("fs-loop-default") !== "0"; } catch(e){}
+// One loop switch for everything, held while you move between samples. It used
+// to follow each sample's own `loopable` reading, so walking from a loop to a
+// one-shot and back flipped it under you - and whether a sound repeats while you
+// judge it is a way of listening, not a property of the file. L sets it whether
+// or not anything is playing, and the sound in hand follows at once.
+//
+// Off for a first visit: most of this library is one-shots, and a hat on repeat
+// is not what anyone expects a click to do. A preference set under the old
+// per-sample rule carries over only where it said loop.
+let loopOn = false;
+try { const v = localStorage.getItem("fs-loop");
+      loopOn = v !== null ? v === "1" : localStorage.getItem("fs-loop-default") === "1"; } catch(e){}
 function showLoop(){
-  // Which of the two questions the button is answering. A sound that is playing
-  // is the thing it is about; with none, it is about the standing preference -
-  // the same choice, asked about every loopable sample rather than about one.
-  // Nothing calls this while the bar serves out its floor, so a finished sound
-  // keeps showing how it played until something actually changes.
-  const live = playing >= 0, on = live ? loopOn : loopDefault;
-  loopEl.textContent = on ? "↻ loop" : "↻ once";
-  loopEl.classList.toggle("on", live && on);
+  const live = playing >= 0;
+  loopEl.textContent = loopOn ? "↻ loop" : "↻ once";
+  loopEl.classList.toggle("on", live && loopOn);
   loopEl.classList.toggle("def", !live);
-  loopEl.setAttribute("aria-pressed", on ? "true" : "false");
-  loopEl.title = live ? "loop this sample (L)"
-                      : "loop loopable samples by default (L)";
+  loopEl.setAttribute("aria-pressed", loopOn ? "true" : "false");
+  loopEl.title = loopOn ? "every sample loops - L plays them once"
+                        : "every sample plays once - L loops them";
 }
 function toggleLoop(){
-  if (playing >= 0 && audio){ loopOn = !loopOn; audio.loop = loopOn; showLoop(); return; }
-  loopDefault = !loopDefault;
-  try { localStorage.setItem("fs-loop-default", loopDefault ? "1" : "0"); } catch(e){}
+  loopOn = !loopOn;
+  try { localStorage.setItem("fs-loop", loopOn ? "1" : "0"); } catch(e){}
+  if (audio) audio.loop = loopOn;
   showLoop();
-  setNow(loopDefault ? "Loopable samples will loop" : "Loopable samples will play once");
-  holdBar(2600);
+  if (playing < 0){ setNow(loopOn ? "Samples will loop" : "Samples will play once"); holdBar(2600); }
 }
 // Two lifetimes, deliberately separate. The pulsing ring belongs to the SOUND and
 // dies with it. The footer bar - the name and its save button - is held for
@@ -1661,7 +1661,10 @@ function onEnded(){
 }
 function playNode(i){
   const n = N[i]; if(!n) return;
-  if(n.k!=="sample"){ setNow(n.l+" — "+n.k+", nothing to play"); return; }
+  if(n.k!=="sample"){ hubStart(i); return; }
+  // Anything that plays a sample other than a hub step is somewhere else to
+  // stand, so Tab goes back to walking similarity from it.
+  if(!hubStepping) hub = -1;
   if(!n.p){ setNow("No preview for "+n.l, true); return; }
   if(playing===i){ stopAudio(); return; }
   stopAudio();
@@ -1669,7 +1672,6 @@ function playNode(i){
   // load time is born suspended and never recovers on its own.
   const ac = audioCtx();
   if(ac && ac.state === "suspended"){ try { ac.resume(); } catch(e){} }
-  loopOn = loopDefault && !!n.lp;
   playRate = rateFor(n);
   playing = i; barNode = i; playStart = Date.now(); lastPulse = 0;
   // The one place a preview actually begins, so the history is written here and
@@ -3291,7 +3293,63 @@ const farEnd = (e, i) => E[e][0] === i ? E[e][1] : E[e][0];
 // moment a filter moved.
 let selNode = -1;
 function selectNode(i){ if (i !== selNode){ selNode = i; draw(); } }
-function selClear(){ if (selNode >= 0){ selNode = -1; draw(); } }
+function selClear(){ hub = -1; if (selNode >= 0){ selNode = -1; draw(); } }
+
+// ---- walking a tag or a family -----------------------------------------------
+// A tag or family node has nothing to play, but it is a list of sounds: every
+// sample joined to it by a hairline. Clicking one makes it the hub, and Tab then
+// steps through that whole list - nearest to the hub first, the same layout
+// reading the similarity walk uses - instead of walking similarity outwards
+// from one sound. The hub stays selected, so its hairlines stay lit and the
+// ring moves along them. shift-Tab steps back along the list, and it wraps both
+// ways. Playing a sample any other way - a click, Space, the basket - is
+// standing somewhere else, and Tab goes back to walking similarity from there.
+let hub = -1, hubStepping = false;
+const HUB = { i:-1, nb:[], sel:-1, gen:-1 };
+function hubList(h){
+  const hn = N[h], seen = new Set(), out = [];
+  for (let k = ADJOFF[h], e = ADJOFF[h+1]; k < e; k++){
+    const j = farEnd(ADJE[k], h);
+    if (seen.has(j) || N[j].k !== "sample" || !shown(N[j])) continue;
+    seen.add(j);
+    const dx = N[j].x - hn.x, dy = N[j].y - hn.y;
+    out.push([j, dx*dx + dy*dy]); }
+  return byKey(out);
+}
+// Rebuilt when the hub or the filters change. A filter change keeps the cursor
+// on the sound in hand if that sound is still in the list, so the next Tab goes
+// on from where you are rather than from the top.
+function hubFrame(){
+  if (HUB.i !== hub || HUB.gen !== walkGen){
+    const cur = HUB.i === hub && HUB.sel >= 0 ? HUB.nb[HUB.sel] : -1;
+    HUB.nb = hubList(hub); HUB.i = hub; HUB.gen = walkGen;
+    HUB.sel = cur >= 0 ? HUB.nb.indexOf(cur) : -1; }
+  return HUB;
+}
+function hubStart(i){
+  const n = N[i];
+  hub = i; readStop();
+  const len = hubFrame().nb.length;
+  setNow(n.l + " — " + n.k + " · " + (len
+    ? len.toLocaleString() + " sample" + (len === 1 ? "" : "s") + " on screen · Tab plays through them"
+    : "no samples on screen"));
+  holdBar(4000);
+}
+function hubStep(dir){
+  const f = hubFrame(), len = f.nb.length;
+  if (!len){ setNow("No samples joined to " + N[hub].l + " are on screen", true);
+             holdBar(2600); return; }
+  f.sel = f.sel < 0 && dir < 0 ? len - 1 : ((f.sel + dir) % len + len) % len;
+  const j = f.nb[f.sel];
+  panTo(j);
+  hubStepping = true;
+  try { if (playing === j){ setNow(nowLine(N[j])); draw(); } else playNode(j); }
+  finally { hubStepping = false; }
+}
+function hubLabel(n){
+  if (hub < 0 || HUB.i !== hub || HUB.sel < 0 || N[HUB.nb[HUB.sel]] !== n) return "";
+  return N[hub].k + " " + N[hub].l + " " + (HUB.sel + 1) + "/" + HUB.nb.length;
+}
 
 // The edge pass in draw() needs one node's neighbours and nothing else, so it
 // gets a named function rather than an arrow rebuilt 60 times a second.
@@ -3419,8 +3477,9 @@ function walkFrame(){
   return nf;
 }
 function walkStep(dir){
+  if (hub >= 0){ hubStep(dir); return; }
   const f = walkFrame();
-  if (!f){ setNow("Nothing to walk from \u2014 hover a sample or play one", true);
+  if (!f){ setNow("Nothing to walk from \u2014 click a sample, a tag or a family", true);
            holdBar(2600); return; }
   // Only reachable now when four rings of the similarity graph came back empty,
   // which takes a whole filtered-out corner of it rather than one dead end.
@@ -3464,6 +3523,7 @@ function walkBack(){
 // the path and pressing shift-Tab starts a walk from where you are standing
 // rather than retracing a path you have already stepped off.
 function walkPrev(){ const f = WALK.f;
+  if (hub >= 0){ hubStep(-1); return; }
   if (f.length > 1 && walkAnchor() === f[f.length-1].i) walkBack(); else walkStep(-1); }
 function walkArrive(i){
   panTo(i);
@@ -3921,7 +3981,9 @@ window.addEventListener("keydown", e => {
   // query box and Tab still moves focus; with nothing hovered and nothing playing
   // it falls through as well, so there is always a way out of the canvas.
   if(e.key==="Tab" && (e.target===document.body || e.target===cv)){
-    if(walkAnchor() < 0) return;
+    // A clicked tag or family is something to walk from too, with no sample in
+    // hand - that is the whole point of clicking one.
+    if(hub < 0 && walkAnchor() < 0) return;
     e.preventDefault(); if(e.shiftKey) walkPrev(); else walkStep(1); return; }
   // The same walk without the focus argument, for anyone who would rather not
   // fight their screen reader for Tab. The page never scrolls, so these are free.

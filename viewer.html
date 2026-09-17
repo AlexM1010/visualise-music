@@ -497,7 +497,7 @@
   <header>
    <div class="hrow r1">
     <h1>Freesound library</h1>
-    <span class="stat"><b id="nsm"></b> samples<span class="lnk"><span class="sep">&middot;</span><b id="nsi"></b> links</span></span>
+    <span class="stat"><b id="nsm"></b> nodes<span class="lnk"><span class="sep">&middot;</span><b id="nsi"></b> links</span></span>
     <span class="hsp"></span>
     <input id="q" placeholder="snare, tag:vinyl, bpm:120-130&hellip;" autocomplete="off"
            title="Terms are ANDed. A leading - drops what the term matches.&#10;&#10;bpm:120-130  bpm:&gt;100  bpm:&lt;90  bpm:128&#10;key:Amin  key:&quot;A minor&quot;  key:C&#10;dur:&lt;2  dur:0.5-4&#10;dl:&gt;1000  rate:&gt;4&#10;tag:vinyl  by:username  pack:...  fam:...  sub:...&#10;loud:&gt;-14  dyn:&gt;6&#10;&#10;Anything else is matched as text, over the name, uploader,&#10;pack, family and every tag on the sample.&#10;Only trusted key and BPM readings are ever matched.">
@@ -681,11 +681,11 @@ const rampColour = v => "hsl(" + Math.round((1 - v) * 225) + ",72%," + Math.roun
 const cv = document.getElementById("cv"), ctx = cv.getContext("2d"), tip = document.getElementById("tip");
 const TIMBRE = ["brightness","warmth","depth","hardness","boominess","roughness","sharpness"];
 
-document.getElementById("nsm").textContent = (DATA.counts.sample||0).toLocaleString();
+document.getElementById("nsm").textContent = N.length.toLocaleString();
 document.getElementById("ncc").textContent = DATA.cc0.toLocaleString();
 document.getElementById("nky").textContent = DATA.keyed.toLocaleString();
 document.getElementById("ntp").textContent = DATA.tempoed.toLocaleString();
-document.getElementById("nsi").textContent = DATA.sims.toLocaleString();
+document.getElementById("nsi").textContent = E.length.toLocaleString();
 // A phone has none of these keys, and "click" and "hovered" describe a mouse -
 // so a touch screen with no mouse beside it gets its own gestures instead.
 const FOOT_KEYS = matchMedia("(hover:none) and (pointer:coarse)").matches

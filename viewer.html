@@ -28,9 +28,31 @@
   /* A BPM is three digits; the shared `input` rule is sized for the search box
      and would hand this 180px of nothing. */
   #pbpm { width:58px; padding:3px 6px; }
+  /* Out of 20-300 the number is not a project tempo, and the page was storing 0
+     while the field went on showing what had been typed - the tooltip distances
+     and the greying both quietly off, with nothing to say why. Red until it is
+     a tempo, clamped to the range on blur. */
+  #pbpm.bad { border-color:#d1655b; }
+  /* A count that lives on the control it is about rather than in the run of
+     stats along the top. That run had to grow to hold them, and growing re-wrapped
+     every group behind it: choosing a key moved the select out from under the
+     cursor that had just used it. Fixed width, right-aligned, tabular figures -
+     183 and 1,403 take the same room, so nothing moves when the count changes. */
+  .cnt { display:inline-block; min-width:5.2ch; margin-left:5px; text-align:right;
+    font-weight:600; color:#e6edf3; font-variant-numeric:tabular-nums; }
+  /* Laid out but not painted, rather than not laid out at all: the slot is the
+     whole point. A `display:none` here would shrink the button the moment the
+     count went away and re-wrap the toolbar behind it - the same fault as the
+     stat run, moved onto a button. `hidden` is kept as the attribute because it
+     is also what takes the empty count out of the accessibility tree. */
+  .cnt[hidden] { display:inline-block; visibility:hidden; }
+  /* A basket holds tens, not thousands. */
+  #nbask { min-width:2.4ch; }
+  button.on .cnt { color:#e6edf3; }
   /* The query box has to show more than a word now that one term can be
      `bpm:120-130`; at the shared 180px you cannot see the term you are typing. */
-  #q { width:250px; }
+  #q { flex:1 1 auto; width:auto; min-width:160px; max-width:520px; background:#161b22;
+    padding:6px 12px; border-radius:8px; }
   header select { background:#0b0e14; border:1px solid #30363d; color:#e6edf3;
     font:inherit; font-size:12px; padding:3px 5px; border-radius:6px; cursor:pointer; }
   header select:focus { outline:none; border-color:#4b8bd6; }
@@ -41,21 +63,109 @@
   button.on { background:#1f6feb33; border-color:#4b8bd6; color:#e6edf3; }
   button.cc.on { background:#57a77333; border-color:#57a773; }
   button:disabled { opacity:.5; cursor:default; }
+  /* ---- the toolbar ------------------------------------------------------
+     Two rows. The first is what a visit needs on sight - search, the basket,
+     the way out with what was found. The second is the map's own controls,
+     and everything that used to sit open along it now sits behind a trigger
+     that says its own state: Colour names the scheme, Filters counts what is
+     on, Project spells out the tempo and key. Nothing is gone, only folded. */
+  header { flex-direction:column; flex-wrap:nowrap; align-items:stretch; gap:0; padding:0; }
+  .hrow { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; padding:10px 18px; min-width:0; }
+  .hrow.r2 { gap:10px; padding:8px 18px; background:#0a0e14; border-top:1px solid #1e2530; }
+  .hsp { flex:1 1 0; min-width:0; }
+  header h1 { font-size:15px; letter-spacing:-.01em; }
+  header .stat { font-size:12px; }
+  header .stat .sep { color:#484f58; margin:0 7px; }
+  #hits { min-width:70px; }
+  header .lbl { color:#6e7681; font-size:10px; text-transform:uppercase;
+    letter-spacing:.07em; margin-right:5px; }
+  header .grp { gap:4px; }
+  header .pill { border-radius:999px; padding:3px 11px; font-size:11.5px; }
+  header .tb { display:inline-flex; align-items:center; gap:7px; background:#161b22;
+    border:1px solid #30363d; color:#c9d1d9; padding:5px 12px; border-radius:8px;
+    transition:border-color .12s, background-color .12s, color .12s; }
+  header .tb:hover, header .pill:hover:not(.on) { border-color:#484f58; color:#e6edf3; }
+  header .tb.on, header .tb.open { border-color:#4b8bd6; background:#1f6feb22; color:#e6edf3; }
+  header .tb .caret { color:#6e7681; font-size:9px; margin-left:-1px; }
+  .badge { background:#1f6feb; color:#fff; font-size:10px; font-weight:600; line-height:1.5;
+    padding:0 6px; border-radius:10px; text-align:center; font-variant-numeric:tabular-nums; }
+  /* ---- popovers -----------------------------------------------------------
+     Positioned in JS (fixed, off the trigger's own rect) rather than CSS
+     anchoring, so a panel never gets clipped by the header's scroll area on
+     a phone. Every option inside is still the same <button> with the same id
+     it always had - the check box is drawn by CSS off its `on` class. */
+  .pop-wrap { position:relative; }
+  /* Only the phone layout dims the page behind an open panel - see there. */
+  .pop-scrim { display:none; }
+  .pop-panel { width:320px; max-width:calc(100vw - 16px); max-height:min(78vh, 580px);
+    overflow:auto; background:#161b22; border:1px solid #30363d; border-radius:12px;
+    padding:12px; box-shadow:0 18px 40px rgba(0,0,0,.55); z-index:6;
+    display:flex; flex-direction:column; gap:2px; }
+  .pop-panel.narrow { width:260px; }
+  .pop-panel[hidden] { display:none; }
+  .pop-head { display:flex; align-items:center; gap:8px; padding:2px 4px 10px;
+    margin-bottom:6px; border-bottom:1px solid #21262d; }
+  .pop-title { font-size:13px; font-weight:600; color:#e6edf3; }
+  .pop-sub { margin-left:auto; font-size:11px; color:#6e7681; font-variant-numeric:tabular-nums; }
+  header .pop-x { background:transparent; border:0; color:#6e7681; font-size:17px;
+    line-height:1; padding:0 2px; min-height:0; margin-left:auto; }
+  header .pop-sub ~ .pop-x { margin-left:0; }
+  header .pop-x:hover { color:#e6edf3; }
+  header .pop-panel .opt { display:flex; align-items:flex-start; gap:10px; width:100%;
+    text-align:left; white-space:normal; background:transparent; border:1px solid transparent;
+    border-radius:7px; padding:7px 8px; color:#c9d1d9; }
+  header .pop-panel .opt:hover:not(:disabled) { background:#1c2129; }
+  header .pop-panel .opt.on { background:#1f6feb14; border-color:transparent; }
+  header .pop-panel .opt.cc.on { background:#57a77314; }
+  .opt .ck { flex:none; position:relative; width:14px; height:14px; margin-top:2px;
+    border:1px solid #484f58; border-radius:4px; background:#0d1117;
+    transition:background-color .12s, border-color .12s; }
+  .opt.on .ck { background:#1f6feb; border-color:#4b8bd6; }
+  .opt.cc.on .ck { background:#57a773; border-color:#57a773; }
+  .opt.on .ck::after { content:""; position:absolute; left:4px; top:1px; width:4px; height:8px;
+    border:solid #fff; border-width:0 2px 2px 0; transform:rotate(45deg); }
+  .opt.radio .ck { border-radius:50%; }
+  .opt.radio.on .ck::after { left:3px; top:3px; width:6px; height:6px; border:0;
+    border-radius:50%; background:#fff; transform:none; }
+  .opt .tx { display:flex; flex-direction:column; gap:1px; flex:1; min-width:0; }
+  .opt .t { font-size:12px; font-weight:600; color:#e6edf3; }
+  .opt .d { font-size:11px; color:#7d8590; line-height:1.35; }
+  .opt .n { flex:none; margin-top:1px; font-size:11px; font-weight:400; color:#6e7681;
+    font-variant-numeric:tabular-nums; }
+  .opt.on .n { color:#9aa4b0; }
+  .pop-field { display:flex; align-items:center; gap:10px; padding:6px 8px; }
+  .pop-field label { flex:none; width:44px; color:#9aa4b0; font-size:12px; }
+  .pop-field .unit { color:#6e7681; font-size:11px; }
+  .pop-field select, .pop-field #pbpm { flex:1; width:auto; background:#0d1117;
+    padding:5px 9px; border-radius:7px; font-size:12px; }
+  .pop-sec { padding:10px 8px 3px; color:#6e7681; font-size:10px; text-transform:uppercase;
+    letter-spacing:.07em; }
+  .pop-foot { display:flex; align-items:center; justify-content:space-between;
+    margin-top:8px; padding-top:10px; border-top:1px solid #21262d; }
+  header .pop-clear { background:transparent; border:0; padding:0; min-height:0;
+    color:#7d8590; font-size:11px; }
+  header .pop-clear:hover:not(:disabled) { color:#e6edf3; }
+  header .pop-done { background:#1f6feb; border:1px solid #4b8bd6; color:#fff;
+    padding:4px 15px; border-radius:7px; font-weight:600; }
+  header .pop-done:hover { background:#388bfd; }
   /* The desktop build is what the page is for once somebody has a library of
      their own, so it is the one control here that is not grey. Its href is the
      releases page until download.json answers - see the foot of the script. */
-  #getapp { margin-left:auto; background:#1f6feb33; border:1px solid #4b8bd6;
-    color:#e6edf3; padding:3px 9px; border-radius:6px; font:inherit; font-size:12px;
+  #getapp { background:#1f6feb33; border:1px solid #4b8bd6;
+    color:#e6edf3; padding:5px 12px; border-radius:8px; font:inherit; font-size:12px;
     text-decoration:none; white-space:nowrap; }
   #getapp:hover { background:#1f6feb55; }
   #getapp .v { color:#9aa4b0; font-variant-numeric:tabular-nums; }
   /* Beside it, and deliberately quieter. The download is the thing being
      offered; this is a tip jar, and a tip jar that competes with it is a tip
      jar in the way. Grey like the rest of the toolbar until it is hovered. */
-  #bmc { background:#161b22; border:1px solid #30363d; color:#9aa4b0;
-    padding:3px 9px; border-radius:6px; font:inherit; font-size:12px;
+  #bmc { background:transparent; border:1px solid transparent; color:#7d8590;
+    padding:5px 4px; border-radius:8px; font:inherit; font-size:12px;
     text-decoration:none; white-space:nowrap; }
-  #bmc:hover { border-color:#d4b03c; color:#e6edf3; }
+  #bmc:hover { color:#d4b03c; }
+  /* Under ~1180px the first row would wrap for the sake of a tip jar; the cup
+     alone still says what it is, and its title says the rest. */
+  @media (max-width:1180px) { #bmc .bmt { display:none; } }
   /* What the button opens. A dialog rather than another corner panel: it is
      read once, on the way out of the page, and what it has to say about an
      unsigned installer does not fit in a 272px column beside the graph. */
@@ -144,14 +254,98 @@
      there the key can be read without covering anything worth seeing. */
   @media (max-width:700px) and (pointer:coarse) {
     #legend { display:none; }
-    /* The toolbar was laid out for a window. At 375px a row of eight filters is
-       468px wide and the last of them hang off the right-hand edge, where no
-       finger can reach them - so the groups break instead. That costs height,
-       and height is what the map is made of, hence the ceiling: past it the
-       toolbar scrolls and the map keeps the rest of the screen. */
-    header .grp { flex-wrap:wrap; }
-    header { max-height:36vh; overflow-y:auto; }
+    /* ---- the toolbar on a phone ---------------------------------------------
+       Height is what the map is made of, so the toolbar gets three lines and no
+       more: the title with the basket beside it, the search box, then one line
+       of chips that scrolls sideways instead of wrapping. Laid out as a window
+       it wrapped to six lines and 290px - over a third of the screen - and still
+       had to scroll. */
+    header .hrow.r1 { gap:8px; padding:8px 12px 8px; }
+    header h1 { font-size:15px; }
+    /* The count is the first thing to give way when the line is short. */
+    header .hrow.r1 > .stat:not(#hits):not(#sorig) { flex:0 1 auto; min-width:0; overflow:hidden;
+      text-overflow:ellipsis; font-size:11px; margin-right:auto; }
+    header .stat .lnk { display:none; }
+    header .hsp { display:none; }
+    /* The basket and the zip keep their icons and lose their words - the
+       title attribute still names them. The desktop build is a Windows and
+       Linux installer, which a phone has no use for. */
+    header .bt { display:none; }
+    header .hrow.r1 .tb { padding:0; width:38px; justify-content:center; gap:3px; }
+    header #tbask:has(.badge:not([hidden])) { width:auto; padding:0 10px; }
+    #getapp { display:none; }
+    #bmc { display:inline-flex; align-items:center; padding:0 4px; font-size:16px; }
+    /* A 220px basis will not fit beside the title, so the box always takes a
+       line of its own - and #hits, when a query gives it something to say,
+       sits at its end rather than on another line below. 16px, or iOS zooms
+       the whole page in the moment the box is focused. */
+    #q { order:1; flex:1 1 220px; max-width:none; font-size:16px; padding:7px 12px; }
+    #hits { order:1; min-width:0; font-size:11px; }
+    #hits:empty { display:none; }
+    #sorig { order:2; }
+    /* One line that scrolls sideways. The fade at the right edge says there is
+       more, and goes once the line has been scrolled to its end. */
+    header .hrow.r2 { flex-wrap:nowrap; overflow-x:auto; gap:6px; padding:8px 12px;
+      scrollbar-width:none; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; }
+    header .hrow.r2::-webkit-scrollbar { display:none; }
+    /* An overlay on the header rather than a mask on the line itself: a mask
+       makes the line a containing block and a stacking context, and the bottom
+       sheets that live inside it would then be pinned to it and painted under
+       their own scrim. */
+    header { position:relative; }
+    header.r2more::after { content:""; position:absolute; right:0; bottom:0; width:44px; height:52px;
+      pointer-events:none; background:linear-gradient(to right, rgba(10,14,20,0), #0a0e14 85%); }
+    header .hrow.r2 > * { flex:none; }
+    /* Only the first three or four chips are on screen without a swipe, so
+       they are the ones reached for most: what narrows the map and what it is
+       for, before which layers of it are drawn. */
+    header .hrow.r2 > .pop-wrap:has(#tfilt) { order:1; }
+    header .hrow.r2 > .pop-wrap:has(#tproj) { order:2; }
+    header .hrow.r2 > .pop-wrap:has(#tcol) { order:3; }
+    header .hrow.r2 > #tphys { order:4; }
+    header .hrow.r2 > .grp { order:5; padding-left:8px; margin-left:2px; border-left:1px solid #21262d; }
+    header .hrow.r2 .lbl { display:none; }
+    /* 26px is a target for a mouse, not a thumb. 36 is short of the 44px the
+       platform guidelines ask for, because every pixel of toolbar is one the
+       map does not get - but it is the difference between hitting `Tags` and
+       hitting `Family`. */
+    header .pill, header .tb, #bmc { min-height:36px; }
+    header .pill { padding:0 13px; font-size:13px; }
+    header .tb { font-size:13px; }
+    /* ---- popovers become bottom sheets ---------------------------------------
+       A panel hung off a chip in a sideways-scrolling line has nowhere sensible
+       to hang: it is pinned to the foot of the screen instead, full width,
+       under the thumb. The !important is against the inline position openPop
+       writes for the window layout. */
+    header .pop-panel { position:fixed !important; top:auto !important; left:0 !important;
+      right:0; bottom:0; width:auto; max-width:none; max-height:82vh;
+      border-radius:16px 16px 0 0; border-width:1px 0 0;
+      padding:6px 16px calc(14px + env(safe-area-inset-bottom));
+      box-shadow:0 -16px 40px rgba(0,0,0,.6); animation:sheet-up .2s ease-out; }
+    header .pop-panel::before { content:""; flex:none; width:36px; height:4px; margin:4px auto 8px;
+      border-radius:2px; background:#30363d; }
+    .pop-scrim { display:block; position:fixed; inset:0; z-index:5; background:rgba(3,5,9,.62);
+      animation:scrim-in .2s ease-out; }
+    .pop-scrim[hidden] { display:none; }
+    .pop-title { font-size:15px; }
+    .pop-sub { font-size:12px; }
+    header .pop-x { font-size:24px; min-width:36px; min-height:36px; margin-right:-8px; }
+    header .pop-panel .opt { padding:11px 8px; gap:12px; }
+    .opt .ck { width:18px; height:18px; margin-top:1px; }
+    .opt.on .ck::after { left:5px; top:1px; width:5px; height:10px; }
+    .opt.radio.on .ck::after { left:4px; top:4px; width:8px; height:8px; }
+    .opt .t { font-size:14px; }
+    .opt .d { font-size:12px; }
+    .opt .n { font-size:12px; }
+    .pop-field { padding:8px; }
+    .pop-field label { font-size:14px; width:52px; }
+    .pop-field select, .pop-field #pbpm { font-size:16px; min-height:42px; }
+    header .pop-clear { font-size:14px; min-height:44px; }
+    header .pop-done { font-size:15px; min-height:44px; padding:0 26px; border-radius:9px; }
   }
+  @keyframes sheet-up { from { transform:translateY(40px); opacity:.4; } }
+  @keyframes scrim-in { from { opacity:0; } }
+  @media (prefers-reduced-motion:reduce) { .pop-panel, .pop-scrim { animation:none !important; } }
   .sw { width:9px; height:9px; border-radius:2px; flex:none; }
   .nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .ct { color:#6e7681; font-variant-numeric:tabular-nums; margin-left:auto; padding-left:8px; }
@@ -171,8 +365,12 @@
   #tip .bar { display:inline-block; height:6px; border-radius:2px; vertical-align:middle; }
   footer { padding:5px 13px; border-top:1px solid #1e2530; color:#6e7681; font-size:12px;
     background:#0d1117; display:flex; gap:11px; align-items:center; }
+  /* flex:none, or the help text's huge flex-basis wins the shrink and clips a
+     15-character progress line down to "Packing 119/2..." on a 1440px footer.
+     #now takes the width it needs; the 44% cap is what stops a long "Saved ..."
+     line from crowding the footer out, and only then does the ellipsis show. */
   #now { color:#57a773; font-weight:600; white-space:nowrap; overflow:hidden;
-    text-overflow:ellipsis; max-width:44%; }
+    text-overflow:ellipsis; max-width:44%; flex:none; }
   #now.err { color:#d1655b; }
   /* Fetching a preview off the CDN is usually imperceptible and occasionally
      several seconds, and in the meantime the only feedback is a ring pulsing on
@@ -297,54 +495,77 @@
 </style>
 <div id="wrap">
   <header>
+   <div class="hrow r1">
     <h1>Freesound library</h1>
-    <span class="stat"><b id="nsm"></b> samples</span>
-    <span class="stat"><b id="ncc"></b> CC0</span>
-    <span class="stat"><b id="nky"></b> keyed</span>
-    <span class="stat"><b id="ntp"></b> tempo</span>
-    <span class="stat"><b id="nsi"></b> similarity links</span>
-    <span class="stat" id="sfit" hidden><b id="nfit"></b> fit the key</span>
-    <span class="stat" id="sbask" hidden><b id="nbask"></b> in the basket</span>
-    <span class="stat" id="sorig" hidden></span>
-    <div class="grp"><span class="lbl">show</span>
-      <button data-k="sample" class="on">samples</button>
-      <button data-k="family" class="on">family</button>
-      <button data-k="tag" class="on">tags</button>
-      <button id="tclap" class="on">similarity</button>
-    </div>
-    <div class="grp"><span class="lbl">only</span>
-      <button id="fcc0" class="cc">CC0</button>
-      <button id="floop">loopable</button>
-      <button id="fone">one-shot</button>
-      <button id="fkey">keyed</button>
-      <button id="ftempo">tempo</button>
-      <button id="flink">linked</button>
-      <button id="ffit" disabled title="key compatible with the project key">fits</button>
-      <button id="fbask" disabled title="only the samples you have kept">basket</button>
-    </div>
-    <div class="grp"><span class="lbl">project</span>
-      <input id="pbpm" type="number" min="20" max="300" step="1" placeholder="BPM" autocomplete="off">
-      <select id="pkey"></select>
-      <button id="trate" title="audition at the project tempo">at tempo</button>
-    </div>
-    <div class="grp"><span class="lbl">colour</span>
-      <button data-col="cluster" class="on">cluster</button>
-      <button data-col="0">bright</button>
-      <button data-col="1">warm</button>
-      <button data-col="2">deep</button>
-      <button data-col="3">hard</button>
-    </div>
-    <div class="grp"><span class="lbl">layout</span>
-      <button id="tphys">arrange</button>
-    </div>
-    <div class="grp"><button id="tbask" title="open the basket (S saves the hovered sample)">&#9776; basket</button><button id="dlvis">&#10515; visible</button></div>
+    <span class="stat"><b id="nsm"></b> samples<span class="lnk"><span class="sep">&middot;</span><b id="nsi"></b> links</span></span>
+    <span class="hsp"></span>
     <input id="q" placeholder="snare, tag:vinyl, bpm:120-130&hellip;" autocomplete="off"
            title="Terms are ANDed. A leading - drops what the term matches.&#10;&#10;bpm:120-130  bpm:&gt;100  bpm:&lt;90  bpm:128&#10;key:Amin  key:&quot;A minor&quot;  key:C&#10;dur:&lt;2  dur:0.5-4&#10;dl:&gt;1000  rate:&gt;4&#10;tag:vinyl  by:username  pack:...  fam:...  sub:...&#10;loud:&gt;-14  dyn:&gt;6&#10;&#10;Anything else is matched as text, over the name, uploader,&#10;pack, family and every tag on the sample.&#10;Only trusted key and BPM readings are ever matched.">
     <span class="stat" id="hits"></span>
+    <span class="hsp"></span>
+    <button id="tbask" class="tb" title="open the basket (S saves the hovered sample)">&#9776;<span class="bt"> Basket</span><b id="nbask" class="badge" hidden></b></button>
+    <button id="dlvis" class="tb">&#10515;<span class="bt"> Save visible</span></button>
     <a id="getapp" href="https://github.com/AlexM1010/visualise-music/releases"
-       title="The same map over your own folder of audio. Windows or Linux.">&#10515; map your own samples</a>
+       title="The same map over your own folder of audio. Windows or Linux.">Map your own samples</a>
     <a id="bmc" href="https://buymeacoffee.com/alexm1010" target="_blank"
-       rel="noopener noreferrer" title="Buy me a coffee - opens in a new tab">buy me a coffee</a>
+       rel="noopener noreferrer" title="Buy me a coffee - opens in a new tab">&#9749;<span class="bmt"> Buy me a coffee</span></a>
+    <span class="stat" id="sorig" hidden></span>
+   </div>
+
+   <div class="hrow r2">
+    <div class="grp"><span class="lbl">show</span>
+      <button data-k="sample" class="pill on">Samples</button>
+      <button data-k="family" class="pill on">Family</button>
+      <button data-k="tag" class="pill on">Tags</button>
+      <button id="tclap" class="pill on">Similarity</button>
+    </div>
+
+    <div class="pop-wrap">
+      <button id="tcol" class="tb" data-pop="colpop" aria-haspopup="true" aria-expanded="false">Colour: <span id="ncol">Cluster</span><span class="caret">&#9660;</span></button>
+      <div id="colpop" class="pop-panel narrow" role="dialog" aria-label="Colour by" hidden>
+        <div class="pop-head"><span class="pop-title">Colour by</span><button class="pop-x" data-pop-close aria-label="Close">&times;</button></div>
+        <button data-col="cluster" class="opt radio on"><span class="ck"></span><span class="tx"><span class="t">Cluster</span><span class="d">The community each sample landed in</span></span></button>
+        <button data-col="0" class="opt radio"><span class="ck"></span><span class="tx"><span class="t">Brightness</span><span class="d">Dull to bright, 0-100</span></span></button>
+        <button data-col="1" class="opt radio"><span class="ck"></span><span class="tx"><span class="t">Warmth</span><span class="d">Cold to warm, 0-100</span></span></button>
+        <button data-col="2" class="opt radio"><span class="ck"></span><span class="tx"><span class="t">Depth</span><span class="d">Shallow to deep, 0-100</span></span></button>
+        <button data-col="3" class="opt radio"><span class="ck"></span><span class="tx"><span class="t">Hardness</span><span class="d">Soft to hard, 0-100</span></span></button>
+      </div>
+    </div>
+
+    <span class="hsp"></span>
+
+    <div class="pop-wrap">
+      <button id="tfilt" class="tb" data-pop="filtpop" aria-haspopup="true" aria-expanded="false">Filters<b id="nflt" class="badge" hidden></b></button>
+      <div id="filtpop" class="pop-panel" role="dialog" aria-label="Filters" hidden>
+        <div class="pop-head"><span class="pop-title">Filters</span><span class="pop-sub" id="nfltx">none active</span><button class="pop-x" data-pop-close aria-label="Close filters">&times;</button></div>
+        <button id="fcc0" class="opt cc"><span class="ck"></span><span class="tx"><span class="t">CC0 only</span><span class="d">Public domain &mdash; free to use, no credit needed</span></span><b class="n" id="ncc"></b></button>
+        <button id="floop" class="opt"><span class="ck"></span><span class="tx"><span class="t">Loopable</span><span class="d">Plays back seamlessly on repeat</span></span><b class="n" id="nloop"></b></button>
+        <button id="fone" class="opt"><span class="ck"></span><span class="tx"><span class="t">One-shot</span><span class="d">A single hit, not a loop</span></span><b class="n" id="nshot"></b></button>
+        <button id="fkey" class="opt"><span class="ck"></span><span class="tx"><span class="t">Keyed</span><span class="d">Has a musical key we trust</span></span><b class="n" id="nky"></b></button>
+        <button id="ftempo" class="opt"><span class="ck"></span><span class="tx"><span class="t">Tempo</span><span class="d">Has a BPM we trust</span></span><b class="n" id="ntp"></b></button>
+        <button id="flink" class="opt"><span class="ck"></span><span class="tx"><span class="t">Linked</span><span class="d">Sounds like at least one other sample</span></span><b class="n" id="nlnk"></b></button>
+        <button id="fbask" class="opt" disabled title="keep a sample first - S keeps the one under the cursor"><span class="ck"></span><span class="tx"><span class="t">In basket</span><span class="d">Only the samples you have kept</span></span></button>
+        <div class="pop-foot"><button class="pop-clear" id="fclear">Clear filters</button><button class="pop-done" data-pop-close>Done</button></div>
+      </div>
+    </div>
+
+    <div class="pop-wrap">
+      <button id="tproj" class="tb" data-pop="projpop" aria-haspopup="true" aria-expanded="false">Project</button>
+      <div id="projpop" class="pop-panel" role="dialog" aria-label="Project" hidden>
+        <div class="pop-head"><span class="pop-title">Project</span><span class="pop-sub">what you are writing</span><button class="pop-x" data-pop-close aria-label="Close project">&times;</button></div>
+        <div class="pop-field"><label for="pbpm">Tempo</label>
+          <input id="pbpm" type="number" min="20" max="300" step="1" placeholder="e.g. 128" autocomplete="off"
+                 title="Your project's tempo, 20-300. Everything gains its distance to it."><span class="unit">BPM</span></div>
+        <div class="pop-field"><label for="pkey">Key</label><select id="pkey"></select></div>
+        <div class="pop-sec">Use it</div>
+        <button id="ffit" class="opt" disabled title="choose a project key first"><span class="ck"></span><span class="tx"><span class="t">Fits the key</span><span class="d">Only samples that sit in your project key</span></span><b id="nfit" class="n" hidden></b></button>
+        <button id="trate" class="opt" title="Audition at the project tempo by resampling, which shifts pitch - the footer says by how much. A ratio past ±1 octave plays as recorded, and greys"><span class="ck"></span><span class="tx"><span class="t">Audition at tempo</span><span class="d">Previews play at your BPM &mdash; shifts pitch</span></span></button>
+        <div class="pop-foot"><span></span><button class="pop-done" data-pop-close>Done</button></div>
+      </div>
+    </div>
+
+    <button id="tphys" class="tb">Arrange</button>
+   </div>
   </header>
   <div id="main"><canvas id="cv"></canvas><div id="legend"></div><div id="phys" hidden></div><div id="basket" hidden></div><div id="tip"></div></div>
   <footer><span id="now" draggable="true"></span><span id="load" role="status" aria-label="loading"></span><canvas id="wave"></canvas><button id="loopst"></button><button id="dlone" hidden>&#10515; save</button><button id="bkone" hidden></button><span id="note"></span><span id="foot"></span></footer>
@@ -465,8 +686,12 @@ document.getElementById("ncc").textContent = DATA.cc0.toLocaleString();
 document.getElementById("nky").textContent = DATA.keyed.toLocaleString();
 document.getElementById("ntp").textContent = DATA.tempoed.toLocaleString();
 document.getElementById("nsi").textContent = DATA.sims.toLocaleString();
-const FOOT_KEYS =
-  "Click a sample to play · Tab walks to the next similar sound, shift-Tab comes "
+// A phone has none of these keys, and "click" and "hovered" describe a mouse -
+// so a touch screen with no mouse beside it gets its own gestures instead.
+const FOOT_KEYS = matchMedia("(hover:none) and (pointer:coarse)").matches
+  ? "Tap a sample to play it · drag to move around · pinch to zoom · "
+    + "tap the background to clear"
+  : "Click a sample to play · Tab walks to the next similar sound, shift-Tab comes "
   + "back the way you came · ctrl-Z goes back to the sound you were on before, "
   + "ctrl-Y forward · Space plays the hovered node · D downloads it · "
   + "S saves it · L loops · F frames it · Esc stops";
@@ -743,7 +968,10 @@ function draw(){
     // Culling matters here: zoomed in, most of 6,938 nodes are off-screen, and a
     // vinyl is five arcs rather than one.
     if(px2 < -r-2 || px2 > W+r+2 || py2 < -r-2 || py2 > H+r+2) continue;
-    const dim = matches && !matches.has(i);
+    // Two reasons to fade a disc - it lost the search, or it does not fit the
+    // project - and one alpha for both, because faint means the same thing on
+    // this canvas whichever of them asked for it.
+    const dim = (matches && !matches.has(i)) || offProject(n);
     ctx.globalAlpha = dim?0.10:1;
     if(n.k==="sample" && r >= VINYL_MIN_R && !fast){
       drawVinyl(px2, py2, r, nodeColour(n));
@@ -1284,6 +1512,7 @@ function setAtTempo(on){
   const b = document.getElementById("trate"); if (b) b.classList.toggle("on", atTempo);
   try { localStorage.setItem("fs-at-tempo", atTempo ? "1" : "0"); } catch(e){}
   applyRate();
+  draw();                     // it decides whether a tempo can miss at all
 }
 // The rate can change under a sound that is already playing - the toggle, or the
 // project BPM being typed - and the footer has to keep up, because the semitone
@@ -2606,11 +2835,23 @@ markLayoutBtns(); updLayNote();
 // KEYORDER, which the arrangement fields build.
 const bpmIn = document.getElementById("pbpm"), keySel = document.getElementById("pkey");
 const rateBtn = document.getElementById("trate"), fitBtn = document.getElementById("ffit");
-const fitStat = document.getElementById("sfit"), fitNum = document.getElementById("nfit");
+const fitNum = document.getElementById("nfit");
 keySel.innerHTML = '<option value="">any key</option>' + KEYORDER.map(k =>
   '<option value="'+k+'"'+(k === PROJ.key ? " selected" : "")+'>'+k+'</option>').join("");
 if (PROJ.bpm) bpmIn.value = PROJ.bpm;
 rateBtn.classList.toggle("on", atTempo);
+// The Project trigger now stands in for the tempo and key it opens onto, so
+// it has to say which one is set without anyone opening it - the same reason
+// `fits` grew a count instead of staying a bare label.
+const tprojBtn = document.getElementById("tproj");
+function updProjLabel(){
+  const parts = [];
+  if (PROJ.bpm) parts.push(PROJ.bpm + " BPM");
+  if (PROJ.key) parts.push(PROJ.key);
+  tprojBtn.textContent = parts.length ? "Project: " + parts.join(" · ") : "Project";
+  tprojBtn.classList.toggle("on", parts.length > 0);
+}
+updProjLabel();
 
 // KEYORDER is twelve minors then twelve majors, so index%12 is the pitch class
 // and index>=12 is the mode. Compatible means: the same key, its relative major
@@ -2624,6 +2865,24 @@ function keyFits(n){
   const pa = a%12, pb = b%12, majA = a >= 12, majB = b >= 12;
   if (majA === majB) return Math.abs(((pa - pb + 18) % 12) - 6) <= 1;
   return pa === (majB ? (pb + 9) % 12 : (pb + 3) % 12);
+}
+// The canvas half of those two settings. `fits` answers "show me only what
+// belongs" by taking everything else away; this answers "where in the map does
+// D# minor live" by leaving it there and greying it, which is the question you
+// have before you know whether the filter is worth pressing. Unkeyed samples
+// grey too - the header's `fit the key` count has never counted them either, and
+// a key we cannot read is not a key that fits.
+//
+// A tempo can miss as well, but only a sample that has one: with `at tempo` on,
+// a ratio past the octave is exactly the case the footer calls "played as
+// recorded", so the disc says what the line under it says. A one-shot has no
+// tempo to reach and is left alone.
+function offProject(n){
+  if (n.k !== "sample") return false;
+  if (PROJ.key && !keyFits(n)) return true;
+  if (!atTempo || !PROJ.bpm || !n.bo || !n.bpm) return false;
+  const r = PROJ.bpm/n.bpm;
+  return r < RATE_LO || r > RATE_HI;
 }
 // The same relationship in words, for the tooltip. Semitones are signed toward
 // the project: "+2 st" means pitch this sample up two to land on it.
@@ -2643,27 +2902,57 @@ function keyToProject(k){
 function updFits(){
   fitBtn.disabled = !PROJ.key;
   if (!PROJ.key){
-    fitStat.hidden = true;
+    fitNum.hidden = true;
+    // A disabled button's tooltip is the one place left to say what would turn
+    // it on, so it says that rather than describing what it does. It sits beside
+    // the key select now, which is most of the answer on its own.
+    fitBtn.title = "choose a project key first";
     if (only.fits){ only.fits = false; fitBtn.classList.remove("on"); }
     return;
   }
   let c = 0;
   for (let i=0;i<N.length;i++) if (N[i].k === "sample" && keyFits(N[i])) c++;
   fitNum.textContent = c.toLocaleString();
-  fitStat.hidden = false;
+  fitNum.hidden = false;
+  fitBtn.title = "only the " + c.toLocaleString() + " samples in a key compatible with "
+    + PROJ.key + " - the rest are greyed until you press it";
 }
-bpmIn.addEventListener("input", () => {
-  const v = Math.round(+bpmIn.value);
-  PROJ.bpm = (isFinite(v) && v >= 20 && v <= 300) ? v : 0;
+// 20-300 is the range a project tempo can be, and anything outside it left the
+// field showing a number the page had already thrown away - no tooltip distance,
+// no greying, and nothing on screen admitting it. Red says the number is not
+// being used; blur puts it back in range rather than leaving it red forever.
+// Half-typed is not wrong, so "1" on the way to "180" is red and silent, never
+// rewritten under the cursor.
+const BPM_LO = 20, BPM_HI = 300;
+function readBpm(){
+  const raw = bpmIn.value.trim();
+  const v = Math.round(+raw);
+  const ok = raw !== "" && isFinite(v) && v >= BPM_LO && v <= BPM_HI;
+  PROJ.bpm = ok ? v : 0;
+  bpmIn.classList.toggle("bad", raw !== "" && !ok);
   try { localStorage.setItem("fs-proj-bpm", String(PROJ.bpm)); } catch(e){}
   applyRate();
+  draw();                     // the greying moves with the number being typed
+  updProjLabel();
+}
+bpmIn.addEventListener("input", readBpm);
+bpmIn.addEventListener("blur", () => {
+  const raw = bpmIn.value.trim();
+  if (raw === "" || bpmIn.classList.contains("bad") === false) return;
+  const v = Math.round(+raw);
+  bpmIn.value = isFinite(v) ? String(Math.max(BPM_LO, Math.min(BPM_HI, v))) : "";
+  readBpm();
 });
 keySel.addEventListener("change", () => {
   PROJ.key = keySel.value;
   try { localStorage.setItem("fs-proj-key", PROJ.key); } catch(e){}
+  updProjLabel();
   const filtering = only.fits;
   updFits();
-  if (filtering) refresh();       // the surviving set changed under the filter
+  // refresh() when the surviving set changed under the filter - updFits() can
+  // clear it, so ask both sides. draw() otherwise: greying fades a node, it
+  // never moves one, so there is nothing for the layout to redo.
+  if (filtering || only.fits) refresh(); else draw();
 });
 rateBtn.onclick = () => setAtTempo(!atTempo);
 updFits();
@@ -2673,7 +2962,7 @@ updFits();
 // six existed nowhere. This is the list of them: click a row to hear it again,
 // drag it into a DAW, or zip the lot with the credits that make it usable.
 const bkPanel = document.getElementById("basket"), bkBtn = document.getElementById("tbask");
-const bkStat = document.getElementById("sbask"), bkNum = document.getElementById("nbask");
+const bkNum = document.getElementById("nbask");
 const fbaskBtn = document.getElementById("fbask");
 const htmlEsc = s => String(s === null || s === undefined ? "" : s)
   .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -2728,12 +3017,16 @@ function renderBasket(){
 // for a basket nobody has touched.
 function updBasket(quiet){
   const ns = basketNodes().length;
-  bkNum.textContent = ns; bkStat.hidden = !ns;
+  bkNum.textContent = ns; bkNum.hidden = !ns;
   const wasFiltering = only.basket;
   // Same shape as updFits: a filter with nothing behind it stands aside rather
   // than emptying the graph.
   if (!ns && only.basket){ only.basket = false; fbaskBtn.classList.remove("on"); }
   fbaskBtn.disabled = !ns;
+  // Same rule as `fits`: while it is off, the tooltip is for saying what turns
+  // it on, because that is the only question a disabled button raises.
+  fbaskBtn.title = ns ? "only the " + ns + " sample" + (ns===1?"":"s") + " you have kept"
+                      : "keep a sample first - S keeps the one under the cursor";
   renderBasket();
   updKeepBtn();
   if (quiet) return;
@@ -3274,6 +3567,12 @@ function panFrame(){
 // ---- input -----------------------------------------------------------------
 document.querySelectorAll("button[data-k]").forEach(b => b.onclick = () => {
   kinds[b.dataset.k] = !kinds[b.dataset.k]; b.classList.toggle("on", kinds[b.dataset.k]); refresh(); });
+// A kind with nothing behind it gets no button. The desktop build makes no family
+// nodes at all - there `subcategory` is a filter on the sample rather than a thing
+// on the map - so its `family` button toggled a set that was always empty, which
+// is worse than an absent control: it looks like one that does nothing.
+document.querySelectorAll("button[data-k]").forEach(b => {
+  if (!DATA.counts[b.dataset.k]) b.hidden = true; });
 document.querySelectorAll("button[data-col]").forEach(b => b.onclick = () => {
   colourBy = b.dataset.col;
   document.querySelectorAll("button[data-col]").forEach(o => o.classList.toggle("on", o === b));
@@ -3287,6 +3586,124 @@ onlyBtn("fbask","basket");        // disabled while the basket is empty, likewis
 const linkBtn = (id, get, set) => { const b = document.getElementById(id);
   b.onclick = () => { set(!get()); b.classList.toggle("on", get()); refresh(); }; };
 linkBtn("tclap", () => showClap, v => showClap = v);
+
+// The Filters trigger stands in for seven buttons it no longer shows at once,
+// so it carries the one number that matters from outside: how many of them
+// are on. `fits` lives in the Project popover instead - it is a project
+// setting's own filter, not one of these.
+const fltBtn = document.getElementById("tfilt"), fltNum = document.getElementById("nflt");
+const fltSub = document.getElementById("nfltx"), fltClear = document.getElementById("fclear");
+const FILT_IDS = ["fcc0","floop","fone","fkey","ftempo","flink","fbask"];
+function updFiltBadge(){
+  let c = 0;
+  for (const k of ["cc0","loop","one","key","tempo","link","basket"]) if (only[k]) c++;
+  fltNum.textContent = c; fltNum.hidden = c === 0;
+  fltBtn.classList.toggle("on", c > 0);
+  fltSub.textContent = c ? c + " active" : "none active";
+  fltClear.disabled = c === 0;
+}
+for (const id of FILT_IDS){
+  const b = document.getElementById(id);
+  if (b) b.addEventListener("click", updFiltBadge);
+}
+// Clear goes through each button's own click rather than resetting `only`
+// behind their backs, so the lit state, the refresh and the badge all stay
+// the one code path they already are.
+fltClear.onclick = () => {
+  for (const id of FILT_IDS){
+    const b = document.getElementById(id);
+    if (b && b.classList.contains("on") && !b.disabled) b.click();
+  }
+};
+updFiltBadge();
+// Each option carries the size of what it narrows to, which is the question
+// asked before pressing it - these were the stat run along the top.
+{
+  const setN = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = (v || 0).toLocaleString(); };
+  let linked = 0;
+  for (let i = 0; i < N.length; i++) if (N[i].k === "sample" && N[i].ln) linked++;
+  setN("nloop", DATA.loopable); setN("nshot", DATA.oneshot); setN("nlnk", linked);
+}
+// Colour is one of five, so its trigger names the one in use and a pick
+// closes the panel - there is nothing else to do in it.
+const colName = document.getElementById("ncol");
+function updColLabel(){
+  const on = document.querySelector("button[data-col].on .t");
+  if (on) colName.textContent = on.textContent;
+}
+document.querySelectorAll("button[data-col]").forEach(b =>
+  b.addEventListener("click", () => { updColLabel(); closeAllPops(); }));
+updColLabel();
+
+// ---- the Filters and Project popovers ---------------------------------
+// Both used to be flat groups sitting open in the header at all times; now
+// they are one button each, and this is the whole of what opening one does.
+// Positioned in JS off the trigger's own screen rect rather than anchored in
+// CSS, so the panel tracks its button even after the header reflows or the
+// page is scrolled on a phone - and never gets clipped by the header's own
+// overflow:auto there.
+// The dimmed page behind a bottom sheet on a phone (CSS keeps it display:none
+// anywhere else). Its own element rather than a shadow on the panel, because a
+// tap on a shadow lands on the map underneath and plays whatever is there.
+// In the header beside the panels, not on <body>: #wrap is position:fixed, which
+// makes it a stacking context of its own, and a scrim outside it covers the
+// panels inside it whatever their z-index.
+const popScrim = document.createElement("div");
+popScrim.className = "pop-scrim"; popScrim.hidden = true;
+document.querySelector("header").appendChild(popScrim);
+function closeAllPops(){
+  popScrim.hidden = true;
+  document.querySelectorAll(".pop-panel").forEach(p => { p.hidden = true; });
+  document.querySelectorAll("[data-pop]").forEach(b => {
+    b.classList.remove("open"); b.setAttribute("aria-expanded", "false"); });
+}
+function openPop(panel, btn){
+  const willOpen = panel.hidden;
+  closeAllPops();
+  if (!willOpen) return;
+  panel.hidden = false; popScrim.hidden = false;
+  btn.classList.add("open"); btn.setAttribute("aria-expanded", "true");
+  const r = btn.getBoundingClientRect();
+  panel.style.position = "fixed";
+  panel.style.top = (r.bottom + 8) + "px";
+  const w = panel.offsetWidth || 320;
+  panel.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + "px";
+}
+document.querySelectorAll("[data-pop]").forEach(b => {
+  const panel = document.getElementById(b.dataset.pop);
+  b.onclick = e => { e.stopPropagation(); openPop(panel, b); };
+});
+document.querySelectorAll("[data-pop-close]").forEach(b => { b.onclick = closeAllPops; });
+document.addEventListener("click", e => {
+  if ([...document.querySelectorAll(".pop-panel")].some(p => !p.hidden && !p.contains(e.target)))
+    closeAllPops();
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeAllPops(); });
+// A fixed-position panel does not move with the header it was placed under,
+// so a scroll on the phone layout - the one place the header itself scrolls -
+// closes it instead of leaving it pointing at empty air. Declared here
+// rather than borrowed from the `headEl` further down, which does not exist
+// yet at this point in the script.
+document.querySelector("header").addEventListener("scroll", closeAllPops);
+// Width only. On a phone the keyboard coming up for the BPM field is a resize
+// too - a height one - and closing on it shut the Project sheet the moment the
+// field inside it was tapped.
+let popW = window.innerWidth;
+window.addEventListener("resize", () => {
+  if (window.innerWidth !== popW){ popW = window.innerWidth; closeAllPops(); } });
+// The chip line scrolls sideways on a phone; it fades at the right edge while
+// there is more of it off screen, and stops fading once there is not.
+const hRow2 = document.querySelector(".hrow.r2");
+function updRow2Fade(){
+  hRow2.parentElement.classList.toggle("r2more",
+    hRow2.scrollLeft + hRow2.clientWidth < hRow2.scrollWidth - 4); }
+hRow2.addEventListener("scroll", updRow2Fade, {passive:true});
+window.addEventListener("resize", updRow2Fade);
+// A chip that changes its own width - Project filling in its tempo - changes
+// whether the line overflows without any scroll or resize to say so.
+const row2Obs = new ResizeObserver(updRow2Fade);
+for (const c of hRow2.children) row2Obs.observe(c);
+updRow2Fade();
 document.getElementById("dlvis").onclick = downloadVisible;
 document.getElementById("dlone").onclick = () => downloadOne(N[barNode]);
 // The button does what L does by calling it: one behaviour, two ways in. Painted
@@ -3654,6 +4071,79 @@ const qEl = document.getElementById("q");
 qEl.addEventListener("input", e => runQuery(e.target.value));
 qEl.addEventListener("focus", () => { footEl.textContent = FOOT_QUERY; });
 qEl.addEventListener("blur",  () => { footEl.textContent = FOOT_KEYS; });
+
+// ---- what each control does ------------------------------------------------
+// Eighteen of the twenty-six controls in the header carried no explanation of
+// any kind: a row of one-word buttons, where the only way to find out what
+// `linked` meant was to press it and watch six thousand discs leave. The footer
+// is already the surface that explains this page - it holds the key list, and
+// stands aside for the query grammar while you are typing one - so it takes this
+// too. Put the cursor on a control and the line says what that control does;
+// take it off and the key list comes back.
+//
+// Every number in here is read off the payload rather than written down, because
+// a hint that says 1,403 to a library that has 41 is worse than no hint.
+const nk = k => (DATA.counts[k] || 0).toLocaleString();
+const num = v => (v || 0).toLocaleString();
+let nLinked = 0;
+for (let i=0;i<N.length;i++) if (N[i].k === "sample" && N[i].ln) nLinked++;
+const HINTS = [
+  ["[data-k=sample]", "Show the sounds themselves - every small disc on the map is one of "
+    + nk("sample") + " samples"],
+  ["[data-k=family]", "Show the " + nk("family") + " family nodes - Freesound's own subcategory "
+    + "classifier. A hairline joins each sample to its family"],
+  ["[data-k=tag]", "Show the " + nk("tag") + " tag nodes - a hairline joins each sample to its "
+    + "three rarest tags, which are the ones that place it"],
+  ["#tclap", "Draw the " + num(DATA.sims) + " similarity edges - the thick ones, and the only "
+    + "thing on this map that joins one sample to another"],
+  ["#fcc0", "Only the " + num(DATA.cc0) + " samples released CC0, which need no credit"],
+  ["#floop", "Only the " + num(DATA.loopable) + " samples the analysis called loopable"],
+  ["#fone", "Only the " + num(DATA.oneshot) + " samples the analysis called a single event"],
+  ["#fkey", "Only the " + num(DATA.keyed) + " samples whose key reading cleared the confidence "
+    + "threshold - the rest have a key, but not one worth trusting"],
+  ["#ftempo", "Only the " + num(DATA.tempoed) + " samples whose BPM reading cleared the "
+    + "confidence threshold"],
+  ["#flink", "Only the " + num(nLinked) + " samples with at least one acoustic neighbour"],
+  ["#pkey", "Your project's key. Every sample gains its distance to it, and everything that "
+    + "does not fit is greyed"],
+  ["[data-col=cluster]", "Colour every node by the cluster it landed in - the communities "
+    + "listed in the legend"],
+  ["[data-col='0']", "Colour every sample by its brightness, 0-100"],
+  ["[data-col='1']", "Colour every sample by its warmth, 0-100"],
+  ["[data-col='2']", "Colour every sample by its depth, 0-100"],
+  ["[data-col='3']", "Colour every sample by its hardness, 0-100"],
+  ["#tphys", "Open the arrangement panel - clusters, a grid, a scatter graph against any two "
+    + "fields, and the live physics behind all three"],
+  ["#dlvis", "Zip every sample currently on screen - the filters and the search box both count"],
+];
+for (const [sel, text] of HINTS)
+  for (const el of document.querySelectorAll("header " + sel))
+    // Never over a title that is already there: `fits` and `basket` rewrite
+    // theirs as the page changes, and the live one is the better sentence.
+    if (!el.title) el.title = text;
+
+// One listener on the header rather than two per control, and `elementFromPoint`
+// rather than the event's own target, because a disabled button does not fire
+// mouse events at all - and a disabled button is exactly the one whose tooltip
+// nobody can read. It answers the hit test whether or not it can be pressed.
+const footBase = () => document.activeElement === qEl ? FOOT_QUERY : FOOT_KEYS;
+const headEl = document.querySelector("header");
+let hintEl;
+function showHint(el){
+  if (el === hintEl) return;                 // a mousemove fires per pixel
+  hintEl = el;
+  footEl.textContent = el === qEl ? FOOT_QUERY : ((el && el.title) || footBase());
+}
+headEl.addEventListener("mousemove", e => {
+  let el = document.elementFromPoint(e.clientX, e.clientY);
+  while (el && el !== headEl && !el.title) el = el.parentElement;
+  showHint(el && el !== headEl ? el : null);
+});
+headEl.addEventListener("mouseleave", () => showHint(null));
+// Tabbing through the toolbar reads the same line, which is the only way any of
+// this reaches somebody who is not holding a mouse.
+headEl.addEventListener("focusin",  e => showHint(e.target.title ? e.target : null));
+headEl.addEventListener("focusout", () => showHint(null));
 
 function paintOriginals(){
   const el = document.getElementById("sorig");

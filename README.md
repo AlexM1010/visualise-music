@@ -212,6 +212,98 @@ properly, and 15,670 purple lines buried the 4,428 real ones it stood in for.
 
 The map is the index. This is the part that gets a sound into a track.
 
+### The toolbar holds still
+
+Two counts used to live in the run of stats along the top - `183 fit the key` and
+`6 in the basket` - and a third chip said whether the originals server was
+answering. All three appeared as you worked, and appearing made the run longer,
+which re-wrapped every control behind it. In a 900px window, choosing a project
+key moved the BPM field 466px left and down a row, and moved the key select out
+from under the cursor that had just used it. Keeping your first sample did it
+again.
+
+So the counts moved onto the controls they are about: the number on `fits` is
+what `fits` would leave standing, the number on `basket` is what is in the
+basket. The originals chip went to the end of the header, where nothing follows
+it to be pushed.
+
+### Two rows, and nothing thrown away
+
+Even holding still, the toolbar was thirty-odd controls in one flat run - five
+unlabelled groups with no order of importance, wrapping wherever the window
+happened to end. It is two rows now. The first is what every visit needs on
+sight: the search box, centred, with the basket and the zip beside it. The
+second is the map's own controls, and everything that used to sit open along it
+is folded behind a trigger that says its own state, so folding it hides nothing:
+
+- **Colour: Cluster** names the scheme in use; the panel lists the five with a
+  line on what each one reads.
+- **Filters** carries a badge counting what is on. Its panel is the seven
+  toggles the `only` group had, each with a sentence saying what it keeps and
+  the number it would leave standing - the counts that used to be the stat run.
+  `Clear filters` presses each lit one rather than resetting the state behind
+  their backs, so the page has one code path for a filter, not two.
+- **Project: 128 BPM · C minor** spells out the tempo and key. Its panel holds
+  them, `fits` with its count, and `at tempo`.
+
+Every button inside is the same `<button>` with the same id it always had; the
+check box is drawn in CSS off its `on` class. The panels are positioned in
+script off the trigger's own rect rather than anchored in CSS, and they are
+still inside `<header>`, so the footer hints below reach them unchanged.
+
+On a phone the toolbar was that flat run wrapped to six lines and 292px - over a
+third of a 812px screen - and it still had to scroll. It is three lines and 153px
+now, which gives the map 624px rather than 485: the title with the basket and the
+zip as bare icons, the search box on a line of its own, then one line of chips
+that scrolls sideways and fades at the edge while there is more of it. Filters
+and Project come first on that line, because only three or four chips are on
+screen without a swipe. The search box is 16px, or iOS zooms the page the moment
+it is focused, and the chips are 36px - short of the 44 the platform guidelines
+ask for, because every pixel of toolbar is one the map does not get. The download
+link for the desktop build is not shown there: it is a Windows and Linux
+installer, which a phone has no use for.
+
+The panels become bottom sheets on a phone, full width under the thumb, over a
+scrim that is an element of its own rather than a shadow, because a tap on a
+shadow lands on the map and plays whatever is under it. They close on a change of
+width only: the keyboard coming up for the BPM field is a resize as well, and
+closing on every resize shut the Project sheet the instant its own field was
+tapped. The footer's key list is replaced there by the gestures a phone actually
+has - tap, drag, pinch.
+
+### The footer says what a control does
+
+Eighteen of the twenty-six controls in the header carried no explanation of any
+kind. They are one-word buttons, and one word is not enough: `linked` is not a
+link, `keyed` does not mean "has a key", and the only way to find out was to
+press one and watch six thousand discs leave.
+
+The footer is already the surface that explains this page — it holds the key
+list, and stands aside for the query grammar while you are typing one — so it
+takes this too. Put the cursor on a control and the line says what that control
+does; take it off and the key list comes back. Tabbing onto one reads the same
+line, which is the only way any of it reaches somebody not holding a mouse.
+
+The text is the control's own `title`, read at hover time rather than copied into
+a second table, so the tooltip and the footer cannot drift apart — and the two
+controls that rewrite their title as the page changes, `fits` with its count and
+`basket` with its precondition, say the same live thing in both places. Every
+number in a hint is read off the payload rather than written down: a line that
+says 1,403 to a library that has 41 is worse than no line.
+
+It is one listener on the header rather than two per control, and it finds the
+control with `elementFromPoint` rather than trusting the event's own target,
+because **a disabled button fires no mouse events at all** — and a disabled
+button is precisely the one whose tooltip nobody can read. Hovering the greyed-out
+`fits` now puts `choose a project key first` in the footer, which is the sentence
+that was unreachable before.
+
+One control turned out to do nothing. The desktop build makes no family nodes —
+there `subcategory` is a filter on the sample rather than a thing on the map — so
+its `family` button toggled a set that was always empty. A kind with nothing
+behind it now gets no button at all, in either build, decided from
+`DATA.counts`. Here all three kinds are populated and all three buttons stay.
+
 ### Walking the similarity edges
 
 The CLAP ranking is the only thing in this graph that knows two sounds are alike,
@@ -390,11 +482,27 @@ pitch, so the footer says by how much: `at 140 BPM, pitched +5.7 st`. Calling
 that time-stretching would be a lie, and which one you are hearing is exactly
 what decides whether the loop is usable. Ratios past an octave are left alone.
 
-`fits` filters to keys compatible with the project: the same key, its relative
-major or minor, and a semitone either side, because nobody thinks twice about
-pitching a one-shot a semitone. Against the 1,403 trusted keys in the corpus, a
-project key leaves a median of 224 samples standing across the 24 - fewest for
-D major at 139, most for C# minor at 339.
+`fits` sits in this group rather than with the other filters, because it is not
+one until a project key exists: it filters to keys compatible with the project -
+the same key, its relative major or minor, and a semitone either side, because
+nobody thinks twice about pitching a one-shot a semitone. Against the 1,403
+trusted keys in the corpus, a project key leaves a median of 224 samples standing
+across the 24 - fewest for D major at 139, most for C# minor at 339. It carries
+that number on its face, so what pressing it would cost is legible before it is
+pressed, and while it is disabled its tooltip says what would turn it on rather
+than describing a filter you cannot reach.
+
+The map answers as well. A project key greys every sample that is not one of
+those compatible keys, at the alpha a search already uses for what it did not
+match, so the shape of the library stays on screen and the part of it you can
+write in stands out of that shape. Unkeyed samples grey with the rest - the
+count on the `fits` button has never counted them either, and a key we cannot read is
+not a key that fits. With `at tempo` on a missed tempo greys too, but only where
+there is one to miss: a ratio past the octave is the case the footer calls
+`1.34× is past ±1 octave, played as recorded`, and the disc should not claim
+otherwise, while a one-shot has no tempo to reach and is left alone. At 180 BPM
+that is 331 of the 1,761 tempos. `fits` still takes them away rather than fading
+them, which is the same question asked harder.
 
 ### Keeping and exporting
 
@@ -413,7 +521,7 @@ lookup but as every kept sample quietly reported as one this build does not
 carry - on exactly the reload the basket exists to survive.
 
 The panel raises itself the first time anything is kept, because otherwise the
-basket is a number in the header and a keystroke described in a footer nobody is
+basket is a number on a button and a keystroke described in a footer nobody is
 reading. After that its open state is remembered as well: closing it means closed
 on the next load, and nothing later drags it back up.
 

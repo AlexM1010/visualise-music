@@ -2580,9 +2580,10 @@ document.getElementById("ph_autofit").onchange = e => { autoFit = e.target.check
 document.getElementById("ph_detail").onchange  = e => { fullDetail = e.target.checked; saveSim(); draw(); };
 const physPanel = document.getElementById("phys");
 const physBtn = document.getElementById("tphys");
-// Lit while the panel is open OR while the simulation is running, so closing
-// the panel over a moving graph does not leave the header claiming nothing is.
-function markPhysBtn(){ physBtn.classList.toggle("on", running || !physPanel.hidden); }
+// Lit only while the panel is open. The simulation runs on its own when the page
+// opens, so tying this to `running` made the button look pressed with no panel
+// showing; the run/pause button inside the panel carries the running state.
+function markPhysBtn(){ physBtn.classList.toggle("on", !physPanel.hidden); }
 physBtn.onclick = () => { physPanel.hidden = !physPanel.hidden; markPhysBtn(); };
 updMeta();
 

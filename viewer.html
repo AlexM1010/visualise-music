@@ -163,9 +163,6 @@
     padding:5px 4px; border-radius:8px; font:inherit; font-size:12px;
     text-decoration:none; white-space:nowrap; }
   #bmc:hover { color:#d4b03c; }
-  /* Under ~1180px the first row would wrap for the sake of a tip jar; the cup
-     alone still says what it is, and its title says the rest. */
-  @media (max-width:1180px) { #bmc .bmt { display:none; } }
   /* What the button opens. A dialog rather than another corner panel: it is
      read once, on the way out of the page, and what it has to say about an
      unsigned installer does not fit in a 272px column beside the graph. */
@@ -508,7 +505,7 @@
     <a id="getapp" href="https://github.com/AlexM1010/visualise-music/releases"
        title="The same map over your own folder of audio. Windows or Linux.">Map your own samples</a>
     <a id="bmc" href="https://buymeacoffee.com/alexm1010" target="_blank"
-       rel="noopener noreferrer" title="Buy me a coffee - opens in a new tab">&#9749;<span class="bmt"> Buy me a coffee</span></a>
+       rel="noopener noreferrer" title="Buy me a coffee - opens in a new tab">&#9749;</a>
     <span class="stat" id="sorig" hidden></span>
    </div>
 
@@ -558,7 +555,7 @@
                  title="Your project's tempo, 20-300. Everything gains its distance to it."><span class="unit">BPM</span></div>
         <div class="pop-field"><label for="pkey">Key</label><select id="pkey"></select></div>
         <div class="pop-sec">Use it</div>
-        <button id="ffit" class="opt" disabled title="choose a project key first"><span class="ck"></span><span class="tx"><span class="t">Fits the key</span><span class="d">Only samples that sit in your project key</span></span><b id="nfit" class="n" hidden></b></button>
+        <button id="ffit" class="opt" disabled title="type a project tempo first"><span class="ck"></span><span class="tx"><span class="t">Fits the tempo</span><span class="d">Only samples within reach of your project tempo</span></span><b id="nfit" class="n" hidden></b></button>
         <button id="trate" class="opt" title="Audition at the project tempo by resampling, which shifts pitch - the footer says by how much. A ratio past ±1 octave plays as recorded, and greys"><span class="ck"></span><span class="tx"><span class="t">Audition at tempo</span><span class="d">Previews play at your BPM &mdash; shifts pitch</span></span></button>
         <div class="pop-foot"><span></span><button class="pop-done" data-pop-close>Done</button></div>
       </div>
@@ -807,10 +804,11 @@ function shown(n){
   if (only.loop && !n.lp) return false;
   if (only.one && !n.one) return false;
   if (only.key && !n.ko) return false;
-  // "fits" is measured against the project key, so with no project key it has
-  // nothing to say and stands aside rather than emptying the graph. The button
-  // is disabled to match, so this guard should never be the thing that saves it.
-  if (only.fits && PROJ.key && !keyFits(n)) return false;
+  // "fits" is measured against the project tempo, so with no project tempo it
+  // has nothing to say and stands aside rather than emptying the graph. The
+  // button is disabled to match, so this guard should never be the thing that
+  // saves it.
+  if (only.fits && PROJ.bpm && !tempoFits(n)) return false;
   if (only.tempo && !n.bo) return false;
   if (only.link && !n.ln) return false;
   // Keyed off the Freesound id rather than the loop's index, because shown() is
@@ -2841,6 +2839,9 @@ const fitNum = document.getElementById("nfit");
 keySel.innerHTML = '<option value="">any key</option>' + KEYORDER.map(k =>
   '<option value="'+k+'"'+(k === PROJ.key ? " selected" : "")+'>'+k+'</option>').join("");
 if (PROJ.bpm) bpmIn.value = PROJ.bpm;
+// A tempo restored from a previous visit gets its filter back too - "fits" is
+// never something you have to re-arm.
+if (PROJ.bpm){ only.fits = true; fitBtn.classList.add("on"); }
 rateBtn.classList.toggle("on", atTempo);
 // The Project trigger now stands in for the tempo and key it opens onto, so
 // it has to say which one is set without anyone opening it - the same reason
@@ -2868,23 +2869,33 @@ function keyFits(n){
   if (majA === majB) return Math.abs(((pa - pb + 18) % 12) - 6) <= 1;
   return pa === (majB ? (pb + 9) % 12 : (pb + 3) % 12);
 }
-// The canvas half of those two settings. `fits` answers "show me only what
-// belongs" by taking everything else away; this answers "where in the map does
-// D# minor live" by leaving it there and greying it, which is the question you
-// have before you know whether the filter is worth pressing. Unkeyed samples
-// grey too - the header's `fit the key` count has never counted them either, and
-// a key we cannot read is not a key that fits.
+// Key has no hard filter any more - the dropdown already lets you choose any
+// key, so this is the whole answer: it says where in the map D# minor lives, by
+// leaving it there and greying it, which is the question you have before you'd
+// know whether a filter was worth pressing. Unkeyed samples grey too - a key we
+// cannot read is not a key that fits.
 //
-// A tempo can miss as well, but only a sample that has one: with `at tempo` on,
-// a ratio past the octave is exactly the case the footer calls "played as
-// recorded", so the disc says what the line under it says. A one-shot has no
-// tempo to reach and is left alone.
+// Tempo still gets a hard filter (`fits`, below) as well as this greying, and
+// the two answer different questions on purpose. This one only fires with
+// `at tempo` on: a ratio past the octave is exactly the case the footer calls
+// "played as recorded", so the disc says what the line under it says. `fits`
+// engages the moment a tempo is typed, with no audition needed, and hides
+// rather than greys. A one-shot has no tempo to reach and is left alone by both.
 function offProject(n){
   if (n.k !== "sample") return false;
   if (PROJ.key && !keyFits(n)) return true;
   if (!atTempo || !PROJ.bpm || !n.bo || !n.bpm) return false;
   const r = PROJ.bpm/n.bpm;
   return r < RATE_LO || r > RATE_HI;
+}
+// The same ±1-octave reach "Audition at tempo" uses to decide whether a preview
+// still sounds like itself once it is pitched to match - reused here as what
+// "compatible tempo" means for the hard filter, rather than inventing a second
+// tolerance to keep straight.
+function tempoFits(n){
+  if (!PROJ.bpm || !n.bo || !n.bpm) return false;
+  const r = PROJ.bpm / n.bpm;
+  return r >= RATE_LO && r <= RATE_HI;
 }
 // The same relationship in words, for the tooltip. Semitones are signed toward
 // the project: "+2 st" means pitch this sample up two to land on it.
@@ -2899,25 +2910,24 @@ function keyToProject(k){
   if (!d) return "same root as " + PROJ.key;
   return (d > 0 ? "+" : "") + d + " st to " + PROJ.key;
 }
-// Only about a fifth of the library has a key worth trusting, so the surviving
-// count is worth stating before anyone wonders where the graph went.
+// Only about a quarter of the library has a tempo worth trusting, so the
+// surviving count is worth stating before anyone wonders where the graph went.
 function updFits(){
-  fitBtn.disabled = !PROJ.key;
-  if (!PROJ.key){
+  fitBtn.disabled = !PROJ.bpm;
+  if (!PROJ.bpm){
     fitNum.hidden = true;
     // A disabled button's tooltip is the one place left to say what would turn
-    // it on, so it says that rather than describing what it does. It sits beside
-    // the key select now, which is most of the answer on its own.
-    fitBtn.title = "choose a project key first";
+    // it on, so it says that rather than describing what it does.
+    fitBtn.title = "type a project tempo first";
     if (only.fits){ only.fits = false; fitBtn.classList.remove("on"); }
     return;
   }
   let c = 0;
-  for (let i=0;i<N.length;i++) if (N[i].k === "sample" && keyFits(N[i])) c++;
+  for (let i=0;i<N.length;i++) if (N[i].k === "sample" && tempoFits(N[i])) c++;
   fitNum.textContent = c.toLocaleString();
   fitNum.hidden = false;
-  fitBtn.title = "only the " + c.toLocaleString() + " samples in a key compatible with "
-    + PROJ.key + " - the rest are greyed until you press it";
+  fitBtn.title = "only the " + c.toLocaleString() + " samples within reach of "
+    + PROJ.bpm + " BPM - on by itself once you type a tempo, off again here";
 }
 // 20-300 is the range a project tempo can be, and anything outside it left the
 // field showing a number the page had already thrown away - no tooltip distance,
@@ -2930,11 +2940,21 @@ function readBpm(){
   const raw = bpmIn.value.trim();
   const v = Math.round(+raw);
   const ok = raw !== "" && isFinite(v) && v >= BPM_LO && v <= BPM_HI;
+  const had = PROJ.bpm;
   PROJ.bpm = ok ? v : 0;
   bpmIn.classList.toggle("bad", raw !== "" && !ok);
   try { localStorage.setItem("fs-proj-bpm", String(PROJ.bpm)); } catch(e){}
+  // Fits the tempo turns itself on the moment a tempo first appears - the
+  // button exists to turn it back off, not to turn it on.
+  if (PROJ.bpm && !had){ only.fits = true; fitBtn.classList.add("on"); }
   applyRate();
-  draw();                     // the greying moves with the number being typed
+  const filtering = only.fits;
+  updFits();
+  // refresh() when the surviving set changed under the filter - updFits() can
+  // clear it, so ask both sides. draw() otherwise: greying (and the rate
+  // readout) move with the number being typed, and there is nothing else for
+  // the layout to redo.
+  if (filtering || only.fits) refresh(); else draw();
   updProjLabel();
 }
 bpmIn.addEventListener("input", readBpm);
@@ -2949,12 +2969,7 @@ keySel.addEventListener("change", () => {
   PROJ.key = keySel.value;
   try { localStorage.setItem("fs-proj-key", PROJ.key); } catch(e){}
   updProjLabel();
-  const filtering = only.fits;
-  updFits();
-  // refresh() when the surviving set changed under the filter - updFits() can
-  // clear it, so ask both sides. draw() otherwise: greying fades a node, it
-  // never moves one, so there is nothing for the layout to redo.
-  if (filtering || only.fits) refresh(); else draw();
+  draw();                     // greying fades a node, it never moves one
 });
 rateBtn.onclick = () => setAtTempo(!atTempo);
 updFits();
@@ -3345,6 +3360,7 @@ function hubStep(dir){
   hubStepping = true;
   try { if (playing === j){ setNow(nowLine(N[j])); draw(); } else playNode(j); }
   finally { hubStepping = false; }
+  readSoon();                      // and the one after it, while this one plays
 }
 function hubLabel(n){
   if (hub < 0 || HUB.i !== hub || HUB.sel < 0 || N[HUB.nb[HUB.sel]] !== n) return "";
@@ -3541,7 +3557,8 @@ function walkArrive(i){
 // next - so once someone is walking it is fetched while the current one plays,
 // and the press after this one has it already. Nothing extra is downloaded: it
 // is the same request moved earlier. A walk that stops, or turns round with
-// shift-Tab, wastes one preview.
+// shift-Tab, wastes one preview. walkNext() answers for both kinds of walk -
+// similarity, and a hub's own list - so this covers every way Tab moves.
 //
 // It arms itself on arrival, so it only ever runs for someone who has pressed
 // Tab at least once - clicking around the map fetches nothing it was not asked
@@ -3555,6 +3572,11 @@ const READ_WAIT = 300;    // ms of clear air for the sound in hand before it sta
 // things that would make the guess worthless are checked instead - a filter
 // change re-sorts the list it reads, and standing somewhere else abandons it.
 function walkNext(){
+  if (hub >= 0){
+    if (HUB.i !== hub || HUB.gen !== walkGen || !HUB.nb.length) return -1;
+    const len = HUB.nb.length;
+    return HUB.nb[((HUB.sel + 1) % len + len) % len];
+  }
   const f = WALK.f; if (!f.length) return -1;
   const top = f[f.length-1];
   if (top.gen !== walkGen || !top.nb.length || walkAnchor() !== top.i) return -1;
@@ -3641,7 +3663,7 @@ const onlyBtn = (id, key) => { const b = document.getElementById(id);
   b.onclick = () => { only[key] = !only[key]; b.classList.toggle("on", only[key]); refresh(); }; };
 onlyBtn("fcc0","cc0"); onlyBtn("floop","loop"); onlyBtn("fone","one");
 onlyBtn("fkey","key"); onlyBtn("ftempo","tempo"); onlyBtn("flink","link");
-onlyBtn("ffit","fits");           // disabled without a project key, so it cannot fire
+onlyBtn("ffit","fits");           // disabled without a project tempo, so it cannot fire
 onlyBtn("fbask","basket");        // disabled while the basket is empty, likewise
 const linkBtn = (id, get, set) => { const b = document.getElementById(id);
   b.onclick = () => { set(!get()); b.classList.toggle("on", get()); refresh(); }; };
@@ -4168,6 +4190,8 @@ const HINTS = [
   ["#flink", "Only the " + num(nLinked) + " samples with at least one acoustic neighbour"],
   ["#pkey", "Your project's key. Every sample gains its distance to it, and everything that "
     + "does not fit is greyed"],
+  ["#pbpm", "Your project's tempo. Fits the tempo turns on by itself the moment you type one, "
+    + "hiding everything out of reach until you switch it back off"],
   ["[data-col=cluster]", "Colour every node by the cluster it landed in - the communities "
     + "listed in the legend"],
   ["[data-col='0']", "Colour every sample by its brightness, 0-100"],

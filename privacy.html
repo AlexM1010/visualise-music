@@ -20,7 +20,7 @@
 <main>
   <p class="updated" style="margin-bottom:16px"><a href="./">&larr; Visualise Music</a></p>
   <h1>Privacy</h1>
-  <p class="updated">Last updated 2026-09-18</p>
+  <p class="updated">Last updated 2026-09-19</p>
 
   <p>This page covers two things: the <strong>Visualise Music desktop app</strong>,
   which you point at a folder of audio to get a map of what sounds like what,
@@ -45,17 +45,36 @@
   anywhere. Nothing is sent to us as part of normal use.</p>
 
   <h3>What the app downloads, and from where</h3>
-  <p>To keep the installer small, the app downloads its analysis tools the
-  first time you set it up. Every request is a plain download, and none of
-  them includes anything about your audio. Like any download, the server can
-  see your IP address and basic request details such as software versions.</p>
+  <p>What the app downloads depends on where you got it. Every request is a
+  plain download, and none of them includes anything about your audio. Like
+  any download, the server can see your IP address and basic request details
+  such as software versions.</p>
+
+  <p><strong>From the Microsoft Store</strong>, the app comes with everything
+  it needs, including the default audio model, and downloads nothing on its
+  own. It never runs its own update check: Windows and the Store handle
+  updates, under
+  <a href="https://privacy.microsoft.com/privacystatement">Microsoft's privacy statement</a>.
+  It only downloads when you ask it to:</p>
+  <ul>
+    <li><strong>GPU support</strong>, about 2.5 GB, if your computer has an
+    NVIDIA graphics card and you press <em>Use the GPU</em>. It comes from
+    <code>download.pytorch.org</code>, run by the PyTorch Foundation
+    (<a href="https://www.linuxfoundation.org/legal/privacy-policy">privacy policy</a>).</li>
+    <li><strong>An alternative audio model</strong>, about 780 MB each, if you
+    choose one of the two alternatives, from
+    <a href="https://huggingface.co/">Hugging Face</a>
+    (<a href="https://huggingface.co/privacy">privacy policy</a>).</li>
+  </ul>
+
+  <p><strong>From this website</strong>, the installer is kept small, so the
+  app downloads its analysis tools the first time you set it up:</p>
   <ul>
     <li><strong>Python packages</strong>, about 1–1.4 GB, from the
     <a href="https://pypi.org/">Python Package Index</a>
     (<a href="https://policies.python.org/pypi.org/Privacy-Notice/">privacy notice</a>).
-    If you choose NVIDIA GPU support, some packages come from
-    <code>download.pytorch.org</code>, run by the PyTorch Foundation
-    (<a href="https://www.linuxfoundation.org/legal/privacy-policy">privacy policy</a>).</li>
+    GPU support, if you choose it, comes from <code>download.pytorch.org</code>
+    as above.</li>
     <li><strong>The audio model</strong>, about 600 MB for the default model
     and about 780 MB for each of the two alternatives if you pick one, from
     <a href="https://huggingface.co/">Hugging Face</a>
@@ -69,14 +88,6 @@
     offline, the app skips it without saying anything. If you install an
     update, it is downloaded from the same place.</li>
   </ul>
-  <p>If you installed the app from the Microsoft Store, it never runs its own
-  update check: Windows and the Store handle updates, under
-  <a href="https://privacy.microsoft.com/privacystatement">Microsoft's privacy statement</a>.
-  The first-time setup downloads above still apply.</p>
-  <p>The <strong>Support</strong> button opens Buy Me a Coffee in your web
-  browser. Nothing is sent unless you click it, and what happens on that site
-  falls under
-  <a href="https://buymeacoffee.com/privacy-policy">their privacy policy</a>.</p>
 
   <h3>What the app stores on your computer</h3>
   <p>All of this is kept in the app's own folders on your machine. The app
@@ -88,16 +99,20 @@
     <code>%APPDATA%\com.visualisemusic.desktop</code>, and on Linux in
     <code>~/.local/share/com.visualisemusic.desktop</code>. The
     <em>App data</em> button in the app opens it.</li>
-    <li><strong>Rebuildable data</strong>: the Python environment, the
-    downloaded models, playback copies of your audio, and logs from recent
-    runs. Logs can include file names from your library. On Windows this is
-    in <code>%LOCALAPPDATA%\com.visualisemusic.desktop</code>, and on Linux
-    in the same folder as above. It can run to several gigabytes, and
-    deleting it only means the app will download or rebuild it.</li>
+    <li><strong>Rebuildable data</strong>: the Python environment (or, in the
+    Microsoft Store version, any GPU support you have added), the downloaded
+    models, playback copies of your audio, and logs from recent runs. Logs can
+    include file names from your library. On Windows this is in
+    <code>%LOCALAPPDATA%\com.visualisemusic.desktop</code>, and on Linux in
+    the same folder as above. It can run to several gigabytes, and deleting it
+    only means the app will download or rebuild it.</li>
   </ul>
-  <p>The Windows uninstaller has a separate checkbox for each of these two
-  folders. On Linux, or to remove things by hand, delete the folders listed
-  above.</p>
+  <p>The Microsoft Store version usually keeps both folders in a private
+  folder Windows gives each Store app, under
+  <code>%LOCALAPPDATA%\Packages</code>, and Windows removes them when you
+  uninstall the app. The installer from this website instead asks, with a
+  separate checkbox for each folder. On Linux, or to remove things by hand,
+  delete the folders listed above.</p>
 
   <h2>The Freesound map on this website</h2>
   <p>The Freesound map is a single static page hosted on
@@ -126,6 +141,10 @@
     and the list of sounds you have picked, are saved in your browser's local
     storage so they are still there next time. They never leave your device,
     and clearing this site's data in your browser removes them.</li>
+    <li><strong>Support button.</strong> The coffee-cup button opens Buy Me a
+    Coffee. Nothing is sent unless you click it, and what happens on that site
+    falls under
+    <a href="https://buymeacoffee.com/privacy-policy">their privacy policy</a>.</li>
     <li><strong>Download button.</strong> Installers are downloaded from
     GitHub Releases, which falls under GitHub's privacy statement.</li>
   </ul>

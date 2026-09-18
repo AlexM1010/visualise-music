@@ -1,0 +1,154 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy — Visualise Music</title>
+<link rel="icon" href="favicon.ico" sizes="16x16 24x24 32x32 48x48 64x64">
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin:0; background:#0b0e14; color:#c9d1d9;
+    font:15px/1.6 ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif; }
+  main { max-width:640px; margin:0 auto; padding:48px 20px 80px; }
+  h1 { color:#e6edf3; font-size:24px; margin:0 0 4px; }
+  .updated { color:#7d8590; font-size:13px; margin:0 0 32px; }
+  h2 { color:#e6edf3; font-size:17px; margin:32px 0 8px; }
+  h3 { color:#e6edf3; font-size:15px; margin:20px 0 6px; }
+  p, li { color:#c9d1d9; }
+  a { color:#4b8bd6; }
+  code { background:#0d1117; border:1px solid #1e2530; border-radius:4px; padding:1px 5px; font-size:0.9em;
+    overflow-wrap:anywhere; }
+</style>
+<main>
+  <p class="updated" style="margin-bottom:16px"><a href="./">&larr; Visualise Music</a></p>
+  <h1>Privacy</h1>
+  <p class="updated">Last updated 2026-09-18</p>
+
+  <p>This page covers two things: the <strong>Visualise Music desktop app</strong>,
+  which you point at a folder of audio to get a map of what sounds like what,
+  and the <strong>Freesound map</strong> on this website. In short: neither
+  sends your audio, your file names or your maps to anyone, there is no
+  account, no analytics and no tracking, and we do not receive any of your
+  data. The app and the site still have to download things from a few other
+  services, and those services can see your IP address when they do. Each one
+  is listed below.</p>
+
+  <h2>Who is responsible</h2>
+  <p>Visualise Music is made by Alex Marshall, an individual based in the
+  United Kingdom, who is the data controller for the purposes of UK data
+  protection law. Contact:
+  <a href="mailto:alex@visualise.music">alex@visualise.music</a>.</p>
+
+  <h2>The desktop app</h2>
+
+  <h3>Your audio stays on your machine</h3>
+  <p>The folder you add is read, analysed and drawn on your own computer. Your
+  audio, file names, folder paths, analysis results and maps are never uploaded
+  anywhere. Nothing is sent to us as part of normal use.</p>
+
+  <h3>What the app downloads, and from where</h3>
+  <p>To keep the installer small, the app downloads its analysis tools the
+  first time you set it up. Every request is a plain download, and none of
+  them includes anything about your audio. Like any download, the server can
+  see your IP address and basic request details such as software versions.</p>
+  <ul>
+    <li><strong>Python packages</strong>, about 1–1.4 GB, from the
+    <a href="https://pypi.org/">Python Package Index</a>
+    (<a href="https://policies.python.org/pypi.org/Privacy-Notice/">privacy notice</a>).
+    If you choose NVIDIA GPU support, some packages come from
+    <code>download.pytorch.org</code>, run by the PyTorch Foundation
+    (<a href="https://www.linuxfoundation.org/legal/privacy-policy">privacy policy</a>).</li>
+    <li><strong>The audio model</strong>, about 600 MB for the default model
+    and about 780 MB for each of the two alternatives if you pick one, from
+    <a href="https://huggingface.co/">Hugging Face</a>
+    (<a href="https://huggingface.co/privacy">privacy policy</a>). The app
+    only goes back to Hugging Face for a model that is not already on your
+    machine.</li>
+    <li><strong>Update check.</strong> Once each time the app starts, it asks
+    a release feed hosted on GitHub whether a newer version exists
+    (<a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's privacy statement</a>).
+    The request contains nothing about you or your library. If you are
+    offline, the app skips it without saying anything. If you install an
+    update, it is downloaded from the same place.</li>
+  </ul>
+  <p>If you installed the app from the Microsoft Store, it never runs its own
+  update check: Windows and the Store handle updates, under
+  <a href="https://privacy.microsoft.com/privacystatement">Microsoft's privacy statement</a>.
+  The first-time setup downloads above still apply.</p>
+  <p>The <strong>Support</strong> button opens Buy Me a Coffee in your web
+  browser. Nothing is sent unless you click it, and what happens on that site
+  falls under
+  <a href="https://buymeacoffee.com/privacy-policy">their privacy policy</a>.</p>
+
+  <h3>What the app stores on your computer</h3>
+  <p>All of this is kept in the app's own folders on your machine. The app
+  never writes to the folders you add; it only reads them.</p>
+  <ul>
+    <li><strong>Your libraries and maps</strong>: the list of folders you
+    have added, including their full paths, plus each folder's map, analysis
+    results and analysis cache. On Windows this is in
+    <code>%APPDATA%\com.visualisemusic.desktop</code>, and on Linux in
+    <code>~/.local/share/com.visualisemusic.desktop</code>. The
+    <em>App data</em> button in the app opens it.</li>
+    <li><strong>Rebuildable data</strong>: the Python environment, the
+    downloaded models, playback copies of your audio, and logs from recent
+    runs. Logs can include file names from your library. On Windows this is
+    in <code>%LOCALAPPDATA%\com.visualisemusic.desktop</code>, and on Linux
+    in the same folder as above. It can run to several gigabytes, and
+    deleting it only means the app will download or rebuild it.</li>
+  </ul>
+  <p>The Windows uninstaller has a separate checkbox for each of these two
+  folders. On Linux, or to remove things by hand, delete the folders listed
+  above.</p>
+
+  <h2>The Freesound map on this website</h2>
+  <p>The Freesound map is a single static page hosted on
+  <a href="https://pages.github.com/">GitHub Pages</a>. It has no account, no
+  cookies, no analytics and no tracking.</p>
+  <ul>
+    <li><strong>Hosting.</strong> Like any web host, GitHub records your IP
+    address when you load the page
+    (<a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's privacy statement</a>).
+    We do not receive those logs.</li>
+    <li><strong>Sound previews.</strong> When you play or download a sound,
+    your browser fetches the preview file directly from
+    <a href="https://freesound.org/">Freesound</a>, which can see your IP
+    address (<a href="https://freesound.org/help/privacy/">Freesound's privacy policy</a>).</li>
+    <li><strong>Signing in to Freesound (optional).</strong> To download the
+    uploader's original files instead of previews, you can enter a Freesound API
+    credential of your own (a client id and secret you create on freesound.org)
+    and sign in on freesound.org itself. We never see your Freesound password.
+    Your browser talks to Freesound directly: the credential and the access
+    token Freesound issues are kept in your browser's local storage and are sent
+    only to freesound.org, never to us or anyone else. Clicking
+    <em>originals on</em> lets you sign out or forget the credential, and
+    clearing this site's data removes both. You can also revoke access from
+    your Freesound settings.</li>
+    <li><strong>Your settings</strong>, such as layout, looping, tempo, key
+    and the list of sounds you have picked, are saved in your browser's local
+    storage so they are still there next time. They never leave your device,
+    and clearing this site's data in your browser removes them.</li>
+    <li><strong>Download button.</strong> Installers are downloaded from
+    GitHub Releases, which falls under GitHub's privacy statement.</li>
+  </ul>
+
+  <h2>Legal basis and what we keep</h2>
+  <p>We hold no personal data about users of the app or the website. The only
+  personal data involved is the IP address that the services above see when
+  your device downloads from them. The app makes those requests because it
+  cannot work without them, and the update check keeps it secure and up to
+  date. That is our legitimate interest in providing software that works.
+  Each service handles your data under its own policy, linked above.</p>
+  <p>If you email us, we keep your message and email address only as long as
+  we need them to deal with your question, and use them for nothing else.</p>
+
+  <h2>Your rights</h2>
+  <p>Under UK data protection law you can ask for access to, correction of,
+  or deletion of personal data we hold about you, and you can object to how
+  it is used. Email the address above to do so. If you are unhappy with the
+  answer, you can complain to the
+  <a href="https://ico.org.uk/make-a-complaint/">Information Commissioner's Office</a>.</p>
+
+  <h2>Changes</h2>
+  <p>If the app or the site starts handling data differently, this page will
+  be updated before that version is released, and the date at the top will
+  change.</p>
+</main>

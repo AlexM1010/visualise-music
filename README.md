@@ -869,9 +869,48 @@ partway.
 too — but a drag hands over a URL and walks away, with no callback to fall back
 from, so it uses the original only when the session is known to be live.
 
-**Downloads count against the quota** — 2,000 a day, the same pool the builder's
-similarity seeding draws from. A 250-sample zip of originals is 250 requests.
-That, not the code, is the limit on this.
+**Downloads count against the quota.** Original downloads have a stricter
+limit than the rest of the API: 30 a minute and 500 a day (Freesound's
+throttling docs), on top of the general 2,000 a day that the builder's
+similarity seeding also draws from. A 250-sample zip of originals is 250
+requests. That, not the code, is the limit on this.
+
+### On the published site: bring your own credential
+
+`serve_originals.py` only helps whoever runs it. For visitors to
+visualise.music, each visitor uses a Freesound API credential of their own, and
+the whole sign-in runs in the page with no server of ours involved.
+
+Freesound's OAuth2 only supports the authorization-code grant with a client
+secret: no PKCE, and no public-client or implicit flow. A secret shared by the
+whole site could not be kept in a static page. A visitor's own secret, kept in
+their own browser, can be. Freesound's API sends `Access-Control-Allow-Origin: *`
+on every endpoint, including the token endpoint and `sounds/<id>/download/`
+(which does not redirect), so the page can call it directly.
+
+1. **originals — set up** opens a dialog. It links to
+   <https://freesound.org/apiv2/apply/> and shows the callback URL to register,
+   which is the page's own address (`location.origin + location.pathname`). The
+   visitor pastes in their client id and secret.
+2. The secret is checked with one token-authenticated request, so a typo is
+   caught before the visitor leaves the page. Both values go to localStorage as
+   `fs-oauth-client`. The tab then goes to Freesound's authorize page with a
+   random `state` stored in sessionStorage.
+3. Freesound sends the tab back to `?code=…&state=…`. The page removes both from
+   the address bar and checks the state against sessionStorage (single use, ten
+   minutes), then swaps the code for tokens (`fs-oauth`). A forged callback has
+   no matching state in that tab and is ignored without a request being made.
+4. Downloads carry a Bearer header. On a 401 the page refreshes once and
+   retries. Refreshes are single-flighted, because Freesound rotates the refresh
+   token each time, and they check whether another tab got there first.
+
+Drags stay on the preview here, because a drag cannot carry a header. The chip
+opens the same dialog to sign out or forget the credential.
+
+**Quota is per visitor.** Freesound throttles by the user who owns the
+credential (`apiv2/throttling.py`), so each visitor gets their own 500 originals
+a day, and no visitor can use up anyone else's. Anyone who goes over falls back
+to previews, as with any 429.
 
 ### The zip compresses now, per member
 

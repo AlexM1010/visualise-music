@@ -227,6 +227,41 @@
     border-radius:6px; color:#7d8590; font:inherit; font-size:15px; line-height:1;
     cursor:pointer; }
   #getapp-dl .x:hover { color:#e6edf3; border-color:#30363d; }
+  /* The Freesound credential dialog wears the same clothes. */
+  #fs-dl { width:min(500px, calc(100vw - 28px)); padding:0; color:#c9d1d9;
+    background:#0d1117; border:1px solid #30363d; border-radius:10px; font:inherit; }
+  #fs-dl::backdrop { background:rgba(3,5,9,.74); }
+  #fs-dl .bd { padding:16px 18px 14px; max-height:min(78vh, 720px); overflow:auto; }
+  #fs-dl h2 { font-size:15px; margin:0 0 4px; color:#e6edf3; font-weight:600; }
+  #fs-dl .sub { color:#7d8590; font-size:12px; margin:0 0 6px; line-height:1.5; }
+  #fs-dl h3 { font-size:10px; margin:14px 0 7px; color:#6e7681; font-weight:600;
+    text-transform:uppercase; letter-spacing:.05em; }
+  #fs-dl p, #fs-dl ol { font-size:12px; line-height:1.6; color:#9aa4b0; }
+  #fs-dl p { margin:8px 0; }
+  #fs-dl ol { margin:0 0 10px; padding-left:19px; }
+  #fs-dl b { color:#e6edf3; font-weight:600; }
+  #fs-dl a { color:#4b8bd6; }
+  #fs-dl code { font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;
+    font-size:11px; color:#c9d1d9; background:#0b0e14; border:1px solid #21262d;
+    border-radius:4px; padding:1px 5px; overflow-wrap:anywhere; }
+  #fs-dl .cbrow { display:flex; gap:6px; align-items:center; margin:4px 0 2px; }
+  #fs-dl .fld { display:flex; flex-direction:column; gap:3px; font-size:11px;
+    color:#7d8590; margin:0 0 9px; }
+  #fs-dl .fld input { width:100%; }
+  #fs-dl .err { color:#e5534b; }
+  #fs-dl button:not(.x) { background:#0b0e14; border:1px solid #30363d; color:#c9d1d9;
+    padding:4px 11px; border-radius:6px; font:inherit; font-size:12px; cursor:pointer; }
+  #fs-dl #fs_go { background:#1f6feb33; border-color:#4b8bd6; color:#e6edf3; font-weight:600; }
+  #fs-dl #fs_go:disabled { opacity:.5; cursor:default; }
+  #fs-dl .ft { display:flex; justify-content:space-between; align-items:center;
+    gap:9px; margin-top:12px; padding-top:11px; border-top:1px solid #1e2530; }
+  #fs-dl .xw { position:sticky; top:0; height:0; z-index:2;
+    display:flex; justify-content:flex-end; }
+  #fs-dl .x { display:flex; align-items:center; justify-content:center;
+    width:22px; height:22px; padding:0; background:#0d1117; border:1px solid #21262d;
+    border-radius:6px; color:#7d8590; font:inherit; font-size:15px; line-height:1;
+    cursor:pointer; }
+  #fs-dl .x:hover { color:#e6edf3; border-color:#30363d; }
   #main { flex:1; position:relative; min-height:0; }
   canvas { display:block; width:100%; height:100%; cursor:grab; }
   canvas.drag { cursor:grabbing; }
@@ -243,6 +278,7 @@
   #legend { position:absolute; top:11px; left:11px; background:rgba(13,17,23,.93);
     border:1px solid #1e2530; border-radius:8px; padding:8px 10px; max-width:225px;
     max-height:calc(100% - 22px); overflow:auto; }
+  #legend[hidden] { display:none; }
   #legend div.row { display:flex; align-items:center; gap:6px; padding:1px 0; color:#9aa4b0; }
   /* On a phone the key is a third of the map, sat over the corner of it, and
      the map is the point. What it says is still in the toolbar - the colour
@@ -345,7 +381,6 @@
   @media (prefers-reduced-motion:reduce) { .pop-panel, .pop-scrim { animation:none !important; } }
   .sw { width:9px; height:9px; border-radius:2px; flex:none; }
   .nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .ct { color:#6e7681; font-variant-numeric:tabular-nums; margin-left:auto; padding-left:8px; }
   #ramp { height:10px; border-radius:3px; margin:5px 0 3px; }
   #legend .ends { display:flex; justify-content:space-between; color:#6e7681; font-size:11px; }
   #tip { position:absolute; pointer-events:none; background:#161b22; border:1px solid #30363d;
@@ -393,6 +428,10 @@
   #foot { flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis;
     white-space:nowrap; }
   footer button { flex:none; }
+  /* Last and flex:none, so the help text yields before it does and the link is
+     always whole. Quiet, because it is there to be found rather than noticed. */
+  #privacy { flex:none; color:#6e7681; text-decoration:none; }
+  #privacy:hover { color:#c9d1d9; text-decoration:underline; }
   /* The waveform belongs to the footer bar and stays hidden until a decode
      lands, so the bar never holds a gap open for something that may not come. */
   #wave { flex:none; width:190px; height:26px; display:none; cursor:pointer;
@@ -409,8 +448,8 @@
   /* A preference is not a state. With no sound to apply it to the button drops
      its fill and sits back, so it never reads as something currently looping. */
   #loopst.def { background:transparent; border-color:#21262d; color:#6e7681; }
-  /* The arrangement and physics panel sits opposite the legend, so a slider is
-     never over the thing it is changing. */
+  /* The arrangement and physics panel sits in the top right corner, clear of the
+     basket, so a slider is never over the thing it is changing. */
   #phys { position:absolute; top:11px; right:11px; width:272px; z-index:4;
     background:rgba(13,17,23,.95); border:1px solid #1e2530; border-radius:8px;
     padding:9px 11px 10px; max-height:calc(100% - 22px); overflow:auto; }
@@ -447,9 +486,8 @@
   #phys .hint { color:#6e7681; font-size:11px; margin-top:5px; line-height:1.35; }
   #phys #ph_lay .hint { margin-bottom:9px; }
   /* The basket borrows the physics panel's look but not its corner. Bottom left,
-     under the legend: the physics panel is 550px of sliders down the right-hand
-     side, and anything sharing that edge covers the ones you are dragging. The
-     legend is 15 rows and stops well short of the bottom. */
+     the physics panel is 550px of sliders down the right-hand side, and
+     anything sharing that edge covers the ones you are dragging. */
   #basket { position:absolute; left:11px; bottom:11px; width:272px; z-index:4;
     background:rgba(13,17,23,.95); border:1px solid #1e2530; border-radius:8px;
     padding:9px 11px 10px; max-height:55%; display:flex; flex-direction:column; }
@@ -564,8 +602,8 @@
     <button id="tphys" class="tb">Arrange</button>
    </div>
   </header>
-  <div id="main"><canvas id="cv"></canvas><div id="legend"></div><div id="phys" hidden></div><div id="basket" hidden></div><div id="tip"></div></div>
-  <footer><span id="now" draggable="true"></span><span id="load" role="status" aria-label="loading"></span><canvas id="wave"></canvas><button id="loopst"></button><button id="dlone" hidden>&#10515; save</button><button id="bkone" hidden></button><span id="note"></span><span id="foot"></span></footer>
+  <div id="main"><canvas id="cv"></canvas><div id="legend" hidden></div><div id="phys" hidden></div><div id="basket" hidden></div><div id="tip"></div></div>
+  <footer><span id="now" draggable="true"></span><span id="load" role="status" aria-label="loading"></span><canvas id="wave"></canvas><button id="loopst"></button><button id="dlone" hidden>&#10515; save</button><button id="bkone" hidden></button><span id="note"></span><span id="foot"></span><a id="privacy" href="privacy.html">Privacy</a></footer>
 <dialog id="getapp-dl">
   <form method="dialog" class="bd">
     <div class="xw"><button class="x" aria-label="Close">&times;</button></div>
@@ -643,6 +681,43 @@
     </div>
   </form>
 </dialog>
+<dialog id="fs-dl">
+  <form method="dialog" class="bd">
+    <div class="xw"><button class="x" aria-label="Close">&times;</button></div>
+    <h2>Original files from Freesound</h2>
+    <p class="sub">Downloads are normally Freesound's ~128&nbsp;kbps MP3 previews.
+      The uploader's original file needs you to sign in to Freesound through an
+      API credential of your own. It is free, takes a minute, and your
+      downloads count against your own allowance of 500 originals a day. The
+      credential and sign-in stay in this browser and are only ever sent to
+      freesound.org.</p>
+    <div id="fs_setup">
+      <h3>Once: make a credential</h3>
+      <ol>
+        <li>Sign in to Freesound, then open
+          <a href="https://freesound.org/apiv2/apply/" target="_blank"
+             rel="noopener noreferrer">freesound.org/apiv2/apply</a>.</li>
+        <li>Name and describe it however you like. For the <b>callback URL</b>,
+          enter exactly:
+          <span class="cbrow"><code id="fs_cb"></code><button type="button" id="fs_copy">copy</button></span></li>
+        <li>Paste the two values it gives you:</li>
+      </ol>
+      <label class="fld">Client id<input id="fs_id" autocomplete="off" spellcheck="false"></label>
+      <label class="fld">Client secret / Api key<input id="fs_secret" type="password"
+             autocomplete="off" spellcheck="false"></label>
+    </div>
+    <div id="fs_have" hidden>
+      <p>Credential <code id="fs_cid"></code> is saved in this browser.
+        <span id="fs_st"></span></p>
+    </div>
+    <p class="err" id="fs_err" hidden></p>
+    <div class="ft">
+      <button type="button" id="fs_forget" hidden>Forget credential</button>
+      <span></span>
+      <button type="button" id="fs_go">Save and sign in</button>
+    </div>
+  </form>
+</dialog>
 </div>
 <script>
 const DATA = __PAYLOAD__;
@@ -658,7 +733,119 @@ const origUrl = n => "/api/original/" + n.i;
 // on a static host that was a 404 per focus and nothing else. The chip starts
 // hidden, which is already the right answer when there is no server to ask.
 const LOCAL_HOST = ["localhost", "127.0.0.1", "[::1]", "::1"].includes(location.hostname);
+
+// Everywhere else - the published site - each visitor brings their own Freesound
+// API credential, and the whole OAuth2 dance runs in this page. Freesound only
+// offers the authorization-code grant with a client secret, which a page cannot
+// keep for everybody; but a visitor's own secret, kept in their own browser, is
+// theirs to keep. It also means their downloads count against their own quota -
+// Freesound throttles by the credential's owner - rather than one shared by the
+// whole site. The API answers CORS for any origin, the token endpoint included,
+// so nothing here goes anywhere but freesound.org.
+const REMOTE_AUTH = !LOCAL_HOST;
+const FS_API = "https://freesound.org/apiv2/";
+const FS_TOKENS = "fs-oauth", FS_CLIENT = "fs-oauth-client", FS_STATE = "fs-oauth-state";
+const fsGet = k => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch(e){ return null; } };
+const fsPut = (k, v) => { try { v ? localStorage.setItem(k, JSON.stringify(v))
+                                  : localStorage.removeItem(k); } catch(e){} };
+const fsLoad = () => fsGet(FS_TOKENS), fsSave = t => fsPut(FS_TOKENS, t);
+// What the visitor types into their credential's callback field: this page,
+// without a query or fragment. Freesound sends the browser back here.
+const fsCallback = () => location.origin + location.pathname;
+async function fsExchange(fields){
+  const c = fsGet(FS_CLIENT);
+  if (!c) throw new Error("no credential saved");
+  const r = await fetch(FS_API + "oauth2/access_token/", {method:"POST",
+    body:new URLSearchParams({client_id:c.id, client_secret:c.secret, ...fields})});
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok || !b.access_token){
+    const e = new Error(b.error_description || b.error || b.detail || ("HTTP " + r.status));
+    e.status = r.status; throw e;
+  }
+  // Absolute, and two minutes early: `expires_in` means nothing once it has sat
+  // in localStorage overnight.
+  return {access_token:b.access_token, refresh_token:b.refresh_token,
+          expires_at:Date.now() + (+b.expires_in || 86400) * 1000 - 120000};
+}
+// The state is what makes the return leg trustworthy. Without it any site could
+// send a visitor here with ?code=<its own code> and their map would quietly sign
+// in as a stranger. It lives in sessionStorage, so only this tab - the one that
+// left for Freesound - can complete the sign-in it started.
+function fsStart(){
+  const c = fsGet(FS_CLIENT);
+  if (!c) return;
+  const s = Array.from(crypto.getRandomValues(new Uint8Array(18)), b => b.toString(16).padStart(2, "0")).join("");
+  try { sessionStorage.setItem(FS_STATE, JSON.stringify({s, t:Date.now()})); } catch(e){}
+  location.href = FS_API + "oauth2/authorize/?" +
+    new URLSearchParams({client_id:c.id, response_type:"code", state:s});
+}
+let FS_NOTE = null;
+(function takeSignIn(){
+  if (!REMOTE_AUTH) return;
+  const q = new URLSearchParams(location.search);
+  if (!q.has("state") || !(q.has("code") || q.has("error"))) return;
+  // The code is single-use and useless without the secret, but it still has no
+  // business sitting in the address bar or the history.
+  const keep = new URLSearchParams(location.search);
+  ["code", "state", "error"].forEach(k => keep.delete(k));
+  history.replaceState(null, "", location.pathname + (String(keep) ? "?" + keep : "") + location.hash);
+  let want = null;
+  try { want = JSON.parse(sessionStorage.getItem(FS_STATE) || "null"); sessionStorage.removeItem(FS_STATE); } catch(e){}
+  if (!want || want.s !== q.get("state") || Date.now() - want.t > 600000){
+    FS_NOTE = {text:"Ignored a Freesound sign-in this tab did not start. If you did start one, " +
+                    "check your credential's callback URL is exactly " + fsCallback(), err:true};
+    return;
+  }
+  if (q.has("error")){ FS_NOTE = {text:"Freesound sign-in was cancelled.", err:true}; return; }
+  fsExchange({grant_type:"authorization_code", code:q.get("code")})
+    .then(t => { fsSave(t); FS_NOTE = {text:"Signed in to Freesound - downloads are the original files now.", err:false}; })
+    .catch(e => { FS_NOTE = {text:"Freesound sign-in failed: " + e.message, err:true}; })
+    .finally(() => probeOriginals());
+})();
+// One refresh at a time: a 250-file zip crossing the expiry would otherwise
+// start 250 of them, and Freesound rotates the refresh token on each, so all
+// but the first would fail and sign the visitor out.
+let fsRefreshing = null;
+async function fsToken(force){
+  const t = fsLoad();
+  if (!t) return null;
+  if (!force && Date.now() < (t.expires_at || 0)) return t.access_token;
+  if (!t.refresh_token) return null;
+  return fsRefreshing || (fsRefreshing = (async () => {
+    try {
+      const n = await fsExchange({grant_type:"refresh_token", refresh_token:t.refresh_token});
+      fsSave(n); return n.access_token;
+    } catch(e){
+      // Another tab may have refreshed first, which spends this refresh token.
+      // Its result is in storage; only a token nobody replaced is really dead.
+      const now = fsLoad();
+      if (now && now.refresh_token !== t.refresh_token) return now.access_token;
+      if (e.status >= 400 && e.status < 500) fsSave(null);   // not on a network blip
+      return null;
+    } finally { fsRefreshing = null; }
+  })());
+}
+// The same contract as /api/original: a Response, 401 when there is no session.
+async function fetchOriginal(n){
+  if (!REMOTE_AUTH) return fetch(origUrl(n));
+  const get = tok => fetch(FS_API + "sounds/" + n.i + "/download/",
+                           {headers:{Authorization:"Bearer " + tok}});
+  let tok = await fsToken(false);
+  if (!tok) return new Response(null, {status:401});
+  let r = await get(tok);
+  // Expired early, or revoked on Freesound's settings page: one refresh, then give up.
+  if (r.status === 401 && (tok = await fsToken(true))) r = await get(tok);
+  return r;
+}
 async function probeOriginals(){
+  if (REMOTE_AUTH){
+    const c = fsGet(FS_CLIENT), t = fsLoad();
+    ORIG_STATE = {configured:!!c, authed:!!(c && t), remote:true};
+    ORIGINALS = ORIG_STATE.authed;
+    paintOriginals();
+    if (FS_NOTE){ setNow(FS_NOTE.text, FS_NOTE.err); FS_NOTE = null; }
+    return;
+  }
   if (!LOCAL_HOST) return;
   try {
     const r = await fetch("/api/auth/status", {cache:"no-store"});
@@ -821,21 +1008,19 @@ const rad = n => n.k==="family" ? Math.max(2.4,Math.min(8,1.9+Math.sqrt(n.d)*0.5
               : n.k==="tag" ? Math.max(1.1,Math.min(4.6,1.1+Math.sqrt(n.d)*0.44))
               : Math.max(0.9,Math.min(3.2,0.9+Math.sqrt(n.d)*0.38));
 
+// The key for a colour range. Cluster colours are named on the map itself, so
+// only the timbre scales - a gradient with no words on it - need one.
 function drawLegend(){
   const el = document.getElementById("legend");
-  if (colourBy === "cluster"){
-    el.innerHTML = DATA.legend.map(l =>
-      '<div class="row"><span class="sw" style="background:'+clusterColour(l.r)+'"></span>'+
-      '<span class="nm">'+l.n.replace(/</g,"&lt;")+'</span><span class="ct">'+l.s+'</span></div>').join("");
-  } else {
-    const stops = [];
-    for (let i=0;i<=10;i++) stops.push(rampColour(i/10)+" "+(i*10)+"%");
-    el.innerHTML = '<div class="row"><span class="nm">'+TIMBRE[+colourBy]+'</span></div>'+
-      '<div id="ramp" style="background:linear-gradient(90deg,'+stops.join(",")+')"></div>'+
-      '<div class="ends"><span>0</span><span>100</span></div>'+
-      '<div class="row" style="margin-top:6px"><span class="sw" style="background:#2f3743"></span>'+
-      '<span class="nm">no value / not a sample</span></div>';
-  }
+  el.hidden = colourBy === "cluster";
+  if (el.hidden) return;
+  const stops = [];
+  for (let i=0;i<=10;i++) stops.push(rampColour(i/10)+" "+(i*10)+"%");
+  el.innerHTML = '<div class="row"><span class="nm">'+TIMBRE[+colourBy]+'</span></div>'+
+    '<div id="ramp" style="background:linear-gradient(90deg,'+stops.join(",")+')"></div>'+
+    '<div class="ends"><span>0</span><span>100</span></div>'+
+    '<div class="row" style="margin-top:6px"><span class="sw" style="background:#2f3743"></span>'+
+    '<span class="nm">no value / not a sample</span></div>';
 }
 
 // ---- canvas ----------------------------------------------------------------
@@ -1124,7 +1309,7 @@ function tipHtml(n){
   // The tags are the most useful thing a producer reads off a tooltip, so they
   // get a row of their own rather than being left to the search box. 12 is where
   // a 390px tip stops being two lines; a sample carrying 34 would otherwise be a
-  // tooltip taller than the legend, so the rest are counted instead of wrapped.
+  // tooltip taller than the map, so the rest are counted instead of wrapped.
   const tg = tagsOf(n);
   if (tg.length){
     h += '<div class="row">tags &middot; ' +
@@ -1187,7 +1372,7 @@ function saveBlob(blob, filename){
 async function fetchAudio(n){
   if (ORIGINALS){
     try {
-      const r = await fetch(origUrl(n));
+      const r = await fetchOriginal(n);
       if (r.ok) return {res:r, original:true};
       if (r.status === 401) ORIGINALS = false, paintOriginals();
     } catch (e){ /* server gone; fall through */ }
@@ -1327,7 +1512,9 @@ function setDragData(e, n){
   // A drag hands the DAW a URL and walks away - there is no callback to fall
   // back from - so this is the one place the preview is used unless originals
   // are known to be live right now.
-  const href = ORIGINALS ? (location.origin + origUrl(n)) : n.p;
+  // With the remote sign-in the original needs an Authorization header, which a
+  // drag cannot carry, so drags stay on the preview there.
+  const href = ORIGINALS && !REMOTE_AUTH ? (location.origin + origUrl(n)) : n.p;
   try { e.dataTransfer.setData("DownloadURL", mime + ":" + nm + ":" + href);
         e.dataTransfer.setData("text/uri-list", href);
         e.dataTransfer.setData("text/plain", href);
@@ -3970,7 +4157,7 @@ window.addEventListener("keydown", e => {
   // landed on a control. Click its prose and the target is a <p>, which would
   // put S and D back to work on a map nobody can currently see. Esc still
   // closes it: that is the dialog's own doing, not this handler's.
-  if(getappDlg.open) return;
+  if(getappDlg.open || fsDlg.open) return;
   // BUTTON joins the text controls because Space is how a focused button is
   // pressed, and the Space branch below preventDefault()s it into pressing
   // nothing.
@@ -4192,8 +4379,8 @@ const HINTS = [
     + "does not fit is greyed"],
   ["#pbpm", "Your project's tempo. Fits the tempo turns on by itself the moment you type one, "
     + "hiding everything out of reach until you switch it back off"],
-  ["[data-col=cluster]", "Colour every node by the cluster it landed in - the communities "
-    + "listed in the legend"],
+  ["[data-col=cluster]", "Colour every node by the cluster it landed in - each community "
+    + "is named on the map"],
   ["[data-col='0']", "Colour every sample by its brightness, 0-100"],
   ["[data-col='1']", "Colour every sample by its warmth, 0-100"],
   ["[data-col='2']", "Colour every sample by its depth, 0-100"],
@@ -4237,6 +4424,27 @@ function paintOriginals(){
   if (!ORIG_STATE){ el.hidden = true; return; }
   el.hidden = false;
   el.onclick = null; el.style.cursor = "default"; el.title = "";
+  if (ORIG_STATE.remote){
+    el.style.cursor = "pointer";
+    if (ORIGINALS){
+      // No hours left here: the refresh token renews it silently, so the only
+      // number worth showing would always be "24h".
+      el.innerHTML = "<b>originals</b> on";
+      el.title = "Downloads serve the uploader's file, not the preview. Click to sign out or change credential.";
+      el.onclick = fsDialog;
+    } else if (ORIG_STATE.configured){
+      el.innerHTML = "<b>originals</b> — connect";
+      el.title = "Sign in to Freesound so downloads serve the original file.";
+      // This tab goes to Freesound and comes back; the settings and picks are
+      // in localStorage and survive the round trip.
+      el.onclick = fsStart;
+    } else {
+      el.innerHTML = "<b>originals</b> — set up";
+      el.title = "Download the uploader's original files with your own Freesound API credential.";
+      el.onclick = fsDialog;
+    }
+    return;
+  }
   if (ORIGINALS){
     const h = Math.floor((ORIG_STATE.expires_in || 0)/3600);
     el.innerHTML = "<b>originals</b> on" + (h ? " · " + h + "h left" : "");
@@ -4251,9 +4459,65 @@ function paintOriginals(){
     el.title = "Add freesound-oauth.key beside serve_originals.py.";
   }
 }
+// The published site's setup, sign-out and forget, in one dialog. The chip
+// opens it; "connect" skips it, since there is nothing left to ask.
+const fsDlg = document.getElementById("fs-dl");
+const fsEl = id => document.getElementById(id);
+function fsDialog(){
+  const c = fsGet(FS_CLIENT), t = fsLoad();
+  fsEl("fs_cb").textContent = fsCallback();
+  fsEl("fs_setup").hidden = !!c;
+  fsEl("fs_have").hidden = !c;
+  fsEl("fs_forget").hidden = !c;
+  fsEl("fs_err").hidden = true;
+  if (c){
+    fsEl("fs_cid").textContent = c.id;
+    fsEl("fs_st").textContent = t ? "Signed in: downloads are the original files." : "Not signed in.";
+  }
+  fsEl("fs_go").textContent = !c ? "Save and sign in" : t ? "Sign out" : "Sign in";
+  fsEl("fs_go").disabled = false;
+  if (!fsDlg.open) fsDlg.showModal();
+}
+function fsErr(text){ const e = fsEl("fs_err"); e.textContent = text; e.hidden = !text; }
+fsEl("fs_go").addEventListener("click", async () => {
+  const c = fsGet(FS_CLIENT), t = fsLoad();
+  if (c && t){ fsSave(null); fsDlg.close(); probeOriginals(); return; }
+  if (c){ fsStart(); return; }
+  const id = fsEl("fs_id").value.trim(), secret = fsEl("fs_secret").value.trim();
+  if (!id || !secret){ fsErr("Both the client id and the client secret are needed."); return; }
+  // The secret doubles as a plain API key, so one cheap request tells a typo
+  // apart from a real credential before the visitor is sent off to Freesound.
+  // The client id has no such check; Freesound's own page will say if it is wrong.
+  fsEl("fs_go").disabled = true; fsErr("");
+  try {
+    const r = await fetch(FS_API + "sounds/" + N.find(x => x.k === "sample").i + "/?fields=id",
+                          {headers:{Authorization:"Token " + secret}});
+    if (r.status === 401){ fsErr("Freesound does not recognise that client secret."); return; }
+  } catch(e){ /* offline or blocked: let Freesound's page be the judge */ }
+  finally { fsEl("fs_go").disabled = false; }
+  fsPut(FS_CLIENT, {id, secret});
+  fsStart();
+});
+// Enter in a field would submit the dialog's form, which closes it - and the
+// first submit button in it is the corner close. Enter means "go" here.
+for (const id of ["fs_id", "fs_secret"]) fsEl(id).addEventListener("keydown", e => {
+  if (e.key === "Enter"){ e.preventDefault(); fsEl("fs_go").click(); }
+});
+fsEl("fs_forget").addEventListener("click", () => {
+  fsPut(FS_CLIENT, null); fsSave(null);
+  fsEl("fs_id").value = ""; fsEl("fs_secret").value = "";
+  probeOriginals(); fsDialog();
+});
+fsEl("fs_copy").addEventListener("click", () => {
+  navigator.clipboard && navigator.clipboard.writeText(fsCallback()).then(
+    () => { fsEl("fs_copy").textContent = "copied"; setTimeout(() => fsEl("fs_copy").textContent = "copy", 1500); },
+    () => {});
+});
 // Re-probed on focus because authorising happens in another tab: without this
 // the chip still reads "connect" after you have just connected.
 window.addEventListener("focus", () => { probeOriginals(); });
+// Signing in or out, or forgetting the credential, in another tab of the map.
+window.addEventListener("storage", e => { if (e.key === FS_TOKENS || e.key === FS_CLIENT) probeOriginals(); });
 probeOriginals();
 
 drawLegend();

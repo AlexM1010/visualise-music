@@ -720,7 +720,7 @@
   </header>
   <div id="main"><canvas id="cv"></canvas><div id="legend" hidden></div><div id="phys" hidden></div><div id="basket" hidden></div><div id="tip"></div><div id="welcome" role="dialog" aria-labelledby="wl_t" hidden>
     <button type="button" class="x" id="wl_x" aria-label="Close">&times;</button>
-    <h2 id="wl_t">Every dot is a sound</h2>
+    <h2 id="wl_t">Explore samples by how they sound</h2>
     <p id="wl_p"></p>
     <div class="row">
       <button type="button" class="go" id="wl_play">&#9654; Play a random sample</button>
@@ -848,7 +848,7 @@
     <h2 id="keys_t">Keyboard shortcuts</h2>
     <h3>Listening</h3>
     <table>
-      <tr><td>Click a dot</td><td>Play it, or stop it if it is playing</td></tr>
+      <tr><td>Click a small dot</td><td>Play it, or stop it if it is playing</td></tr>
       <tr><td><kbd>Space</kbd></td><td>Play the sample under the cursor, or stop</td></tr>
       <tr><td><kbd>R</kbd></td><td>Play a random sample from what is on screen</td></tr>
       <tr><td><kbd>Tab</kbd> or <kbd>&rarr;</kbd></td><td>Play the next similar sound</td></tr>
@@ -1563,7 +1563,9 @@ async function deflateRaw(bytes){
   w.write(bytes); w.close();
   return new Uint8Array(await new Response(cs.readable).arrayBuffer());
 }
-async function buildZip(files){
+// `onFile` hears each member as it is written, so a large basket says how far
+// the compressing has got instead of sitting on "Packing 200/200" in silence.
+async function buildZip(files, onFile){
   const enc = new TextEncoder(), parts = [], central = [];
   let offset = 0;
   const u16 = v => [v & 255, (v >> 8) & 255];
@@ -1588,6 +1590,7 @@ async function buildZip(files){
       u16(method), u16(0), u16(0), u32(crc), u32(csz), u32(sz),
       u16(name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset))), name);
     offset += local.length + name.length + csz;
+    if (onFile) await onFile(central.length / 2, files.length);
   }
   const cdSize = central.reduce((a,b) => a + b.length, 0);
   const eocd = new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0),
@@ -1711,7 +1714,12 @@ async function packZip(list, btn, capNote){
   await Promise.all([worker(),worker(),worker(),worker(),worker(),worker()]);
   if (files.length){
     const raw = files.reduce((a,f) => a + f.data.length, 0);
-    const blob = await buildZip(files.concat(metaFiles(files.map(f => f.n))));
+    const blob = await buildZip(files.concat(metaFiles(files.map(f => f.n))), async (i, n) => {
+      setNow("Compressing " + i + "/" + n);
+      // A stored member is synchronous work, and the text only paints if the
+      // page gets a turn - so it gets one every few files.
+      if (i % 8 === 1) await new Promise(r => setTimeout(r, 0));
+    });
     saveBlob(blob, "freesound-samples-" + files.length + ".zip");
     const mb = (blob.size/1048576).toFixed(1);
     // Only mentioned when it is worth mentioning: a zip of previews is all
@@ -2794,7 +2802,7 @@ function markPreset(){
 }
 function updMeta(){
   const el = document.getElementById("ph_meta"); if (!el) return;
-  el.textContent = ACTN.toLocaleString() + " samples · " + ELN.toLocaleString() + " links · " +
+  el.textContent = ACTN.toLocaleString() + " on screen · " + ELN.toLocaleString() + " links · " +
     (running ? "arranging\u2026" : settled() ? "settled" : "paused") +
     (PINNED.size ? " · " + PINNED.size + " pinned" : "");
 }
@@ -4438,10 +4446,11 @@ function playRandom(){
 (function(){
   const el = document.getElementById("welcome");
   const count = (DATA.counts.sample || 0).toLocaleString();
-  document.getElementById("wl_p").innerHTML = "<b>" + count + " Freesound samples</b>, "
-    + "placed by how they sound, so similar sounds sit together. "
-    + (TOUCH ? "Tap a dot to hear it. Drag to move around and pinch to zoom."
-             : "Click a dot to hear it, then press <b>Tab</b> for the next similar sound.");
+  document.getElementById("wl_p").innerHTML = "Each small dot is one of <b>" + count
+    + " Freesound samples</b>, with similar sounds close together. "
+    + (TOUCH ? "Tap one to hear it, drag to move around and pinch to zoom."
+             : "Click one to hear it, then press <b>Tab</b> for the closest match.")
+    + " The larger labelled circles are families and tags.";
   document.getElementById("wl_keys").hidden = TOUCH;
   // Blurred first: Tab on a focused button moves focus rather than walking on
   // from the sample that just started, which is the next thing anyone presses.

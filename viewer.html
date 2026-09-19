@@ -87,6 +87,12 @@
   header .tb:hover, header .pill:hover:not(.on) { border-color:#484f58; color:#e6edf3; }
   header .tb.on, header .tb.open { border-color:#4b8bd6; background:#1f6feb22; color:#e6edf3; }
   header .tb .caret { color:#6e7681; font-size:9px; margin-left:-1px; }
+  /* The originals chip is a toolbar button like the rest; orange while it still
+     needs setting up. display on .tb beats the UA's [hidden], so restate it. */
+  header #sorig[hidden] { display:none; }
+  header #sorig.todo { border-color:#e0823d; background:#e0823d1f; color:#f0a35e; }
+  header #sorig.todo:hover { border-color:#f0a35e; color:#ffc48a; }
+  header #sorig.todo b { color:inherit; }
   .badge { background:#1f6feb; color:#fff; font-size:10px; font-weight:600; line-height:1.5;
     padding:0 6px; border-radius:10px; text-align:center; font-variant-numeric:tabular-nums; }
   /* ---- popovers -----------------------------------------------------------
@@ -304,7 +310,7 @@
        title attribute still names them. The desktop build is a Windows and
        Linux installer, which a phone has no use for. */
     header .bt { display:none; }
-    header .hrow.r1 .tb { padding:0; width:38px; justify-content:center; gap:3px; }
+    header .hrow.r1 .tb:not(#sorig) { padding:0; width:38px; justify-content:center; gap:3px; }
     header #tbask:has(.badge:not([hidden])) { width:auto; padding:0 10px; }
     #getapp { display:none; }
     #bmc { display:inline-flex; align-items:center; padding:0 4px; font-size:16px; }
@@ -589,7 +595,7 @@
        title="The same map over your own folder of audio. Windows or Linux.">Map your own samples</a>
     <a id="bmc" href="https://buymeacoffee.com/alexm1010" target="_blank"
        rel="noopener noreferrer" title="Buy me a coffee - opens in a new tab">&#9749;</a>
-    <span class="stat" id="sorig" hidden></span>
+    <button id="sorig" class="tb" hidden></button>
    </div>
 
    <div class="hrow r2">
@@ -4545,22 +4551,26 @@ function paintOriginals(){
   if (!ORIG_STATE){ el.hidden = true; return; }
   el.hidden = false;
   el.onclick = null; el.style.cursor = "default"; el.title = "";
+  el.classList.remove("todo", "on");
   if (ORIG_STATE.remote){
     el.style.cursor = "pointer";
     if (ORIGINALS){
       // No hours left here: the refresh token renews it silently, so the only
       // number worth showing would always be "24h".
       el.innerHTML = "<b>originals</b> on";
+      el.classList.add("on");
       el.title = "Downloads serve the uploader's file, not the preview. Click to sign out or change credential.";
       el.onclick = fsDialog;
     } else if (ORIG_STATE.configured){
-      el.innerHTML = "<b>originals</b> — connect";
+      el.innerHTML = "<b>originals</b> — sign in";
+      el.classList.add("todo");
       el.title = "Sign in to Freesound so downloads serve the original file.";
       // This tab goes to Freesound and comes back; the settings and picks are
       // in localStorage and survive the round trip.
       el.onclick = fsStart;
     } else {
-      el.innerHTML = "<b>originals</b> — set up";
+      el.innerHTML = "<b>originals</b>";
+      el.classList.add("todo");
       el.title = "Download the uploader's original files with your own Freesound API credential.";
       el.onclick = fsDialog;
     }
@@ -4569,14 +4579,17 @@ function paintOriginals(){
   if (ORIGINALS){
     const h = Math.floor((ORIG_STATE.expires_in || 0)/3600);
     el.innerHTML = "<b>originals</b> on" + (h ? " · " + h + "h left" : "");
+    el.classList.add("on");
     el.title = "Downloads and drags serve the uploader's file, not the preview.";
   } else if (ORIG_STATE.configured){
-    el.innerHTML = "<b>originals</b> — connect";
+    el.innerHTML = "<b>originals</b> — sign in";
+    el.classList.add("todo");
     el.style.cursor = "pointer";
     el.title = "Sign in to Freesound so downloads serve the original file.";
     el.onclick = () => window.open("/api/auth/start", "_blank");
   } else {
-    el.innerHTML = "<b>originals</b> — not set up";
+    el.innerHTML = "<b>originals</b>";
+    el.classList.add("todo");
     el.title = "Add freesound-oauth.key beside serve_originals.py.";
   }
 }

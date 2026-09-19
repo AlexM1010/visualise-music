@@ -583,18 +583,18 @@
   <header>
    <div class="hrow r1">
     <h1>Freesound library</h1>
-    <span class="stat"><b id="nsm"></b> nodes<span class="lnk"><span class="sep">&middot;</span><b id="nsi"></b> links</span></span>
+    <span class="stat"><b id="nsm"></b> samples<span class="lnk"><span class="sep">&middot;</span><b id="nsi"></b> links</span></span>
     <span class="hsp"></span>
     <input id="q" placeholder="snare, tag:vinyl, bpm:120-130&hellip;" autocomplete="off"
            title="Terms are ANDed. A leading - drops what the term matches.&#10;&#10;bpm:120-130  bpm:&gt;100  bpm:&lt;90  bpm:128&#10;key:Amin  key:&quot;A minor&quot;  key:C&#10;dur:&lt;2  dur:0.5-4&#10;dl:&gt;1000  rate:&gt;4&#10;tag:vinyl  by:username  pack:...  fam:...  sub:...&#10;loud:&gt;-14  dyn:&gt;6&#10;&#10;Anything else is matched as text, over the name, uploader,&#10;pack, family and every tag on the sample.&#10;Only trusted key and BPM readings are ever matched.">
     <span class="stat" id="hits"></span>
     <span class="hsp"></span>
-    <button id="tbask" class="tb" title="open the basket (S saves the hovered sample)">&#9776;<span class="bt"> Basket</span><b id="nbask" class="badge" hidden></b></button>
+    <button id="tbask" class="tb" title="Open the basket of samples you have kept (S keeps the one under the cursor)">&#9776;<span class="bt"> Basket</span><b id="nbask" class="badge" hidden></b></button>
     <button id="dlvis" class="tb">&#10515;<span class="bt"> Save visible</span></button>
     <a id="getapp" href="https://github.com/AlexM1010/visualise-music/releases"
        title="The same map over your own folder of audio. Windows or Linux.">Map your own samples</a>
     <a id="bmc" href="https://buymeacoffee.com/alexm1010" target="_blank"
-       rel="noopener noreferrer" title="Buy me a coffee - opens in a new tab">&#9749;</a>
+       rel="noopener noreferrer" title="Buy me a coffee (opens in a new tab)" aria-label="Buy me a coffee (opens in a new tab)">&#9749;</a>
     <button id="sorig" class="tb" hidden></button>
    </div>
 
@@ -610,7 +610,7 @@
       <button id="tcol" class="tb" data-pop="colpop" aria-haspopup="true" aria-expanded="false">Colour: <span id="ncol">Cluster</span><span class="caret">&#9660;</span></button>
       <div id="colpop" class="pop-panel narrow" role="dialog" aria-label="Colour by" hidden>
         <div class="pop-head"><span class="pop-title">Colour by</span><button class="pop-x" data-pop-close aria-label="Close">&times;</button></div>
-        <button data-col="cluster" class="opt radio on"><span class="ck"></span><span class="tx"><span class="t">Cluster</span><span class="d">The community each sample landed in</span></span></button>
+        <button data-col="cluster" class="opt radio on"><span class="ck"></span><span class="tx"><span class="t">Cluster</span><span class="d">Groups of similar sounds</span></span></button>
         <button data-col="0" class="opt radio"><span class="ck"></span><span class="tx"><span class="t">Brightness</span><span class="d">Dull to bright, 0-100</span></span></button>
         <button data-col="1" class="opt radio"><span class="ck"></span><span class="tx"><span class="t">Warmth</span><span class="d">Cold to warm, 0-100</span></span></button>
         <button data-col="2" class="opt radio"><span class="ck"></span><span class="tx"><span class="t">Depth</span><span class="d">Shallow to deep, 0-100</span></span></button>
@@ -630,7 +630,7 @@
         <button id="fkey" class="opt"><span class="ck"></span><span class="tx"><span class="t">Keyed</span><span class="d">Has a musical key we trust</span></span><b class="n" id="nky"></b></button>
         <button id="ftempo" class="opt"><span class="ck"></span><span class="tx"><span class="t">Tempo</span><span class="d">Has a BPM we trust</span></span><b class="n" id="ntp"></b></button>
         <button id="flink" class="opt"><span class="ck"></span><span class="tx"><span class="t">Linked</span><span class="d">Sounds like at least one other sample</span></span><b class="n" id="nlnk"></b></button>
-        <button id="fbask" class="opt" disabled title="keep a sample first - S keeps the one under the cursor"><span class="ck"></span><span class="tx"><span class="t">In basket</span><span class="d">Only the samples you have kept</span></span></button>
+        <button id="fbask" class="opt" disabled title="Keep a sample first. S keeps the one under the cursor"><span class="ck"></span><span class="tx"><span class="t">In basket</span><span class="d">Only the samples you have kept</span></span></button>
         <div class="pop-foot"><button class="pop-clear" id="fclear">Clear filters</button><button class="pop-done" data-pop-close>Done</button></div>
       </div>
     </div>
@@ -916,20 +916,20 @@ const rampColour = v => "hsl(" + Math.round((1 - v) * 225) + ",72%," + Math.roun
 const cv = document.getElementById("cv"), ctx = cv.getContext("2d"), tip = document.getElementById("tip");
 const TIMBRE = ["brightness","warmth","depth","hardness","boominess","roughness","sharpness"];
 
-document.getElementById("nsm").textContent = N.length.toLocaleString();
+document.getElementById("nsm").textContent = (DATA.counts.sample || 0).toLocaleString();
 document.getElementById("ncc").textContent = DATA.cc0.toLocaleString();
 document.getElementById("nky").textContent = DATA.keyed.toLocaleString();
 document.getElementById("ntp").textContent = DATA.tempoed.toLocaleString();
-document.getElementById("nsi").textContent = E.length.toLocaleString();
+document.getElementById("nsi").textContent = (DATA.sims || 0).toLocaleString();
 // A phone has none of these keys, and "click" and "hovered" describe a mouse -
 // so a touch screen with no mouse beside it gets its own gestures instead.
-const FOOT_KEYS = matchMedia("(hover:none) and (pointer:coarse)").matches
+const TOUCH = matchMedia("(hover:none) and (pointer:coarse)").matches;
+const FOOT_KEYS = TOUCH
   ? "Tap a sample to play it · drag to move around · pinch to zoom · "
     + "tap the background to clear"
-  : "Click a sample to play · Tab walks to the next similar sound, shift-Tab comes "
-  + "back the way you came, or through every sample on a clicked tag · ctrl-Z goes back to the sound you were on before, "
-  + "ctrl-Y forward · Space plays the hovered node · D downloads it · "
-  + "S saves it · L loops · F frames it · Esc stops";
+  : "Click a sample to play · Tab plays the next similar sound, shift-Tab the last one · "
+  + "Space plays the sample under the cursor · S keeps it · D downloads it · "
+  + "L loops · F zooms to it · ctrl-Z / ctrl-Y back and forward · Esc stops";
 // The query grammar needs somewhere to be found that costs nothing once you know
 // it. The footer already ellipsises and never grows the layout, and it is only
 // standing in for the key list while someone is actually typing a query.
@@ -1641,7 +1641,7 @@ function downloadVisible(){
 function downloadBasket(){
   if (zipping) return;
   let list = basketNodes().filter(n => n.p);
-  if (!list.length){ setNow("The basket is empty — hover a sample and press S", true);
+  if (!list.length){ setNow("The basket is empty — keep a sample first", true);
                      holdBar(3200); return; }
   let capNote = "";
   if (list.length > MAX_ZIP){
@@ -1794,8 +1794,8 @@ function showLoop(){
   loopEl.classList.toggle("on", live && loopOn);
   loopEl.classList.toggle("def", !live);
   loopEl.setAttribute("aria-pressed", loopOn ? "true" : "false");
-  loopEl.title = loopOn ? "every sample loops - L plays them once"
-                        : "every sample plays once - L loops them";
+  loopEl.title = loopOn ? "Samples loop until you stop them. Click or press L to play each once"
+                        : "Each sample plays once. Click or press L to loop them";
 }
 function toggleLoop(){
   loopOn = !loopOn;
@@ -2943,7 +2943,7 @@ const LAYOUTS = {
 const LAY_ORDER = ["clusters", "grid", "scatter"];
 // What the buttons read. The key stays `scatter` because it is also the
 // LAYOUTS name and the data-l a button is matched by; only the label is long.
-const LAY_LABEL = { baked: "baked", scatter: "scatter" };
+const LAY_LABEL = { baked: "original", scatter: "scatter" };
 
 // ---- axis furniture --------------------------------------------------------
 // Decimals come from the range, not from each value, so an axis does not read
@@ -3131,7 +3131,7 @@ function markLayoutBtns(){
 function updLayNote(){
   const el = document.getElementById("lay_note"); if (!el) return;
   el.textContent = layout ? layNote
-    : "the simulation has the positions now — pick an arrangement to take them back";
+    : "Arranged by the physics. Pick a layout to go back to it";
 }
 document.querySelectorAll("#phys button.lay").forEach(b =>
   b.onclick = () => applyLayout(b.dataset.l));
@@ -3306,11 +3306,13 @@ bkPanel.innerHTML =
   '<button id="bk_clear">clear</button></div>' +
   '<div id="bk_list"></div>' +
   '<div class="hint" id="bk_miss" hidden></div>' +
-  '<div class="hint">S keeps or drops the sample under the cursor, and so does the ' +
-  'button beside save in the footer. A row plays on click and can be dragged into ' +
-  'Ableton, FL or onto the desktop &mdash; that drag is a Chromium feature, and ' +
-  'Firefox and Safari ignore it. &#8599; opens a sample on freesound.org, where ' +
-  'the uploader&rsquo;s original file and the full licence are.</div>';
+  '<div class="hint">' + (TOUCH
+    ? 'Tap + keep beside a playing sample to add it here, and tap again to drop it. '
+    : 'S keeps or drops the sample under the cursor, and so does + keep in the footer. ' +
+      'Click a row to play it, or drag it into Ableton, FL Studio or onto the desktop ' +
+      '(in Chrome and Edge). ') +
+  '&#8599; opens a sample on freesound.org, with the original file and its full ' +
+  'licence.</div>';
 
 const bkList = document.getElementById("bk_list");
 function renderBasket(){
@@ -3327,7 +3329,8 @@ function renderBasket(){
     " not in this build of the library. They are still saved, and \u2197 still " +
     "opens them.";
   if (!ns.length){
-    bkList.innerHTML = '<div class="none">Nothing kept yet \u2014 hover a sample and press S.</div>';
+    bkList.innerHTML = '<div class="none">Nothing kept yet \u2014 ' +
+      (TOUCH ? 'play a sample and tap + keep.' : 'hover a sample and press S.') + '</div>';
     return; }
   // Only what is trusted is printed: an untrusted key is the one the analyser
   // gave a car crash, and in a one-line row there is no room to say so.
@@ -3357,7 +3360,7 @@ function updBasket(quiet){
   // Same rule as `fits`: while it is off, the tooltip is for saying what turns
   // it on, because that is the only question a disabled button raises.
   fbaskBtn.title = ns ? "only the " + ns + " sample" + (ns===1?"":"s") + " you have kept"
-                      : "keep a sample first - S keeps the one under the cursor";
+                      : "Keep a sample first. S keeps the one under the cursor";
   renderBasket();
   updKeepBtn();
   if (quiet) return;
@@ -3424,7 +3427,7 @@ function copyText(text){
 const OPEN_ASK = 8;
 function openBasketPages(){
   const ids = [...BASKET.keys()];
-  if (!ids.length){ setNow("The basket is empty \u2014 hover a sample and press S", true);
+  if (!ids.length){ setNow("The basket is empty \u2014 keep a sample first", true);
                     holdBar(3200); return; }
   const urls = ids.map(id => "https://freesound.org/s/" + id + "/");
   // Eight is about where a row of tabs stops being a row of tabs. Below it the
@@ -4486,35 +4489,35 @@ const num = v => (v || 0).toLocaleString();
 let nLinked = 0;
 for (let i=0;i<N.length;i++) if (N[i].k === "sample" && N[i].ln) nLinked++;
 const HINTS = [
-  ["[data-k=sample]", "Show the sounds themselves - every small disc on the map is one of "
-    + nk("sample") + " samples"],
-  ["[data-k=family]", "Show the " + nk("family") + " family nodes - Freesound's own subcategory "
-    + "classifier. A hairline joins each sample to its family"],
-  ["[data-k=tag]", "Show the " + nk("tag") + " tag nodes - a hairline joins each sample to its "
-    + "three rarest tags, which are the ones that place it"],
-  ["#tclap", "Draw the " + num(DATA.sims) + " similarity edges - the thick ones, and the only "
-    + "thing on this map that joins one sample to another"],
+  ["[data-k=sample]", "Show the samples. Every small dot on the map is one of the "
+    + nk("sample") + " sounds"],
+  ["[data-k=family]", "Show the " + nk("family") + " sound families Freesound sorts its "
+    + "samples into, each linked to its members by a thin line"],
+  ["[data-k=tag]", "Show the " + nk("tag") + " tags, each linked by a thin line to the samples "
+    + "it is one of the three most distinctive tags of"],
+  ["#tclap", "Show the " + num(DATA.sims) + " links between samples that sound alike. They "
+    + "are the thick lines, and the only ones that join sample to sample"],
   ["#fcc0", "Only the " + num(DATA.cc0) + " samples released CC0, which need no credit"],
   ["#floop", "Only the " + num(DATA.loopable) + " samples the analysis called loopable"],
   ["#fone", "Only the " + num(DATA.oneshot) + " samples the analysis called a single event"],
-  ["#fkey", "Only the " + num(DATA.keyed) + " samples whose key reading cleared the confidence "
-    + "threshold - the rest have a key, but not one worth trusting"],
-  ["#ftempo", "Only the " + num(DATA.tempoed) + " samples whose BPM reading cleared the "
-    + "confidence threshold"],
-  ["#flink", "Only the " + num(nLinked) + " samples with at least one acoustic neighbour"],
+  ["#fkey", "Only the " + num(DATA.keyed) + " samples whose musical key was detected with "
+    + "confidence"],
+  ["#ftempo", "Only the " + num(DATA.tempoed) + " samples whose tempo was detected with "
+    + "confidence"],
+  ["#flink", "Only the " + num(nLinked) + " samples that sound like at least one other"],
   ["#pkey", "Your project's key. Every sample gains its distance to it, and everything that "
     + "does not fit is greyed"],
   ["#pbpm", "Your project's tempo. Fits the tempo turns on by itself the moment you type one, "
     + "hiding everything out of reach until you switch it back off"],
-  ["[data-col=cluster]", "Colour every node by the cluster it landed in - each community "
+  ["[data-col=cluster]", "Colour each sample by its group of similar sounds. Each group "
     + "is named on the map"],
   ["[data-col='0']", "Colour every sample by its brightness, 0-100"],
   ["[data-col='1']", "Colour every sample by its warmth, 0-100"],
   ["[data-col='2']", "Colour every sample by its depth, 0-100"],
   ["[data-col='3']", "Colour every sample by its hardness, 0-100"],
-  ["#tphys", "Open the arrangement panel - clusters, a grid, a scatter graph against any two "
-    + "fields, and the live physics behind all three"],
-  ["#dlvis", "Zip every sample currently on screen - the filters and the search box both count"],
+  ["#tphys", "Rearrange the map: by group, as a grid, or plotted against any two "
+    + "measurements, with the physics that moves it"],
+  ["#dlvis", "Download every sample on screen as a zip. Filters and search both count"],
 ];
 for (const [sel, text] of HINTS)
   for (const el of document.querySelectorAll("header " + sel))

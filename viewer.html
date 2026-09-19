@@ -1961,7 +1961,7 @@ function startAudio(i, n, routed){
   // clear the symbol and whichever comes first wins.
   mine.play().then(() => { if(still()){ cancelLoading(); setNow(nowLine(n)); } })
              .catch(err => { if(still()){ cancelLoading();
-               setNow("Blocked ("+err.name+") — open over http://localhost", true); } });
+               setNow("Could not play "+n.l, true); } });
 }
 // ~11fps: the pulse only needs to read as alive, and a full redraw is tens of
 // thousands of edges, which is not worth doing 60 times a second.

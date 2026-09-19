@@ -313,7 +313,10 @@
     header .hrow.r1 .tb:not(#sorig) { padding:0; width:38px; justify-content:center; gap:3px; }
     header #tbask:has(.badge:not([hidden])) { width:auto; padding:0 10px; }
     #getapp { display:none; }
-    #bmc { display:inline-flex; align-items:center; padding:0 4px; font-size:16px; }
+    /* After the search box rather than before it: with Random in the top row
+       the cup no longer fits there, and at the start of the second line it
+       reads as part of the search. */
+    #bmc { display:inline-flex; align-items:center; padding:0 4px; font-size:16px; order:1; }
     /* A 220px basis will not fit beside the title, so the box always takes a
        line of its own - and #hits, when a query gives it something to say,
        sits at its end rather than on another line below. 16px, or iOS zooms
@@ -578,6 +581,63 @@
   /* The now-playing chip is a drag source, but only while it names something. */
   #now { cursor:grab; }
   #now:empty { cursor:default; }
+  /* ---- guidance ------------------------------------------------------------
+     The page opens on the map with no front door, so the first visit gets one
+     card saying the thing the map cannot show - every dot is a sound - with a
+     button that plays one. Bottom right, opposite the basket, and gone for good
+     once dismissed or once anything plays. */
+  #welcome { position:absolute; right:14px; bottom:14px; z-index:5;
+    width:min(320px, calc(100% - 28px)); background:rgba(13,17,23,.97);
+    border:1px solid #30363d; border-radius:10px; padding:14px 16px 13px;
+    box-shadow:0 12px 40px rgba(0,0,0,.55); animation:wlin .25s ease-out; }
+  #welcome[hidden] { display:none; }
+  @keyframes wlin { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion:reduce) { #welcome { animation:none; } }
+  #welcome h2 { font-size:14px; margin:0 26px 6px 0; color:#e6edf3; font-weight:600; }
+  #welcome p { margin:0 0 12px; font-size:12px; line-height:1.55; color:#9aa4b0; }
+  #welcome p b { color:#e6edf3; font-weight:600; }
+  #welcome .row { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  #welcome .row button { font-size:12px; padding:5px 10px; }
+  #welcome .go { background:#1f6feb33; border-color:#4b8bd6; color:#e6edf3; font-weight:600; }
+  #welcome .go:hover { background:#1f6feb55; }
+  #welcome .x { position:absolute; top:9px; right:9px; display:flex; align-items:center;
+    justify-content:center; width:22px; height:22px; padding:0; background:transparent;
+    border:1px solid #21262d; border-radius:6px; color:#7d8590; font-size:15px; line-height:1; }
+  #welcome .x:hover { color:#e6edf3; border-color:#30363d; }
+  @media (max-width:700px) and (pointer:coarse) {
+    #welcome { left:10px; right:10px; bottom:10px; width:auto; } }
+  /* The shortcuts, in the clothes the other two dialogs wear. */
+  #keys-dl { width:min(480px, calc(100vw - 28px)); padding:0; color:#c9d1d9;
+    background:#0d1117; border:1px solid #30363d; border-radius:10px; font:inherit; }
+  #keys-dl::backdrop { background:rgba(3,5,9,.74); }
+  #keys-dl .bd { padding:16px 18px 14px; max-height:min(80vh, 760px); overflow:auto; }
+  #keys-dl h2 { font-size:15px; margin:0 0 2px; color:#e6edf3; font-weight:600; }
+  #keys-dl h3 { font-size:10px; margin:16px 0 5px; color:#6e7681; font-weight:600;
+    text-transform:uppercase; letter-spacing:.05em; }
+  #keys-dl table { width:100%; border-collapse:collapse; font-size:12px; }
+  #keys-dl td { padding:5px 0; vertical-align:top; color:#9aa4b0;
+    border-bottom:1px solid #161b22; line-height:1.45; }
+  #keys-dl tr:last-child td { border-bottom:0; }
+  #keys-dl td:first-child { width:44%; padding-right:12px; color:#c9d1d9; }
+  #keys-dl p { margin:0 0 6px; font-size:12px; line-height:1.6; color:#9aa4b0; }
+  #keys-dl kbd { font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; font-size:11px;
+    color:#e6edf3; background:#161b22; border:1px solid #30363d; border-bottom-width:2px;
+    border-radius:4px; padding:0 5px; white-space:nowrap; }
+  #keys-dl code { font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; font-size:11px;
+    color:#c9d1d9; background:#0b0e14; border:1px solid #21262d; border-radius:4px;
+    padding:1px 5px; white-space:nowrap; }
+  #keys-dl .ft { display:flex; justify-content:flex-end; margin-top:14px; padding-top:11px;
+    border-top:1px solid #1e2530; }
+  #keys-dl .ft button { background:#1f6feb33; border:1px solid #4b8bd6; color:#e6edf3;
+    padding:4px 14px; border-radius:6px; font:inherit; font-size:12px; font-weight:600; cursor:pointer; }
+  #keys-dl .xw { position:sticky; top:0; height:0; z-index:2;
+    display:flex; justify-content:flex-end; }
+  #keys-dl .x { display:flex; align-items:center; justify-content:center;
+    width:22px; height:22px; padding:0; background:#0d1117; border:1px solid #21262d;
+    border-radius:6px; color:#7d8590; font:inherit; font-size:15px; line-height:1;
+    cursor:pointer; }
+  #keys-dl .x:hover { color:#e6edf3; border-color:#30363d; }
+  #keysbtn { width:24px; padding:2px 0; font-size:12px; font-weight:600; }
 </style>
 <div id="wrap">
   <header>
@@ -589,6 +649,7 @@
            title="Terms are ANDed. A leading - drops what the term matches.&#10;&#10;bpm:120-130  bpm:&gt;100  bpm:&lt;90  bpm:128&#10;key:Amin  key:&quot;A minor&quot;  key:C&#10;dur:&lt;2  dur:0.5-4&#10;dl:&gt;1000  rate:&gt;4&#10;tag:vinyl  by:username  pack:...  fam:...  sub:...&#10;loud:&gt;-14  dyn:&gt;6&#10;&#10;Anything else is matched as text, over the name, uploader,&#10;pack, family and every tag on the sample.&#10;Only trusted key and BPM readings are ever matched.">
     <span class="stat" id="hits"></span>
     <span class="hsp"></span>
+    <button id="trand" class="tb" title="Play a random sample from what is on screen (R)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg><span class="bt"> Random</span></button>
     <button id="tbask" class="tb" title="Open the basket of samples you have kept (S keeps the one under the cursor)">&#9776;<span class="bt"> Basket</span><b id="nbask" class="badge" hidden></b></button>
     <button id="dlvis" class="tb">&#10515;<span class="bt"> Save visible</span></button>
     <a id="getapp" href="https://github.com/AlexM1010/visualise-music/releases"
@@ -653,8 +714,16 @@
     <button id="tphys" class="tb">Arrange</button>
    </div>
   </header>
-  <div id="main"><canvas id="cv"></canvas><div id="legend" hidden></div><div id="phys" hidden></div><div id="basket" hidden></div><div id="tip"></div></div>
-  <footer><span id="now" draggable="true"></span><span id="load" role="status" aria-label="loading"></span><canvas id="wave"></canvas><button id="loopst"></button><button id="dlone" hidden>&#10515; save</button><button id="bkone" hidden></button><span id="note"></span><span id="foot"></span><a id="privacy" href="privacy.html">Privacy</a></footer>
+  <div id="main"><canvas id="cv"></canvas><div id="legend" hidden></div><div id="phys" hidden></div><div id="basket" hidden></div><div id="tip"></div><div id="welcome" role="dialog" aria-labelledby="wl_t" hidden>
+    <button type="button" class="x" id="wl_x" aria-label="Close">&times;</button>
+    <h2 id="wl_t">Every dot is a sound</h2>
+    <p id="wl_p"></p>
+    <div class="row">
+      <button type="button" class="go" id="wl_play">&#9654; Play a random sample</button>
+      <button type="button" id="wl_keys">Keyboard shortcuts</button>
+    </div>
+  </div></div>
+  <footer><span id="now" draggable="true"></span><span id="load" role="status" aria-label="loading"></span><canvas id="wave"></canvas><button id="loopst"></button><button id="dlone" hidden>&#10515; save</button><button id="bkone" hidden></button><span id="note"></span><span id="foot"></span><button id="keysbtn" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">?</button><a id="privacy" href="privacy.html">Privacy</a></footer>
 <dialog id="getapp-dl">
   <form method="dialog" class="bd">
     <div class="xw"><button class="x" aria-label="Close">&times;</button></div>
@@ -767,6 +836,41 @@
       <span></span>
       <button type="button" id="fs_go">Save and sign in</button>
     </div>
+  </form>
+</dialog>
+<dialog id="keys-dl" aria-labelledby="keys_t">
+  <form method="dialog" class="bd">
+    <div class="xw"><button class="x" aria-label="Close">&times;</button></div>
+    <h2 id="keys_t">Keyboard shortcuts</h2>
+    <h3>Listening</h3>
+    <table>
+      <tr><td>Click a dot</td><td>Play it, or stop it if it is playing</td></tr>
+      <tr><td><kbd>Space</kbd></td><td>Play the sample under the cursor, or stop</td></tr>
+      <tr><td><kbd>R</kbd></td><td>Play a random sample from what is on screen</td></tr>
+      <tr><td><kbd>Tab</kbd> or <kbd>&rarr;</kbd></td><td>Play the next similar sound</td></tr>
+      <tr><td><kbd>Shift</kbd> <kbd>Tab</kbd> or <kbd>&larr;</kbd></td><td>Go back the way you came</td></tr>
+      <tr><td><kbd>Ctrl</kbd> <kbd>Z</kbd> / <kbd>Ctrl</kbd> <kbd>Y</kbd></td><td>The sound you played before, or after</td></tr>
+      <tr><td><kbd>L</kbd></td><td>Loop samples, or play each one once</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>Stop, and clear the trail</td></tr>
+    </table>
+    <h3>Keeping sounds</h3>
+    <table>
+      <tr><td><kbd>S</kbd></td><td>Keep the sample in your basket, or drop it</td></tr>
+      <tr><td><kbd>D</kbd></td><td>Download the sample</td></tr>
+    </table>
+    <h3>Moving around</h3>
+    <table>
+      <tr><td>Scroll</td><td>Zoom in and out</td></tr>
+      <tr><td>Drag</td><td>Move the map</td></tr>
+      <tr><td><kbd>F</kbd></td><td>Fit the whole map in the window</td></tr>
+      <tr><td>Click a tag or family</td><td>Then <kbd>Tab</kbd> plays through every sample on it</td></tr>
+    </table>
+    <h3>Searching</h3>
+    <p>Type words to match names, tags and uploaders, or narrow it down with
+      <code>bpm:120-130</code> <code>key:Amin</code> <code>tag:vinyl</code>
+      <code>dur:&lt;2</code> <code>by:name</code>. Start a term with
+      <code>-</code> to leave those samples out.</p>
+    <div class="ft"><button>Done</button></div>
   </form>
 </dialog>
 </div>
@@ -921,15 +1025,12 @@ document.getElementById("ncc").textContent = DATA.cc0.toLocaleString();
 document.getElementById("nky").textContent = DATA.keyed.toLocaleString();
 document.getElementById("ntp").textContent = DATA.tempoed.toLocaleString();
 document.getElementById("nsi").textContent = (DATA.sims || 0).toLocaleString();
-// A phone has none of these keys, and "click" and "hovered" describe a mouse -
-// so a touch screen with no mouse beside it gets its own gestures instead.
+// A phone has none of these keys, and "click" and "hovered" describe a mouse.
 const TOUCH = matchMedia("(hover:none) and (pointer:coarse)").matches;
-const FOOT_KEYS = TOUCH
-  ? "Tap a sample to play it · drag to move around · pinch to zoom · "
-    + "tap the background to clear"
-  : "Click a sample to play · Tab plays the next similar sound, shift-Tab the last one · "
-  + "Space plays the sample under the cursor · S keeps it · D downloads it · "
-  + "L loops · F zooms to it · ctrl-Z / ctrl-Y back and forward · Esc stops";
+// Nothing by default: the welcome card introduces the map and the ? button
+// holds the keys, so the line only speaks when it has something to say - what a
+// header control does, or the search syntax while a query is being typed.
+const FOOT_KEYS = "";
 // The query grammar needs somewhere to be found that costs nothing once you know
 // it. The footer already ellipsises and never grows the layout, and it is only
 // standing in for the key list while someone is actually typing a query.
@@ -1902,6 +2003,7 @@ function playNode(i){
   // stand, so Tab goes back to walking similarity from it.
   if(!hubStepping) hub = -1;
   if(!n.p){ setNow("No preview for "+n.l, true); return; }
+  welcomeClose();
   if(playing===i){ stopAudio(); return; }
   stopAudio();
   // Made and resumed here because here is the user gesture: a context built at
@@ -4282,12 +4384,67 @@ cv.addEventListener("touchcancel", () => {
 for (const g of ["gesturestart","gesturechange","gestureend"])
   cv.addEventListener(g, e => e.preventDefault(), {passive:false});
 
+// ---- guidance ----------------------------------------------------------------
+// The page opens on the map itself, with no front door. What a first visit
+// needs is the one fact the map cannot show - every dot is a sound - and a way
+// to hear one, so a card says that once and a button plays one. The full key
+// list sits behind a footer button and ?, rather than in a footer line too long
+// to read.
+const keysDlg = document.getElementById("keys-dl");
+const keysBtn = document.getElementById("keysbtn");
+const WELCOME_KEY = "fs-welcomed";
+function openKeys(){ welcomeClose(); if (!keysDlg.open) keysDlg.showModal(); }
+keysBtn.onclick = openKeys;
+keysBtn.hidden = TOUCH;
+// Random stays in the toolbar for good: the welcome card offers it once, but
+// "surprise me" is how the map is browsed, not only how it is first met.
+document.getElementById("trand").onclick = e => { e.currentTarget.blur(); playRandom(); };
+// Looked up rather than held in a const: playNode calls this, and a function
+// that can be reached from anywhere should not depend on where it was declared.
+function welcomeClose(){
+  const el = document.getElementById("welcome");
+  if (!el || el.hidden) return;
+  el.hidden = true;
+  try { localStorage.setItem(WELCOME_KEY, "1"); } catch(e){}
+}
+// Somewhere the Tab walk can go next, on screen and with a preview to play;
+// failing that, anything on screen that plays at all.
+function playRandom(){
+  const linked = [], any = [];
+  for (let i=0;i<N.length;i++){ const n = N[i];
+    if (n.k !== "sample" || !n.p || !shown(n)) continue;
+    any.push(i); if (n.ln) linked.push(i); }
+  const pool = linked.length ? linked : any;
+  if (!pool.length){ setNow("Nothing on screen to play \u2014 clear the filters", true); return; }
+  const i = pool[Math.floor(Math.random() * pool.length)];
+  playNode(i); panTo(i);
+}
+(function(){
+  const el = document.getElementById("welcome");
+  const count = (DATA.counts.sample || 0).toLocaleString();
+  document.getElementById("wl_p").innerHTML = "<b>" + count + " Freesound samples</b>, "
+    + "placed by how they sound, so similar sounds sit together. "
+    + (TOUCH ? "Tap a dot to hear it. Drag to move around and pinch to zoom."
+             : "Click a dot to hear it, then press <b>Tab</b> for the next similar sound.");
+  document.getElementById("wl_keys").hidden = TOUCH;
+  // Blurred first: Tab on a focused button moves focus rather than walking on
+  // from the sample that just started, which is the next thing anyone presses.
+  document.getElementById("wl_play").onclick = e => { e.currentTarget.blur(); playRandom(); };
+  document.getElementById("wl_keys").onclick = openKeys;
+  document.getElementById("wl_x").onclick = welcomeClose;
+  let seen = false;
+  try { seen = localStorage.getItem(WELCOME_KEY) === "1"; } catch(e){}
+  // A beat after load, so the map is what is seen first and the card arrives
+  // on top of it rather than instead of it.
+  if (!seen) setTimeout(() => { el.hidden = false; }, 700);
+})();
+
 window.addEventListener("keydown", e => {
   // The download panel is modal, and the test below only clears keystrokes that
   // landed on a control. Click its prose and the target is a <p>, which would
   // put S and D back to work on a map nobody can currently see. Esc still
   // closes it: that is the dialog's own doing, not this handler's.
-  if(getappDlg.open || fsDlg.open) return;
+  if(getappDlg.open || fsDlg.open || keysDlg.open) return;
   // BUTTON joins the text controls because Space is how a focused button is
   // pressed, and the Space branch below preventDefault()s it into pressing
   // nothing.
@@ -4309,6 +4466,8 @@ window.addEventListener("keydown", e => {
   // the map: without this, ctrl-F frames the graph instead of finding anything
   // and ctrl-P runs the physics instead of printing.
   if(e.ctrlKey || e.metaKey || e.altKey) return;
+  if(e.key==="?"){ e.preventDefault(); openKeys(); return; }
+  if(e.key==="r"||e.key==="R"){ e.preventDefault(); playRandom(); return; }
   // Both of these mean the sample under the mouse, and fall back to the one in
   // the footer bar for a walk driven from the keyboard with the mouse away.
   if(e.key==="d"||e.key==="D"){ e.preventDefault(); downloadOne(N[hover>=0?hover:barNode]); return; }
@@ -4329,7 +4488,7 @@ window.addEventListener("keydown", e => {
   if(e.key==="ArrowRight"){ e.preventDefault(); walkStep(1); return; }
   if(e.key==="ArrowLeft"){ e.preventDefault(); walkPrev(); return; }
   // Esc is "stop and get out of the way", and the trail is part of the way.
-  if(e.key==="Escape"){ stopAudio(); walkClear(); selClear(); }
+  if(e.key==="Escape"){ stopAudio(); walkClear(); selClear(); welcomeClose(); }
   else if(e.code==="Space"){ e.preventDefault();
     if(playing>=0) stopAudio(); else if(hover>=0) playNode(hover); }
 });

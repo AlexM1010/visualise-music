@@ -448,29 +448,75 @@
   /* A preference is not a state. With no sound to apply it to the button drops
      its fill and sits back, so it never reads as something currently looping. */
   #loopst.def { background:transparent; border-color:#21262d; color:#6e7681; }
-  /* The arrangement and physics panel sits in the top right corner, clear of the
-     basket, so a slider is never over the thing it is changing. */
-  #phys { position:absolute; top:11px; right:11px; width:272px; z-index:4;
-    background:rgba(13,17,23,.95); border:1px solid #1e2530; border-radius:8px;
-    padding:9px 11px 10px; max-height:calc(100% - 22px); overflow:auto; }
+  /* The arrangement panel sits opposite the legend, so a slider is never over
+     the thing it is changing. Two tabs - where the nodes go and the live physics
+     that moves them - because one scroll of
+     fifteen controls made the panel taller than most windows. */
+  #phys { position:absolute; top:11px; right:11px; width:296px; z-index:4;
+    background:rgba(13,17,23,.96); border:1px solid #1e2530; border-radius:12px;
+    box-shadow:0 18px 40px rgba(0,0,0,.55);
+    padding:10px 12px 12px; max-height:calc(100% - 22px); overflow:auto; }
+  #phys[hidden] { display:none; }
+  #phys .ph-tabs { display:flex; gap:3px; padding:3px; margin-bottom:12px;
+    background:#0b0e14; border-radius:9px; }
+  #phys .ph-tabs button { flex:1 1 0; padding:5px 0; font-size:11.5px; border-radius:6px;
+    background:transparent; border:1px solid transparent; color:#9aa4b0;
+    transition:background-color .12s, border-color .12s, color .12s; }
+  #phys .ph-tabs button:hover:not(.on) { color:#e6edf3; }
+  #phys .ph-tabs button.on { background:#1f6feb26; border-color:#4b8bd6; color:#e6edf3; }
+  #phys .ph-pane[hidden] { display:none; }
+  #phys .ph-pane { animation:phin .14s ease-out; }
+  @keyframes phin { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion:reduce) { #phys .ph-pane { animation:none; } }
   #phys h2 { font-size:10px; margin:0 0 7px; color:#6e7681; font-weight:600;
-    text-transform:uppercase; letter-spacing:.05em; }
+    text-transform:uppercase; letter-spacing:.07em; }
+  #phys .ph-grp { margin-top:13px; }
   #phys .btns { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:8px; }
   #phys .btns button { padding:2px 7px; font-size:11px; }
   #phys h2 + .btns { margin-bottom:6px; }
+  #phys .lay-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:10px; }
+  #phys .lay-card { display:flex; flex-direction:column; align-items:center; gap:5px;
+    padding:10px 6px 8px; border-radius:9px; background:#0f1319; color:#9aa4b0;
+    font-size:11px; white-space:normal;
+    transition:border-color .12s, background-color .12s, color .12s; }
+  #phys .lay-card svg { display:block; }
+  #phys .lay-card:hover:not(.on) { border-color:#484f58; color:#e6edf3; }
+  #phys .lay-card.on { background:#1f6feb1f; border-color:#4b8bd6; color:#e6edf3; }
+  #phys .chips { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; }
+  #phys .chips button { display:inline-flex; align-items:center; gap:6px;
+    padding:3px 9px; font-size:11px; }
+  #phys .chips .dot { width:6px; height:6px; border-radius:50%; flex:none; }
+  #phys .runrow { display:flex; gap:5px; margin-bottom:2px; }
+  #phys .runrow button { flex:1 1 0; padding:5px 0; font-size:11.5px; border-radius:7px; }
+  #phys #ph_run { background:#1f6feb26; border-color:#4b8bd6; color:#e6edf3; }
+  #phys #ph_run:hover { background:#1f6feb40; }
   #phys label { display:block; margin:0 0 5px; }
   /* Name, track and value on one line: ten stacked three-line sliders made the
      panel taller than most windows, and the panel is meant to sit beside the
      graph rather than scroll over it. */
-  #phys label.sl { display:flex; align-items:center; gap:6px; margin:0 0 3px; }
-  #phys label.sl .nm { flex:none; width:74px; color:#7d8590; font-size:11px;
+  #phys label.sl { display:flex; align-items:center; gap:8px; margin:0 0 5px; }
+  #phys label.sl .nm { flex:none; width:64px; color:#7d8590; font-size:11px;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   #phys label.sl b { flex:none; width:36px; text-align:right; color:#c9d1d9;
     font-size:11px; font-weight:600; font-variant-numeric:tabular-nums; }
-  #phys input[type=range] { flex:1 1 0; min-width:0; width:100%; height:13px;
-    margin:0; padding:0; border:0; background:transparent;
-    accent-color:#4b8bd6; cursor:pointer; }
-  #phys .axes { display:flex; gap:6px; }
+  /* The track is filled up to the thumb, so a value reads off the bar rather than
+     off hunting for the thumb. --f is the fraction, written by paintSlider(). */
+  #phys input[type=range] { -webkit-appearance:none; appearance:none; --f:0%;
+    flex:1 1 0; min-width:0; width:100%; height:16px; margin:0; padding:0; border:0;
+    background:transparent; cursor:pointer; }
+  #phys input[type=range]:focus { outline:none; }
+  #phys input[type=range]::-webkit-slider-runnable-track { height:4px; border-radius:2px;
+    background:linear-gradient(to right, #4b8bd6 var(--f), #21262d var(--f)); }
+  #phys input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px;
+    height:14px; margin-top:-5px; border-radius:50%; background:#4b8bd6;
+    border:2px solid #0d1117; transition:background-color .12s; }
+  #phys input[type=range]:hover::-webkit-slider-thumb { background:#6fa8dc; }
+  #phys input[type=range]:focus-visible::-webkit-slider-thumb { box-shadow:0 0 0 2px #4b8bd680; }
+  #phys input[type=range]::-moz-range-track { height:4px; border-radius:2px; background:#21262d; }
+  #phys input[type=range]::-moz-range-progress { height:4px; border-radius:2px; background:#4b8bd6; }
+  #phys input[type=range]::-moz-range-thumb { width:14px; height:14px; border-radius:50%;
+    background:#4b8bd6; border:2px solid #0d1117; box-sizing:border-box; }
+  #phys .axes { display:flex; gap:6px; margin-bottom:8px; }
   #phys .axes[hidden] { display:none; }
   #phys .ax { flex:1 1 0; min-width:0; display:flex; align-items:center; gap:5px; margin:0; }
   #phys .ax span { color:#6e7681; font-size:11px; }
@@ -479,12 +525,11 @@
     padding:2px 3px; cursor:pointer; }
   #phys select:focus { outline:none; border-color:#4b8bd6; }
   #phys .chk { display:flex; align-items:center; gap:6px; color:#7d8590;
-    font-size:11px; margin:7px 0 0; cursor:pointer; }
+    font-size:11px; margin:6px 0 0; cursor:pointer; }
   #phys .chk input { width:auto; accent-color:#4b8bd6; }
-  #phys .meta { color:#6e7681; font-size:11px; margin-top:8px; padding-top:6px;
+  #phys .meta { color:#6e7681; font-size:11px; margin-top:12px; padding-top:8px;
     border-top:1px solid #1e2530; font-variant-numeric:tabular-nums; }
   #phys .hint { color:#6e7681; font-size:11px; margin-top:5px; line-height:1.35; }
-  #phys #ph_lay .hint { margin-bottom:9px; }
   /* The basket borrows the physics panel's look but not its corner. Bottom left,
      the physics panel is 550px of sliders down the right-hand side, and
      anything sharing that edge covers the ones you are dragging. */
@@ -2479,20 +2524,22 @@ function refresh(){
 }
 
 // ---- panel -----------------------------------------------------------------
+// Labels and tooltips are for someone arranging their library, not tuning the
+// solver: the ForceAtlas2 names are in the keys, where the code needs them.
 const CTRL = [
-  ["fa2Scale",  "scaling",   0,   2,   0.01, "repulsion, scaled by (degree+1) at both ends"],
-  ["fa2Grav",   "gravity",   0,   10,  0.1,  "pull to the middle, also by degree"],
-  ["fa2Tol",    "tolerance", 0.1, 5,   0.05, "how much swinging the adaptive speed will put up with"],
-  ["fa2Wsim",   "sim links", 0,   3,   0.05, "attraction along the thick acoustic links"],
-  ["fa2Wstruct","tag links", 0,   3,   0.05, "attraction along the tag and family hairlines"],
-  ["coll",      "spacing",   0,   30,  0.5,  "how hard discs refuse to overlap - also spreads a scatter graph"],
-  ["theta",     "approx.",   0.3, 1.6, 0.05, "Barnes-Hut theta - higher is faster and coarser; 0.9 costs 38ms a tick against 1.3's 20ms, for 0.9% force error against 3.1%"],
-  ["steps",     "ticks/frame",1,  4,   1,    "settle faster, at the cost of frame rate"],
+  ["fa2Scale",  "spread",       0,   2,   0.01, "How strongly samples push each other apart. Well-connected samples push harder"],
+  ["fa2Grav",   "centre pull",  0,   10,  0.1,  "How strongly everything is drawn towards the middle"],
+  ["fa2Tol",    "settling",     0.1, 5,   0.05, "Higher settles faster but can wobble; lower is steadier but slower"],
+  ["fa2Wsim",   "sound links",  0,   3,   0.05, "How strongly samples that sound alike pull together"],
+  ["fa2Wstruct","tag links",    0,   3,   0.05, "How strongly samples that share a tag or family pull together"],
+  ["coll",      "spacing",      0,   30,  0.5,  "How firmly samples refuse to overlap"],
+  ["theta",     "accuracy",     0.3, 1.6, 0.05, "Higher is faster and rougher; lower is slower and more exact"],
+  ["steps",     "speed",        1,   4,   1,    "Settle in fewer frames, at the cost of smoothness"],
 ];
 const FLAGS = [
-  ["fa2Lin",    "LinLog attraction", "logarithmic instead of linear - pulls the communities into separate lumps"],
-  ["fa2Strong", "strong gravity",    "gravity that grows with distance instead of staying constant"],
-  ["fa2Hub",    "dissuade hubs",     "divide attraction by the source's degree, pushing much-linked nodes out"],
+  ["fa2Lin",    "separate clusters",  "Pull each group of similar sounds into its own clump"],
+  ["fa2Strong", "strong centre pull", "Pull harder the further a sample is from the middle"],
+  ["fa2Hub",    "push hubs outwards", "Move samples with many connections towards the edges"],
 ];
 // `compact` has to fight ForceAtlas2's own tendency to spread, and the version
 // that only turned strong gravity on did the opposite - it settled wider than the
@@ -2511,18 +2558,41 @@ const PRESETS = {
 const STEP_OF = {}; CTRL.forEach(c => STEP_OF[c[0]] = c[4]);
 const fmt = (k, v) => v.toFixed(STEP_OF[k] < 0.01 ? 3 : STEP_OF[k] < 1 ? 2 : 0);
 
+// Which slider sits under which heading. CTRL stays the flat list every loop
+// below walks; this only decides where each one is drawn.
+const CTRL_GROUPS = [
+  ["forces",      ["fa2Scale", "fa2Grav", "fa2Tol", "coll"]],
+  ["attraction",  ["fa2Wsim", "fa2Wstruct"]],
+  ["performance", ["theta", "steps"]],
+];
+const CTRL_OF = {}; CTRL.forEach(c => CTRL_OF[c[0]] = c);
+const PRESET_DOT = { default:"#4b8bd6", linlog:"#57a773", "hubs out":"#b58de0", compact:"#e0823d" };
+// What each preset is called on its chip. The keys stay as they were: a saved
+// layout remembers settings, not preset names, but other code matches on them.
+const PRESET_NAMES = { default:"balanced", linlog:"clusters", "hubs out":"hubs out", compact:"compact" };
+const slHtml = c =>
+  '<label class="sl" title="' + c[5] + '"><span class="nm">' + c[1] + '</span>' +
+  '<input type="range" id="ph_r_' + c[0] + '" min="' + c[2] + '" max="' + c[3] +
+  '" step="' + c[4] + '" value="' + SIM[c[0]] + '">' +
+  '<b id="ph_v_' + c[0] + '">' + fmt(c[0], SIM[c[0]]) + '</b></label>';
+const PH_TABS = [["layout", "Layout"], ["physics", "Physics"]];
+
 document.getElementById("phys").innerHTML =
-  '<div id="ph_lay"></div>' +
-  '<h2>live physics &middot; ForceAtlas2</h2>' +
-  '<div class="btns"><button id="ph_run">&#9654; run</button>' +
+  '<div class="ph-tabs" role="tablist">' + PH_TABS.map(t =>
+    '<button role="tab" data-tab="' + t[0] + '">' + t[1] + '</button>').join("") + '</div>' +
+
+  '<div class="ph-pane" id="ph_pane_layout" role="tabpanel"><div id="ph_lay"></div></div>' +
+
+  '<div class="ph-pane" id="ph_pane_physics" role="tabpanel" hidden>' +
+  '<h2>style</h2>' +
+  '<div class="chips">' + Object.keys(PRESETS).map(p =>
+    '<button class="pre" data-p="' + p + '"><span class="dot" style="background:' +
+    (PRESET_DOT[p] || "#7d8590") + '"></span>' + (PRESET_NAMES[p] || p) + '</button>').join("") + '</div>' +
+  '<div class="runrow"><button id="ph_run">&#9654; run</button>' +
   '<button id="ph_unpin">unpin all</button></div>' +
-  '<div class="btns">' + Object.keys(PRESETS).map(p =>
-    '<button class="pre" data-p="' + p + '">' + p + '</button>').join("") + '</div>' +
-  CTRL.map(c =>
-    '<label class="sl" title="' + c[5] + '"><span class="nm">' + c[1] + '</span>' +
-    '<input type="range" id="ph_r_' + c[0] + '" min="' + c[2] + '" max="' + c[3] +
-    '" step="' + c[4] + '" value="' + SIM[c[0]] + '">' +
-    '<b id="ph_v_' + c[0] + '">' + fmt(c[0], SIM[c[0]]) + '</b></label>').join("") +
+  CTRL_GROUPS.map(g => '<h2 class="ph-grp">' + g[0] + '</h2>' +
+    g[1].map(k => slHtml(CTRL_OF[k])).join("")).join("") +
+  '<h2 class="ph-grp">options</h2>' +
   FLAGS.map(f => '<label class="chk" title="' + f[2] + '">' +
     '<input type="checkbox" class="flg" data-f="' + f[0] + '"' +
     (SIM[f[0]] > 0 ? " checked" : "") + '> ' + f[1] + '</label>').join("") +
@@ -2532,14 +2602,40 @@ document.getElementById("phys").innerHTML =
   '> full detail while moving</label>' +
   '<div class="meta" id="ph_meta"></div>' +
   '<div class="hint">Drag a node to move it, shift-drag to leave it pinned. ' +
-  'Only what is on screen is simulated — filter first, then run.</div>';
+  'Only what is on screen is simulated \u2014 filter first, then run.</div>' +
+  '</div>' +
+
+  '</div>';
+
+// Filled track: the fraction of the range the value has covered.
+function paintSlider(r){
+  r.style.setProperty("--f", ((+r.value - +r.min) / (+r.max - +r.min) * 100) + "%");
+}
+document.querySelectorAll("#phys input[type=range]").forEach(r => {
+  paintSlider(r); r.addEventListener("input", () => paintSlider(r));
+});
+
+let phTab = "layout";
+try { const t = localStorage.getItem("fs-phtab"); if (PH_TABS.some(x => x[0] === t)) phTab = t; } catch(e){}
+function setPhTab(name){
+  phTab = name;
+  document.querySelectorAll("#phys .ph-tabs button").forEach(b => {
+    const on = b.dataset.tab === name;
+    b.classList.toggle("on", on); b.setAttribute("aria-selected", on);
+  });
+  PH_TABS.forEach(t => document.getElementById("ph_pane_" + t[0]).hidden = t[0] !== name);
+  try { localStorage.setItem("fs-phtab", name); } catch(e){}
+}
+document.querySelectorAll("#phys .ph-tabs button").forEach(b =>
+  b.onclick = () => setPhTab(b.dataset.tab));
+setPhTab(phTab);
 
 // A change has to reach the collision radii (they come off `spacing`) and has to
 // be visible, so a settled graph is given just enough heat to move.
 function touched(){
   actDirty = true;
   if (running && alpha < 0.05) alpha = 0.15;
-  saveSim(); updMeta();
+  saveSim(); updMeta(); markPreset();
 }
 CTRL.forEach(c => {
   const k = c[0], r = document.getElementById("ph_r_" + k);
@@ -2559,21 +2655,28 @@ function applyPreset(p){
   for (const k in s){
     SIM[k] = s[k];
     const r = document.getElementById("ph_r_" + k);
-    if (r){ r.value = s[k]; document.getElementById("ph_v_" + k).textContent = fmt(k, s[k]); }
+    if (r){ r.value = s[k]; paintSlider(r); document.getElementById("ph_v_" + k).textContent = fmt(k, s[k]); }
     const f = document.querySelector('#phys .flg[data-f="' + k + '"]');
     if (f) f.checked = s[k] > 0;
   }
-  actDirty = true; saveSim(); reheat();
+  actDirty = true; saveSim(); reheat(); markPreset();
+}
+// The preset whose every setting the sliders currently match, if any, stays lit.
+function markPreset(){
+  document.querySelectorAll("#phys button.pre").forEach(b => {
+    const s = PRESETS[b.dataset.p];
+    b.classList.toggle("on", Object.keys(s).every(k => Math.abs(+SIM[k] - s[k]) < 1e-6));
+  });
 }
 function updMeta(){
   const el = document.getElementById("ph_meta"); if (!el) return;
-  el.textContent = ACTN.toLocaleString() + " nodes · " + ELN.toLocaleString() + " links · " +
-    (running ? status() + " · " + fps.toFixed(0) + " fps"
-             : settled() ? "settled" : "paused") +
+  el.textContent = ACTN.toLocaleString() + " samples · " + ELN.toLocaleString() + " links · " +
+    (running ? "arranging\u2026" : settled() ? "settled" : "paused") +
     (PINNED.size ? " · " + PINNED.size + " pinned" : "");
 }
 document.querySelectorAll("#phys button.pre").forEach(b =>
   b.onclick = () => applyPreset(b.dataset.p));
+markPreset();
 document.getElementById("ph_run").onclick    = () => setRun(!running);
 document.getElementById("ph_unpin").onclick  = unpinAll;
 document.getElementById("ph_autofit").onchange = e => { autoFit = e.target.checked; saveSim(); };
@@ -2834,7 +2937,7 @@ const LAYOUTS = {
 const LAY_ORDER = ["clusters", "grid", "scatter"];
 // What the buttons read. The key stays `scatter` because it is also the
 // LAYOUTS name and the data-l a button is matched by; only the label is long.
-const LAY_LABEL = { scatter: "scatter graph" };
+const LAY_LABEL = { baked: "baked", scatter: "scatter" };
 
 // ---- axis furniture --------------------------------------------------------
 // Decimals come from the range, not from each value, so an axis does not read
@@ -2986,10 +3089,27 @@ const optsFor = sel => {
   }
   return out + "</optgroup>";
 };
+const LAY_ICON = {
+  baked:    '<circle cx="5" cy="17" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="19" cy="15" r="2"/>' +
+            '<path d="M6.1 15.3 10.9 7.7M13.2 7.6l4.6 5.8M7 16.7l10-1.4"/>',
+  clusters: '<g fill="currentColor" stroke="none"><circle cx="5" cy="6" r="1.4"/><circle cx="7.6" cy="7.2" r="1.4"/>' +
+            '<circle cx="6" cy="9.2" r="1.4"/><circle cx="16" cy="6" r="1.4"/><circle cx="18.6" cy="7.6" r="1.4"/>' +
+            '<circle cx="17" cy="9.8" r="1.4"/><circle cx="10.4" cy="17.4" r="1.4"/><circle cx="13.2" cy="18" r="1.4"/>' +
+            '<circle cx="12" cy="20.2" r="1.4"/></g>',
+  grid:     '<g fill="currentColor" stroke="none">' + [6,12,18].map(y => [6,12,18].map(x =>
+            '<circle cx="' + x + '" cy="' + y + '" r="1.5"/>').join("")).join("") + '</g>',
+  scatter:  '<path d="M4 4v16h16"/><g fill="currentColor" stroke="none"><circle cx="8" cy="15" r="1.3"/>' +
+            '<circle cx="11" cy="11" r="1.3"/><circle cx="14" cy="13.5" r="1.3"/><circle cx="17" cy="8" r="1.3"/>' +
+            '<circle cx="9" cy="8.5" r="1.3"/></g>',
+};
+const layIcon = l => '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" ' +
+  'stroke-width="1.5" stroke-linecap="round" aria-hidden="true">' + LAY_ICON[l] + '</svg>';
+// Baked is not in LAY_ORDER - keys 1-3 index that list - but it is somewhere the
+// nodes can be, so it gets a card like the others.
 document.getElementById("ph_lay").innerHTML =
-  '<h2>arrangement</h2>' +
-  '<div class="btns">' + LAY_ORDER.map(l =>
-    '<button class="lay" data-l="' + l + '">' + (LAY_LABEL[l] || l) + '</button>').join("") + '</div>' +
+  '<div class="lay-grid">' + ["baked"].concat(LAY_ORDER).map(l =>
+    '<button class="lay lay-card" data-l="' + l + '">' + layIcon(l) +
+    '<span>' + (LAY_LABEL[l] || l) + '</span></button>').join("") + '</div>' +
   '<div class="axes" id="ph_axes" hidden><label class="ax"><span>x</span><select id="ax_x">' +
   optsFor(axX) + '</select></label><label class="ax"><span>y</span><select id="ax_y">' +
   optsFor(axY) + '</select></label></div>' +

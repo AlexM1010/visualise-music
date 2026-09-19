@@ -2262,13 +2262,13 @@ for (let i=0;i<NN;i++){ BX[i]=N[i].x; BY[i]=N[i].y; PX[i]=N[i].x*WORLD; PY[i]=N[
 // Defaults are tuned for 7k nodes. ForceAtlas2 has no natural scale - it settles
 // wherever repulsion and attraction happen to balance - and Gephi's own scaling
 // of 2 puts this graph at a span of tens of thousands of units, which is not
-// wrong in itself but leaves `spacing` meaningless beside it. 0.2 lands it at
-// about 2,400, the same order as the layout the builder ships.
+// wrong in itself but leaves `spacing` meaningless beside it. 0.4 lands it at
+// about 3,400 - see the note above PRESETS for why it is not smaller.
 //
 // Flags are 0/1 rather than booleans so they ride along in the same numeric
 // restore as everything else.
 const SIM_DEF = {
-  fa2Scale:0.2, fa2Grav:1.2, fa2Tol:1, fa2Wsim:1, fa2Wstruct:0.15,
+  fa2Scale:0.4, fa2Grav:1.2, fa2Tol:1, fa2Wsim:1, fa2Wstruct:0.15,
   fa2Lin:0, fa2Strong:0, fa2Hub:0,
   coll:8, theta:1.20, steps:1,
 };
@@ -2673,19 +2673,48 @@ const FLAGS = [
   ["fa2Strong", "strong centre pull", "Pull harder the further a sample is from the middle"],
   ["fa2Hub",    "push hubs outwards", "Move samples with many connections towards the edges"],
 ];
+// `tagged` raises tag links from 0.15 to 2, so every sample is pulled to the tags
+// and family it carries about as hard as to the sounds it resembles, and the
+// tags that many samples share act as hubs the map wraps around. That alone
+// shrinks the map to a third and leaves the closest tenth of the nodes stacked
+// on top of each other, so it also raises `spread` (now 1.8). The proportions
+// do not change - a tag link stays about 1.3 times a sound link, against 4.6.
+// `sound` is the mirror of `tagged`: position comes from how a sample sounds,
+// not from what its uploader typed, which on Freesound is inconsistent - one
+// person's "808" is another's "kick". Tag links cannot go to 0: samples with no
+// sound links are then held by nothing but gravity and the map flies apart to
+// a span of 45,000. At 0.1 they tether it, and with sound links at 1.5 a sound
+// link settles at about an eighth of a tag link (1/4.6 in `default`).
 // `compact` has to fight ForceAtlas2's own tendency to spread, and the version
 // that only turned strong gravity on did the opposite - it settled wider than the
 // default. Strong gravity grows with distance while repulsion falls off, so the
 // two balance at a radius the *scaling* sets; turning gravity up moves that
 // radius far less than pulling the scaling down does. At 0.04 against 1.5 the
 // graph settles at a span of about 780 where the default settles at 2,440.
-// It also drops `spacing` to 2: at a third of the span the collision radii are
-// what stops it getting any tighter, and they jitter while they do it.
+// That version was also too tight to use: a tenth of the nodes sat on top of
+// another. It now takes `spread` 0.16 and `spacing` 6.
+//
+// Every spread below is set by how many samples overlap *as drawn*, not by span
+// or by distances in world units. A node's on-screen radius is rad() times the
+// zoom z, clamped to 1..7 (see draw), so between z=1 and z=7 discs grow with the
+// map and the fraction that overlap is flat; that plateau is the view anyone
+// actually reads at, and it is the only part a layout can change. Fitted to the
+// window (z<1) discs are a fixed few pixels and 70-75% of samples overlap in
+// every preset - that is 6,000 dots in one screen, not the layout. Past z=7
+// discs stop growing, so at max zoom nothing overlaps; measuring there is what
+// made the tight presets look fine. Plateau overlap on a 1400x900 canvas, before
+// -> after: default 25% -> 5.5%, linlog 17% -> 5% (spacing 8 -> 12 as well),
+// hubs out 2% (unchanged), tagged 28% -> 8%, sound 3%. compact is the exception and
+// stays at 39%: at 0.48 it matched the others but no longer looked compact, so
+// it was put back - tightness is what it is for. None got worse
+// at fit or at twice fit; linlog got better there too (25% -> 16% at twice fit).
 const PRESETS = {
-  default:  { fa2Scale:0.20, fa2Grav:1.2, fa2Tol:1,   fa2Wsim:1,   fa2Wstruct:0.15, fa2Lin:0, fa2Strong:0, fa2Hub:0, coll:8 },
-  linlog:   { fa2Scale:0.03, fa2Grav:1.6, fa2Tol:1,   fa2Wsim:1,   fa2Wstruct:0.15, fa2Lin:1, fa2Strong:0, fa2Hub:0, coll:8 },
+  default:  { fa2Scale:0.40, fa2Grav:1.2, fa2Tol:1,   fa2Wsim:1,   fa2Wstruct:0.15, fa2Lin:0, fa2Strong:0, fa2Hub:0, coll:8 },
+  linlog:   { fa2Scale:0.05, fa2Grav:1.6, fa2Tol:1,   fa2Wsim:1,   fa2Wstruct:0.15, fa2Lin:1, fa2Strong:0, fa2Hub:0, coll:12 },
   "hubs out":{fa2Scale:0.035,fa2Grav:1.2, fa2Tol:1,   fa2Wsim:1,   fa2Wstruct:0.15, fa2Lin:0, fa2Strong:0, fa2Hub:1, coll:8 },
-  compact:  { fa2Scale:0.04, fa2Grav:1.5, fa2Tol:1,   fa2Wsim:1.2, fa2Wstruct:0.25, fa2Lin:0, fa2Strong:1, fa2Hub:0, coll:2 },
+  compact:  { fa2Scale:0.16, fa2Grav:1.5, fa2Tol:1,   fa2Wsim:1.2, fa2Wstruct:0.25, fa2Lin:0, fa2Strong:1, fa2Hub:0, coll:6 },
+  tagged:   { fa2Scale:1.8,  fa2Grav:1.2, fa2Tol:1,   fa2Wsim:1,   fa2Wstruct:2,    fa2Lin:0, fa2Strong:0, fa2Hub:0, coll:8 },
+  sound:    { fa2Scale:0.6,  fa2Grav:1.2, fa2Tol:1,   fa2Wsim:1.5, fa2Wstruct:0.1,  fa2Lin:0, fa2Strong:0, fa2Hub:0, coll:8 },
 };
 const STEP_OF = {}; CTRL.forEach(c => STEP_OF[c[0]] = c[4]);
 const fmt = (k, v) => v.toFixed(STEP_OF[k] < 0.01 ? 3 : STEP_OF[k] < 1 ? 2 : 0);
@@ -2698,10 +2727,10 @@ const CTRL_GROUPS = [
   ["performance", ["theta", "steps"]],
 ];
 const CTRL_OF = {}; CTRL.forEach(c => CTRL_OF[c[0]] = c);
-const PRESET_DOT = { default:"#4b8bd6", linlog:"#57a773", "hubs out":"#b58de0", compact:"#e0823d" };
+const PRESET_DOT = { default:"#4b8bd6", linlog:"#57a773", "hubs out":"#b58de0", compact:"#e0823d", tagged:"#d4b13f", sound:"#3fb9c4" };
 // What each preset is called on its chip. The keys stay as they were: a saved
 // layout remembers settings, not preset names, but other code matches on them.
-const PRESET_NAMES = { default:"balanced", linlog:"clusters", "hubs out":"hubs out", compact:"compact" };
+const PRESET_NAMES = { default:"balanced", linlog:"clusters", "hubs out":"hubs out", compact:"compact", tagged:"by tag", sound:"by sound" };
 const slHtml = c =>
   '<label class="sl" title="' + c[5] + '"><span class="nm">' + c[1] + '</span>' +
   '<input type="range" id="ph_r_' + c[0] + '" min="' + c[2] + '" max="' + c[3] +

@@ -705,10 +705,58 @@ damping constant. LinLog attraction, strong gravity and dissuade-hubs are there
 as flags. `VX`/`VY` hold this tick's force rather than a velocity: nothing
 carries over but the previous force, which is what swinging is measured against.
 
-Four presets, each naming every control it touches so switching between them is
+Six presets, each naming every control it touches so switching between them is
 symmetric — one that left a shared slider where the last one put it would not be
-a preset. From the baked layout they settle to spans of 2,445 (`default`, 366
-ticks), 2,153 (`linlog`, 162), 3,136 (`hubs out`, 121) and 739 (`compact`, 595).
+a preset. The spans and tick counts in the history below (2,445 for `default`
+at 366 ticks, and so on) are from before the presets were re-spaced and before
+the current stop rule, which ends a run at about 120–160 ticks.
+
+**`tagged` ("by tag") is `default` with tag links raised from 0.15 to 2.** A
+sample is then drawn to the tags and family it carries about as hard as to the
+sounds it resembles, and the tags that many samples share become hubs the map
+wraps around: a tag link goes from 4.6 times a sound link to 1.3 times. Tag links
+alone shrank the map to a third (span 800) and left the closest tenth of the
+nodes on top of each other; raising `spread` does not change those proportions,
+but it gives the samples room.
+
+**`sound` ("by sound") is the mirror of `tagged`: sound links up from 1 to 1.5,
+tag links down from 0.15 to 0.1, `spread` 0.6.** Where a sample sits then comes
+from how it sounds rather than from what its uploader typed, and Freesound tags
+are inconsistent — one person's "808" is another's "kick" or "sub". It is the
+view for finding a substitute: the neighbours of a nearly-right sample are the
+ones that sound like it, and flipping between it and `tagged` shows where the
+labels and the audio disagree. A sound link settles at about an eighth of a tag
+link, against a quarter in `default`. Tag links cannot go to 0: samples with no
+sound links are then held by gravity alone, and the map flies apart to a span
+of 45,000. At 0.1 they hold it together. Tighter sound clusters do cost some
+crowding at twice fit (41% against 36% for `default`).
+
+**Every preset's `spread` is set by how many samples overlap as drawn, at the zoom
+people read at.** A node's on-screen radius is `rad()` times the zoom `z`, clamped
+to 1–7. Between z=1 and z=7 discs grow with the map, so the share of samples
+touching another is flat across that whole band. That plateau is the view anyone
+actually reads, and the only part a layout can change. Fitted to the window
+(z<1) discs are a fixed few pixels and 70–75% of samples overlap in every preset:
+that is 6,000 dots on one screen, not the layout. Past z=7 discs stop growing, so
+at max zoom nothing overlaps. The earlier tuning measured distances in world
+units, which is effectively max zoom, and that is why the tight presets looked
+fine. Measured on a 1400×900 canvas:
+
+| preset | `spread` | `spacing` | span | fit | 2× fit | plateau |
+|---|---|---|---|---|---|---|
+| `default` | 0.2 → 0.4 | 8 | 3,330 | 73% | 35% | 25% → 5% |
+| `linlog` | 0.03 → 0.05 | 8 → 12 | 3,500 | 58% | 18% | 17% → 5% |
+| `hubs out` | 0.035 | 8 | 3,630 | 76% | 11% | 2% |
+| `compact` | 0.16 | 6 | 1,550 | 71% | 39% | 39% |
+| `tagged` | 1.2 → 1.8 | 8 | 2,380 | 72% | 30% | 28% → 7% |
+| `sound` | 0.6 (new) | 8 | 4,960 | — | 41% | 3% |
+
+None got worse at fit or at twice fit; `linlog` got better (25% → 18% at twice
+fit). `tagged` stops at 1.8 because the `spread` slider ends at 2. `compact` is
+the deliberate exception: at `spread` 0.48 it came down to 8% like the others
+but no longer looked compact, so it went back to 0.16 and keeps its overlap —
+being tight is the point of it. Saved settings from
+before this change keep the old `spread` until a preset chip is clicked.
 
 **`compact` had to be rebuilt to do what its name says.** The first version only
 turned strong gravity on, and settled *wider* than the default: strong gravity

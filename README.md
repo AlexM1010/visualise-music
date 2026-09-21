@@ -108,7 +108,7 @@ file untouched and the button on the version before it.
 
 The file is read from this page's own origin rather than from `github.com`,
 which would cost a CORS header the page cannot require and a rate limit it
-cannot see. Absent — in a clone, behind `serve_originals.py`, or at any moment
+cannot see. Absent — in a clone, on a local server, or at any moment
 before the first release — the panel still opens and still gives the warning,
 the download falls back to the releases page, and the checksum section stays
 hidden rather than offering a command with nothing to compare against.
@@ -225,7 +225,7 @@ again.
 So the counts moved onto the controls they are about: the number on `fits` is
 what `fits` would leave standing, the number on `basket` is what is in the
 basket. The originals chip went to the end of the header, where nothing follows
-it to be pushed.
+it to be pushed (it has since been removed; see *No Freesound API at runtime*).
 
 ### Two rows, and nothing thrown away
 
@@ -844,128 +844,31 @@ documentation, which is wrong or silent on all of them.
   runs — each seed imports ~9 neighbours — because the cap that used to prevent
   that was starving the seeding and has been removed.
 - Downloads serve the **preview** MP3 (~128 kbps), not the uploader's original.
-  The original needs an OAuth2 session a static page cannot hold, so every zip
-  carries a `manifest.csv` of ids and urls instead - the record that lets the
-  originals be fetched later by something that can hold a session. The footer
-  links to each sound's page for one at a time.
+  The footer links to each sound's freesound.org page, where the original is,
+  and every zip carries a `manifest.csv` of ids and urls.
 
-## Originals, not previews
+## No Freesound API at runtime
 
-Every download this project made for its first year was a **preview**: the
-~128 kbps mp3 Freesound generates for streaming. The uploader's actual file is
-behind `GET /apiv2/sounds/<id>/download/`, which requires OAuth2, and a static
-page cannot hold an OAuth2 session. That is why the zips have always carried a
-`manifest.csv` of ids and urls — the record that lets the originals be fetched
-later by something that can hold one.
+The page makes no Freesound API calls. Metadata and similarity were gathered
+once by the builder, and audio plays from Freesound's preview CDN. For the
+uploader's original file the page links to the sound's freesound.org page.
 
-`serve_originals.py` is that something: a static file server with three extra
-routes, serving the same page, so the only thing that changes is where
-`downloadOne` and the zip get their bytes.
+It used to offer originals too: a sign-in chip where each visitor brought their
+own API credential and ran the OAuth2 flow in the page, plus `serve_originals.py`
+for doing the same locally. Both were removed in September 2026. Frederic Font
+(Freesound, MTG-UPF) said that because the site links to a paid app and a tip
+jar, live API use from it counts as commercial use. Linking to the sound page
+instead keeps the map off the API entirely. He also said the one-time harvest
+behind the map is small enough to be exempt. Check with Freesound before any
+larger re-harvest.
 
-```bash
-python serve_originals.py --dir . --port 8973 --open
-```
-
-Once, first:
-
-1. Register an application at <https://freesound.org/apiv2/apply/>.
-2. Set its redirect URI to exactly `http://127.0.0.1:8973/api/auth/callback`.
-3. Write `freesound-oauth.key` beside the script:
-   `{"client_id": "...", "client_secret": "..."}`
-
-Then click **originals** in the header. The access token lasts 24 hours and is
-refreshed from the refresh token behind a lock, so the browser dance happens
-about once and a 250-file zip cannot start 250 refreshes racing into the same
-file. Both the key and the token file are gitignored.
-
-### The callback checks a `state`, and has to
-
-`/api/auth/callback` listens on loopback, and loopback is reachable from any page
-the browser happens to be on. Without a check, a site you are merely visiting can
-point your own browser at
-
-    http://127.0.0.1:8973/api/auth/callback?code=<the attacker's code>
-
-and the server would exchange that code and store the token - after which every
-"original" runs through a stranger's Freesound account, on their quota, and
-nothing on the page would look wrong.
-
-So a random `state` is minted when the flow starts, sent to Freesound, echoed
-back, and has to match one this process issued. It is single-use, and it expires
-with the ten-minute life of the authorization code it protects. A forged callback
-- with no state or a guessed one - is refused with a 400 and stores nothing.
-
-The cost is that restarting the server mid-sign-in invalidates the flow, since
-the pending states are in memory. That is the right way round: it fails closed,
-and the rejection page says to start again from the **originals** chip.
-
-**Nothing about this is required.** `serve_originals.py` is itself the web
-server, so it only ever serves the page from `127.0.0.1` — which means the page
-only probes `/api/auth/status` when its own origin is loopback. Anywhere else,
-GitHub Pages included, the probe is not made at all: the header chip stays
-hidden and every download is a preview exactly as before. Served from a plain
-`http.server` on localhost the probe is made and simply fails, to the same
-effect.
-
-A 401 mid-zip — nobody authorised, or the day's quota gone — falls back to the
-preview per file rather than failing the download, and the footer says whether
-what you got was originals, previews, or the mix that means the quota ran out
-partway.
-
-`safeName()` follows: an original is named with the format the uploader posted,
-`n.f`, and only a preview is `.mp3`. Dragging into a DAW carries the original
-too — but a drag hands over a URL and walks away, with no callback to fall back
-from, so it uses the original only when the session is known to be live.
-
-**Downloads count against the quota.** Original downloads have a stricter
-limit than the rest of the API: 30 a minute and 500 a day (Freesound's
-throttling docs), on top of the general 2,000 a day that the builder's
-similarity seeding also draws from. A 250-sample zip of originals is 250
-requests. That, not the code, is the limit on this.
-
-### On the published site: bring your own credential
-
-`serve_originals.py` only helps whoever runs it. For visitors to
-visualise.music, each visitor uses a Freesound API credential of their own, and
-the whole sign-in runs in the page with no server of ours involved.
-
-Freesound's OAuth2 only supports the authorization-code grant with a client
-secret: no PKCE, and no public-client or implicit flow. A secret shared by the
-whole site could not be kept in a static page. A visitor's own secret, kept in
-their own browser, can be. Freesound's API sends `Access-Control-Allow-Origin: *`
-on every endpoint, including the token endpoint and `sounds/<id>/download/`
-(which does not redirect), so the page can call it directly.
-
-1. **originals — set up** opens a dialog. It links to
-   <https://freesound.org/apiv2/apply/> and shows the callback URL to register,
-   which is the page's own address (`location.origin + location.pathname`). The
-   visitor pastes in their client id and secret.
-2. The secret is checked with one token-authenticated request, so a typo is
-   caught before the visitor leaves the page. Both values go to localStorage as
-   `fs-oauth-client`. The tab then goes to Freesound's authorize page with a
-   random `state` stored in sessionStorage.
-3. Freesound sends the tab back to `?code=…&state=…`. The page removes both from
-   the address bar and checks the state against sessionStorage (single use, ten
-   minutes), then swaps the code for tokens (`fs-oauth`). A forged callback has
-   no matching state in that tab and is ignored without a request being made.
-4. Downloads carry a Bearer header. On a 401 the page refreshes once and
-   retries. Refreshes are single-flighted, because Freesound rotates the refresh
-   token each time, and they check whether another tab got there first.
-
-Drags stay on the preview here, because a drag cannot carry a header. The chip
-opens the same dialog to sign out or forget the credential.
-
-**Quota is per visitor.** Freesound throttles by the user who owns the
-credential (`apiv2/throttling.py`), so each visitor gets their own 500 originals
-a day, and no visitor can use up anyone else's. Anyone who goes over falls back
-to previews, as with any 429.
+Visitors who used the old sign-in still have its client secret and tokens in
+localStorage (`fs-oauth-client`, `fs-oauth`). The page deletes both on load.
 
 ### The zip compresses now, per member
 
-STORE-only was right while every member was a Freesound preview: an mp3 is
-already compressed, and deflating it burns CPU to save nothing. An originals zip
-can be full of 24-bit wav, where it saves a great deal, so the method is decided
-per file — `mp3`, `ogg`, `opus`, `m4a`, `flac` and `aac` are stored, everything
+An mp3 preview is already compressed, and deflating it burns CPU to save
+nothing. The method is still decided per file — `mp3`, `ogg`, `opus`, `m4a`, `flac` and `aac` are stored, everything
 else is offered to `CompressionStream("deflate-raw")` and kept compressed only
 if that actually came out smaller. `credits.txt` and `manifest.csv` compress to
 almost nothing either way.

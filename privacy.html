@@ -20,7 +20,7 @@
 <main>
   <p class="updated" style="margin-bottom:16px"><a href="./">&larr; Visualise Music</a></p>
   <h1>Privacy</h1>
-  <p class="updated">Last updated 2026-09-19</p>
+  <p class="updated">Last updated 2026-09-21</p>
 
   <p>This page covers two things: the <strong>Visualise Music desktop app</strong>,
   which you point at a folder of audio to get a map of what sounds like what,
@@ -126,16 +126,12 @@
     your browser fetches the preview file directly from
     <a href="https://freesound.org/">Freesound</a>, which can see your IP
     address (<a href="https://freesound.org/help/privacy/">Freesound's privacy policy</a>).</li>
-    <li><strong>Signing in to Freesound (optional).</strong> To download the
-    uploader's original files instead of previews, you can enter a Freesound API
-    credential of your own (a client id and secret you create on freesound.org)
-    and sign in on freesound.org itself. We never see your Freesound password.
-    Your browser talks to Freesound directly: the credential and the access
-    token Freesound issues are kept in your browser's local storage and are sent
-    only to freesound.org, never to us or anyone else. Clicking
-    <em>originals on</em> lets you sign out or forget the credential, and
-    clearing this site's data removes both. You can also revoke access from
-    your Freesound settings.</li>
+    <li><strong>Original files.</strong> The map does not sign in to Freesound
+    or use its API. Each sound links to its page on freesound.org, where you
+    can download the uploader's original file. If you used the earlier
+    Freesound sign-in, the page deletes the credential and token it stored
+    in your browser the next time you open it. You can also revoke that access
+    from your Freesound settings.</li>
     <li><strong>Your settings</strong>, such as layout, looping, tempo, key
     and the list of sounds you have picked, are saved in your browser's local
     storage so they are still there next time. They never leave your device,

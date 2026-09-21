@@ -1028,7 +1028,7 @@ document.getElementById("nsm").textContent = (DATA.counts.sample || 0).toLocaleS
 document.getElementById("ncc").textContent = DATA.cc0.toLocaleString();
 document.getElementById("nky").textContent = DATA.keyed.toLocaleString();
 document.getElementById("ntp").textContent = DATA.tempoed.toLocaleString();
-document.getElementById("nsi").textContent = (DATA.sims || 0).toLocaleString();
+document.getElementById("nsi").textContent = E.length.toLocaleString();
 // A phone has none of these keys, and "click" and "hovered" describe a mouse.
 const TOUCH = matchMedia("(hover:none) and (pointer:coarse)").matches;
 // Nothing by default: the welcome card introduces the map and the ? button

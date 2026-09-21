@@ -25,11 +25,13 @@
   <p>This page covers two things: the <strong>Visualise Music desktop app</strong>,
   which you point at a folder of audio to get a map of what sounds like what,
   and the <strong>Freesound map</strong> on this website. In short: neither
-  sends your audio, your file names or your maps to anyone, there is no
-  account, no analytics and no tracking, and we do not receive any of your
-  data. The app and the site still have to download things from a few other
-  services, and those services can see your IP address when they do. Each one
-  is listed below.</p>
+  sends your audio, your file names or your maps to anyone, and there is no
+  account and no tracking. During the <strong>beta</strong>, the app sends us
+  only what you choose to send &mdash; a bug report, an idea, a survey answer,
+  a thumbs up or a correction &mdash; and, only if you switch it on, anonymous
+  usage statistics. None of it contains your audio, file names or folder
+  paths. The app and the site also download things from a few other services,
+  which can see your IP address when they do. Everything is listed below.</p>
 
   <h2>Who is responsible</h2>
   <p>Visualise Music is made by Alex Marshall, an individual based in the
@@ -42,7 +44,51 @@
   <h3>Your audio stays on your machine</h3>
   <p>The folder you add is read, analysed and drawn on your own computer. Your
   audio, file names, folder paths, analysis results and maps are never uploaded
-  anywhere. Nothing is sent to us as part of normal use.</p>
+  anywhere. Nothing about your library is sent to us as part of normal use.</p>
+
+  <h3>Beta feedback and usage statistics</h3>
+  <p>While the app is in beta it can send feedback to us, always because you
+  did something to send it:</p>
+  <ul>
+    <li><strong>Reports you write</strong> from the <em>Feedback</em> button or
+    a <em>Report</em> button: what you typed, the type of report, and, if you
+    leave <em>Include technical details</em> ticked, the app version, your
+    operating system, processor, memory, display scale, whether you have an
+    NVIDIA graphics card, counts about your libraries (how many samples, how
+    many failed), recent messages from the app and the last lines of its logs.
+    You can see exactly what will be sent before you send it.</li>
+    <li><strong>Survey answers</strong>: the optional questions about you (how
+    you make music, which DAW, library size), what you would pay, and a short
+    check-in after a couple of weeks.</li>
+    <li><strong>Ratings and corrections</strong>: a thumbs up or down on a
+    &ldquo;sounds like&rdquo; match, or a corrected tempo, key or drum role.
+    These describe the sounds by their features (length, format, drum role,
+    family, similarity score), never by name.</li>
+    <li><strong>Crash reports</strong>, only if you press <em>Send</em> when
+    the app asks after closing unexpectedly.</li>
+    <li><strong>Your email address</strong>, only if you type it into a report
+    because you would like a reply or launch news.</li>
+    <li><strong>Usage statistics</strong>, <em>off unless you switch them
+    on</em> (at first launch or in About): counts of which features you use
+    and how long builds take for how many samples.</li>
+  </ul>
+  <p>Before anything leaves your computer, the app replaces every folder path
+  and audio file name with a placeholder such as <code>&lt;library&gt;</code>
+  or <code>&lt;file&gt;</code>, and our server refuses anything that still
+  looks like one. Each install is identified only by a random tester number,
+  which has nothing to do with you, your files or your Microsoft account.</p>
+  <p>Feedback is received and stored by a service we run on
+  <a href="https://www.cloudflare.com/">Cloudflare</a>
+  (<a href="https://www.cloudflare.com/privacypolicy/">privacy policy</a>),
+  and reports that need a reply are forwarded to our own inbox through
+  <a href="https://www.zoho.com/zeptomail/">Zoho ZeptoMail</a>
+  (<a href="https://www.zoho.com/privacy.html">privacy policy</a>). Both see
+  your IP address when the app connects; we do not store it. If the app is
+  offline, feedback waits on your computer and is sent later.</p>
+  <p><strong>To delete it</strong>, press <em>Delete my beta data</em> in the
+  app's About window: everything stored under your tester number is erased
+  and the app starts again with a new one. Or email us with the tester number
+  shown there.</p>
 
   <h3>What the app downloads, and from where</h3>
   <p>What the app downloads depends on where you got it. Every request is a
@@ -145,12 +191,18 @@
   </ul>
 
   <h2>Legal basis and what we keep</h2>
-  <p>We hold no personal data about users of the app or the website. The only
-  personal data involved is the IP address that the services above see when
-  your device downloads from them. The app makes those requests because it
+  <p>Apart from beta feedback, we hold no personal data about users of the app
+  or the website. The IP address that download services see is handled under
+  their own policies, linked above; the app makes those requests because it
   cannot work without them, and the update check keeps it secure and up to
-  date. That is our legitimate interest in providing software that works.
-  Each service handles your data under its own policy, linked above.</p>
+  date. That is our legitimate interest in providing software that works.</p>
+  <p>Beta feedback you choose to send is used to fix problems and decide what
+  to build, which is our legitimate interest in developing the app; usage
+  statistics are sent only with your consent, which you can withdraw at any
+  time in About. We keep beta feedback until twelve months after the beta ends,
+  then delete it, apart from anonymous totals. We will quote what you wrote
+  only if you ticked <em>You may quote me</em>, and then by first name
+  only.</p>
   <p>If you email us, we keep your message and email address only as long as
   we need them to deal with your question, and use them for nothing else.</p>
 

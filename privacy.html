@@ -79,12 +79,21 @@
   or <code>&lt;file&gt;</code>, and our server refuses anything that still
   looks like one. Each install is identified only by a random tester number,
   which has nothing to do with you, your files or your Microsoft account.</p>
-  <p>Each time the app starts, it also asks our beta service whether the beta
-  is still open. That request carries nothing about you, your library or your
-  tester number. Once the beta has ended, the app also sends its tester number
-  to ask whether that copy holds a licence, and if you buy the full version
-  through our website checkout, the checkout receives the tester number so the
-  purchase can unlock your copy.</p>
+  <p>Starting the app does not contact our beta service. The app asks it
+  whether the beta is still open at most once a day, and only when you send
+  something, have usage statistics switched on, or open one of the beta
+  windows; that request carries nothing about you, your library or your tester
+  number. If you buy the full version through our website checkout, the
+  checkout receives the tester number so the purchase can unlock your copy, and
+  after the beta a copy holding such a licence sends its tester number to
+  check it at most once a week. A copy from the Microsoft Store relies on the
+  Store's own licence and never makes that check.</p>
+  <p><strong>Restoring a purchase.</strong> If you reinstall or move to a new
+  computer, <em>Restore a purchase</em> asks for the email address you bought
+  with. The service emails a one-time code to that address, through ZeptoMail
+  as below, and keeps the address with the code for 15 minutes, until the code
+  is used or runs out; entering the code moves your licence to the new
+  copy.</p>
   <p>Feedback is received and stored by a service we run on
   <a href="https://www.cloudflare.com/">Cloudflare</a>
   (<a href="https://www.cloudflare.com/privacypolicy/">privacy policy</a>),

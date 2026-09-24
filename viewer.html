@@ -600,25 +600,44 @@
     cursor:pointer; }
   #keys-dl .x:hover { color:#ececec; border-color:#353535; }
   #keysbtn { width:24px; padding:2px 0; font-size:12px; font-weight:600; }
-  /* ==== studio finish ==========================================================
-     Figures set as read-outs, the active choice marked with an underline, fader
-     caps on the sliders, and a now-playing display inset into the footer. */
-  .stat b, .cnt, .badge, .ct, .opt .n, .pop-sub, .bkr .mt, #phys label.sl b, #phys .meta, #pbpm {
+  /* ==== finish ==================================================================
+     One radius family - controls 5px, panels 8px - and controls that are a
+     soft fill rather than a hairline drawn round each one; a chosen chip is
+     tinted, what floats gets a layered shadow, and the type is the platform's
+     current UI face. Slider values and the tempo are set as read-outs. */
+  html, body { font-family:Inter,"Segoe UI Variable Text","Segoe UI Variable",-apple-system,BlinkMacSystemFont,
+    ui-sans-serif,"Segoe UI",system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  button, input, select, #q, header select, header .tb, header .pill, footer button, #loopst, #keysbtn,
+  header .pop-done, header .pop-panel .opt, .pop-field select, .pop-field #pbpm, #phys select,
+  #phys .ph-tabs button, #phys .runrow button, #welcome .row button, #welcome .x, #keys-dl .x,
+  #now:not(:empty), #wave { border-radius:5px; }
+  .pop-panel, #legend, #phys, #basket, #welcome, #tip, #keys-dl, #getapp-dl { border-radius:8px; }
+  .pop-panel, #legend, #phys, #basket, #welcome, #tip {
+    border-color:rgba(255,255,255,.07); box-shadow:0 10px 28px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.04); }
+  #phys .ph-tabs { border-radius:7px; }
+  ::-webkit-scrollbar-thumb { border-radius:6px; }
+
+  header .tb, header .pill:not(.on), footer button, #loopst { background:#282828; border-color:transparent; }
+  header .tb:hover:not(.on):not(.open), header .pill:hover:not(.on), footer button:hover:not(:disabled) {
+    background:#323232; border-color:transparent; }
+  header .pill.on { background:#1f6feb33; border-color:transparent; color:#ececec; }
+  header .pill.cc.on { background:#57a77333; }
+  #phys .ph-tabs button.on { background:#323232; border-color:transparent; box-shadow:0 1px 2px rgba(0,0,0,.45); }
+  #q { background:#282828; border-color:transparent; }
+  #q:hover { background:#323232; }
+  #q:focus { background:#161616; border-color:#4b8bd6; }
+
+  #phys label.sl b, #phys .meta, #pbpm {
     font-family:ui-monospace,"SF Mono","Cascadia Mono","JetBrains Mono",Consolas,monospace;
     font-size:11px; letter-spacing:0; }
-  header .pill.on { box-shadow:inset 0 -2px 0 #4b8bd6; }
-  header .pill.cc.on { box-shadow:inset 0 -2px 0 #57a773; }
-  #phys input[type=range]::-webkit-slider-thumb { width:8px; height:14px; border-radius:1px;
-    background:#d0d0d0; border:1px solid #121212; }
-  #phys input[type=range]:hover::-webkit-slider-thumb { background:#ececec; }
-  #phys input[type=range]::-moz-range-thumb { width:8px; height:14px; border-radius:1px;
-    background:#d0d0d0; border:1px solid #121212; }
-  footer { background:#161616; border-top-color:#353535; }
-  #now:not(:empty) { height:28px; line-height:26px; padding:0 10px; background:#121212;
-    border:1px solid #262626; border-radius:2px;
-    font-family:ui-monospace,"SF Mono","Cascadia Mono","JetBrains Mono",Consolas,monospace;
-    font-size:11.5px; font-weight:500; }
-  #wave { background:#121212; border:1px solid #262626; border-radius:2px; }
+  #phys input[type=range]::-webkit-slider-thumb { width:8px; height:14px; border-radius:2px;
+    background:#ececec; border:0; box-shadow:0 1px 3px rgba(0,0,0,.5); }
+  #phys input[type=range]::-moz-range-thumb { width:8px; height:14px; border-radius:2px;
+    background:#ececec; border:0; box-shadow:0 1px 3px rgba(0,0,0,.5); }
+
+  footer { background:#161616; border-top-color:#262626; }
+  #now:not(:empty) { height:28px; line-height:28px; padding:0 11px; background:#121212; font-weight:500; }
+  #wave { background:#121212; border-color:transparent; }
 </style>
 <div id="wrap">
   <header>

@@ -23,7 +23,7 @@
   .stat { color:#7d8590; font-variant-numeric:tabular-nums; white-space:nowrap; }
   .stat b { color:#e6edf3; font-weight:600; }
   input { background:#0b0e14; border:1px solid #30363d; color:#e6edf3; padding:4px 8px;
-    border-radius:6px; font:inherit; width:180px; }
+    border-radius:2px; font:inherit; width:180px; }
   input:focus { outline:none; border-color:#4b8bd6; }
   /* A BPM is three digits; the shared `input` rule is sized for the search box
      and would hand this 180px of nothing. */
@@ -52,14 +52,14 @@
   /* The query box has to show more than a word now that one term can be
      `bpm:120-130`; at the shared 180px you cannot see the term you are typing. */
   #q { flex:1 1 auto; width:auto; min-width:160px; max-width:520px; background:#161b22;
-    padding:6px 12px; border-radius:8px; }
+    padding:6px 12px; border-radius:3px; }
   header select { background:#0b0e14; border:1px solid #30363d; color:#e6edf3;
-    font:inherit; font-size:12px; padding:3px 5px; border-radius:6px; cursor:pointer; }
+    font:inherit; font-size:12px; padding:3px 5px; border-radius:2px; cursor:pointer; }
   header select:focus { outline:none; border-color:#4b8bd6; }
   .grp { display:flex; gap:3px; align-items:center; }
   .grp .lbl { color:#6e7681; font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
   button { background:#161b22; border:1px solid #30363d; color:#9aa4b0; padding:3px 8px;
-    border-radius:6px; font:inherit; font-size:12px; cursor:pointer; white-space:nowrap; }
+    border-radius:2px; font:inherit; font-size:12px; cursor:pointer; white-space:nowrap; }
   button.on { background:#1f6feb33; border-color:#4b8bd6; color:#e6edf3; }
   button.cc.on { background:#57a77333; border-color:#57a773; }
   button:disabled { opacity:.5; cursor:default; }
@@ -82,15 +82,15 @@
   header .lbl { color:#6e7681; font-size:10px; text-transform:uppercase;
     letter-spacing:.07em; margin-right:5px; }
   header .grp { gap:4px; }
-  header .pill { border-radius:999px; padding:3px 11px; font-size:11.5px; }
+  header .pill { border-radius:3px; padding:3px 11px; font-size:11.5px; }
   header .tb { display:inline-flex; align-items:center; gap:7px; background:#161b22;
-    border:1px solid #30363d; color:#c9d1d9; padding:5px 12px; border-radius:8px;
+    border:1px solid #30363d; color:#c9d1d9; padding:5px 12px; border-radius:3px;
     transition:border-color .12s, background-color .12s, color .12s; }
   header .tb:hover, header .pill:hover:not(.on) { border-color:#484f58; color:#e6edf3; }
   header .tb.on, header .tb.open { border-color:#4b8bd6; background:#1f6feb22; color:#e6edf3; }
   header .tb .caret { color:#6e7681; font-size:9px; margin-left:-1px; }
   .badge { background:#1f6feb; color:#fff; font-size:10px; font-weight:600; line-height:1.5;
-    padding:0 6px; border-radius:10px; text-align:center; font-variant-numeric:tabular-nums; }
+    padding:0 6px; border-radius:4px; text-align:center; font-variant-numeric:tabular-nums; }
   /* ---- popovers -----------------------------------------------------------
      Positioned in JS (fixed, off the trigger's own rect) rather than CSS
      anchoring, so a panel never gets clipped by the header's scroll area on
@@ -100,8 +100,8 @@
   /* Only the phone layout dims the page behind an open panel - see there. */
   .pop-scrim { display:none; }
   .pop-panel { width:320px; max-width:calc(100vw - 16px); max-height:min(78vh, 580px);
-    overflow:auto; background:#161b22; border:1px solid #30363d; border-radius:12px;
-    padding:12px; box-shadow:0 18px 40px rgba(0,0,0,.55); z-index:6;
+    overflow:auto; background:#161b22; border:1px solid #30363d; border-radius:4px;
+    padding:12px; box-shadow:0 4px 14px rgba(0,0,0,.45); z-index:6;
     display:flex; flex-direction:column; gap:2px; }
   .pop-panel.narrow { width:260px; }
   .pop-panel[hidden] { display:none; }
@@ -115,12 +115,12 @@
   header .pop-x:hover { color:#e6edf3; }
   header .pop-panel .opt { display:flex; align-items:flex-start; gap:10px; width:100%;
     text-align:left; white-space:normal; background:transparent; border:1px solid transparent;
-    border-radius:7px; padding:7px 8px; color:#c9d1d9; }
+    border-radius:3px; padding:7px 8px; color:#c9d1d9; }
   header .pop-panel .opt:hover:not(:disabled) { background:#1c2129; }
   header .pop-panel .opt.on { background:#1f6feb14; border-color:transparent; }
   header .pop-panel .opt.cc.on { background:#57a77314; }
   .opt .ck { flex:none; position:relative; width:14px; height:14px; margin-top:2px;
-    border:1px solid #484f58; border-radius:4px; background:#0d1117;
+    border:1px solid #484f58; border-radius:2px; background:#0d1117;
     transition:background-color .12s, border-color .12s; }
   .opt.on .ck { background:#1f6feb; border-color:#4b8bd6; }
   .opt.cc.on .ck { background:#57a773; border-color:#57a773; }
@@ -139,7 +139,7 @@
   .pop-field label { flex:none; width:44px; color:#9aa4b0; font-size:12px; }
   .pop-field .unit { color:#6e7681; font-size:11px; }
   .pop-field select, .pop-field #pbpm { flex:1; width:auto; background:#0d1117;
-    padding:5px 9px; border-radius:7px; font-size:12px; }
+    padding:5px 9px; border-radius:3px; font-size:12px; }
   .pop-sec { padding:10px 8px 3px; color:#6e7681; font-size:10px; text-transform:uppercase;
     letter-spacing:.07em; }
   .pop-foot { display:flex; align-items:center; justify-content:space-between;
@@ -148,13 +148,13 @@
     color:#7d8590; font-size:11px; }
   header .pop-clear:hover:not(:disabled) { color:#e6edf3; }
   header .pop-done { background:#1f6feb; border:1px solid #4b8bd6; color:#fff;
-    padding:4px 15px; border-radius:7px; font-weight:600; }
+    padding:4px 15px; border-radius:3px; font-weight:600; }
   header .pop-done:hover { background:#388bfd; }
   /* The desktop build is what the page is for once somebody has a library of
      their own, so it is the one control here that is not grey. Its href is the
      releases page until download.json answers - see the foot of the script. */
   #getapp { background:#1f6feb33; border:1px solid #4b8bd6;
-    color:#e6edf3; padding:5px 12px; border-radius:8px; font:inherit; font-size:12px;
+    color:#e6edf3; padding:5px 12px; border-radius:3px; font:inherit; font-size:12px;
     text-decoration:none; white-space:nowrap; }
   #getapp:hover { background:#1f6feb55; }
   #getapp .v { color:#9aa4b0; font-variant-numeric:tabular-nums; }
@@ -162,14 +162,14 @@
      offered; this is a tip jar, and a tip jar that competes with it is a tip
      jar in the way. Grey like the rest of the toolbar until it is hovered. */
   #bmc { background:transparent; border:1px solid transparent; color:#7d8590;
-    padding:5px 4px; border-radius:8px; font:inherit; font-size:12px;
+    padding:5px 4px; border-radius:3px; font:inherit; font-size:12px;
     text-decoration:none; white-space:nowrap; }
   #bmc:hover { color:#d4b03c; }
   /* What the button opens. A dialog rather than another corner panel: it is
      read once, on the way out of the page, and what it has to say about an
      unsigned installer does not fit in a 272px column beside the graph. */
   #getapp-dl { width:min(540px, calc(100vw - 28px)); padding:0; color:#c9d1d9;
-    background:#0d1117; border:1px solid #30363d; border-radius:10px; font:inherit; }
+    background:#0d1117; border:1px solid #30363d; border-radius:4px; font:inherit; }
   #getapp-dl::backdrop { background:rgba(3,5,9,.74); }
   #getapp-dl .bd { padding:16px 18px 14px; max-height:min(78vh, 720px); overflow:auto; }
   #getapp-dl h2 { font-size:15px; margin:0 0 4px; color:#e6edf3; font-weight:600; }
@@ -181,9 +181,9 @@
     line-height:1.65; color:#9aa4b0; }
   #getapp-dl b { color:#e6edf3; font-weight:600; }
   #getapp-dl .get { display:flex; align-items:center; gap:11px; flex-wrap:wrap;
-    padding:12px 13px; background:#0b0e14; border:1px solid #30363d; border-radius:8px; }
+    padding:12px 13px; background:#0b0e14; border:1px solid #30363d; border-radius:3px; }
   #getapp-dl .get a { background:#1f6feb33; border:1px solid #4b8bd6; color:#e6edf3;
-    padding:5px 13px; border-radius:6px; text-decoration:none; font-size:13px;
+    padding:5px 13px; border-radius:2px; text-decoration:none; font-size:13px;
     font-weight:600; white-space:nowrap; }
   #getapp-dl .get a:hover { background:#1f6feb55; }
   #getapp-dl .get .m { color:#7d8590; font-size:11px; font-variant-numeric:tabular-nums; }
@@ -192,7 +192,7 @@
      below it is a block per platform rather than one. */
   #getapp-dl .pick { display:flex; gap:6px; margin:0 0 11px; }
   #getapp-dl .pick button { flex:1; background:#0b0e14; border:1px solid #21262d;
-    color:#7d8590; padding:5px 0; border-radius:6px; font:inherit; font-size:12px;
+    color:#7d8590; padding:5px 0; border-radius:2px; font:inherit; font-size:12px;
     cursor:pointer; }
   #getapp-dl .pick button:hover { color:#c9d1d9; border-color:#30363d; }
   #getapp-dl .pick button.on { background:#1f6feb22; border-color:#4b8bd6; color:#e6edf3; }
@@ -211,7 +211,7 @@
   #getapp-dl .warn { border-left:2px solid #d4b03c; padding-left:11px; }
   #getapp-dl code { font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;
     font-size:11px; color:#c9d1d9; background:#0b0e14; border:1px solid #21262d;
-    border-radius:4px; padding:1px 5px; }
+    border-radius:2px; padding:1px 5px; }
   #getapp-dl .cmd { display:block; padding:7px 9px; margin:0 0 8px;
     overflow-wrap:anywhere; line-height:1.5; }
   #getapp-dl .ft { display:flex; justify-content:space-between; align-items:center;
@@ -226,7 +226,7 @@
     display:flex; justify-content:flex-end; }
   #getapp-dl .x { display:flex; align-items:center; justify-content:center;
     width:22px; height:22px; padding:0; background:#0d1117; border:1px solid #21262d;
-    border-radius:6px; color:#7d8590; font:inherit; font-size:15px; line-height:1;
+    border-radius:2px; color:#7d8590; font:inherit; font-size:15px; line-height:1;
     cursor:pointer; }
   #getapp-dl .x:hover { color:#e6edf3; border-color:#30363d; }
   #main { flex:1; position:relative; min-height:0; }
@@ -243,7 +243,7 @@
   #cv { touch-action:none; -webkit-user-select:none; user-select:none;
     -webkit-touch-callout:none; }
   #legend { position:absolute; top:11px; left:11px; background:rgba(13,17,23,.93);
-    border:1px solid #1e2530; border-radius:8px; padding:8px 10px; max-width:225px;
+    border:1px solid #1e2530; border-radius:3px; padding:8px 10px; max-width:225px;
     max-height:calc(100% - 22px); overflow:auto; }
   #legend[hidden] { display:none; }
   #legend div.row { display:flex; align-items:center; gap:6px; padding:1px 0; color:#9aa4b0; }
@@ -321,9 +321,9 @@
        writes for the window layout. */
     header .pop-panel { position:fixed !important; top:auto !important; left:0 !important;
       right:0; bottom:0; width:auto; max-width:none; max-height:82vh;
-      border-radius:16px 16px 0 0; border-width:1px 0 0;
+      border-radius:6px 6px 0 0; border-width:1px 0 0;
       padding:6px 16px calc(14px + env(safe-area-inset-bottom));
-      box-shadow:0 -16px 40px rgba(0,0,0,.6); animation:sheet-up .2s ease-out; }
+      box-shadow:0 -4px 14px rgba(0,0,0,.5); animation:sheet-up .2s ease-out; }
     header .pop-panel::before { content:""; flex:none; width:36px; height:4px; margin:4px auto 8px;
       border-radius:2px; background:#30363d; }
     .pop-scrim { display:block; position:fixed; inset:0; z-index:5; background:rgba(3,5,9,.62);
@@ -343,19 +343,19 @@
     .pop-field label { font-size:14px; width:52px; }
     .pop-field select, .pop-field #pbpm { font-size:16px; min-height:42px; }
     header .pop-clear { font-size:14px; min-height:44px; }
-    header .pop-done { font-size:15px; min-height:44px; padding:0 26px; border-radius:9px; }
+    header .pop-done { font-size:15px; min-height:44px; padding:0 26px; border-radius:3px; }
   }
   @keyframes sheet-up { from { transform:translateY(40px); opacity:.4; } }
   @keyframes scrim-in { from { opacity:0; } }
   @media (prefers-reduced-motion:reduce) { .pop-panel, .pop-scrim { animation:none !important; } }
   .sw { width:9px; height:9px; border-radius:2px; flex:none; }
   .nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  #ramp { height:10px; border-radius:3px; margin:5px 0 3px; }
+  #ramp { height:10px; border-radius:2px; margin:5px 0 3px; }
   #legend .ends { display:flex; justify-content:space-between; color:#6e7681; font-size:11px; }
   #tip { position:absolute; pointer-events:none; background:#161b22; border:1px solid #30363d;
-    border-radius:7px; padding:9px 11px; display:none; z-index:5;
+    border-radius:3px; padding:9px 11px; display:none; z-index:5;
     max-width:min(390px, calc(100vw - 22px));
-    box-shadow:0 6px 24px rgba(0,0,0,.6); }
+    box-shadow:0 3px 10px rgba(0,0,0,.5); }
   #tip b { color:#e6edf3; display:block; margin-bottom:3px; word-break:break-word; }
   #tip .row { color:#7d8590; font-size:12px; }
   #tip .cc0 { color:#57a773; font-weight:600; }
@@ -406,7 +406,7 @@
   /* The waveform belongs to the footer bar and stays hidden until a decode
      lands, so the bar never holds a gap open for something that may not come. */
   #wave { flex:none; width:190px; height:26px; display:none; cursor:pointer;
-    border:1px solid #1e2530; border-radius:4px; background:#0f1319; }
+    border:1px solid #1e2530; border-radius:2px; background:#0f1319; }
   /* Loop is a button rather than a read-out: the state it shows is the one thing
      in the footer anybody would want to change on sight. It keeps its place when
      nothing is playing, where it shows - and sets - the standing preference for
@@ -424,13 +424,13 @@
      that moves them - because one scroll of
      fifteen controls made the panel taller than most windows. */
   #phys { position:absolute; top:11px; right:11px; width:296px; z-index:4;
-    background:rgba(13,17,23,.96); border:1px solid #1e2530; border-radius:12px;
-    box-shadow:0 18px 40px rgba(0,0,0,.55);
+    background:rgba(13,17,23,.96); border:1px solid #1e2530; border-radius:4px;
+    box-shadow:0 4px 14px rgba(0,0,0,.45);
     padding:10px 12px 12px; max-height:calc(100% - 22px); overflow:auto; }
   #phys[hidden] { display:none; }
   #phys .ph-tabs { display:flex; gap:3px; padding:3px; margin-bottom:12px;
-    background:#0b0e14; border-radius:9px; }
-  #phys .ph-tabs button { flex:1 1 0; padding:5px 0; font-size:11.5px; border-radius:6px;
+    background:#0b0e14; border-radius:3px; }
+  #phys .ph-tabs button { flex:1 1 0; padding:5px 0; font-size:11.5px; border-radius:2px;
     background:transparent; border:1px solid transparent; color:#9aa4b0;
     transition:background-color .12s, border-color .12s, color .12s; }
   #phys .ph-tabs button:hover:not(.on) { color:#e6edf3; }
@@ -447,7 +447,7 @@
   #phys h2 + .btns { margin-bottom:6px; }
   #phys .lay-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:10px; }
   #phys .lay-card { display:flex; flex-direction:column; align-items:center; gap:5px;
-    padding:10px 6px 8px; border-radius:9px; background:#0f1319; color:#9aa4b0;
+    padding:10px 6px 8px; border-radius:3px; background:#0f1319; color:#9aa4b0;
     font-size:11px; white-space:normal;
     transition:border-color .12s, background-color .12s, color .12s; }
   #phys .lay-card svg { display:block; }
@@ -458,7 +458,7 @@
     padding:3px 9px; font-size:11px; }
   #phys .chips .dot { width:6px; height:6px; border-radius:50%; flex:none; }
   #phys .runrow { display:flex; gap:5px; margin-bottom:2px; }
-  #phys .runrow button { flex:1 1 0; padding:5px 0; font-size:11.5px; border-radius:7px; }
+  #phys .runrow button { flex:1 1 0; padding:5px 0; font-size:11.5px; border-radius:3px; }
   #phys #ph_run { background:#1f6feb26; border-color:#4b8bd6; color:#e6edf3; }
   #phys #ph_run:hover { background:#1f6feb40; }
   #phys label { display:block; margin:0 0 5px; }
@@ -492,7 +492,7 @@
   #phys .ax { flex:1 1 0; min-width:0; display:flex; align-items:center; gap:5px; margin:0; }
   #phys .ax span { color:#6e7681; font-size:11px; }
   #phys select { flex:1 1 0; min-width:0; background:#0b0e14; color:#e6edf3;
-    font:inherit; font-size:11px; border:1px solid #30363d; border-radius:5px;
+    font:inherit; font-size:11px; border:1px solid #30363d; border-radius:2px;
     padding:2px 3px; cursor:pointer; }
   #phys select:focus { outline:none; border-color:#4b8bd6; }
   #phys .chk { display:flex; align-items:center; gap:6px; color:#7d8590;
@@ -505,7 +505,7 @@
      the physics panel is 550px of sliders down the right-hand side, and
      anything sharing that edge covers the ones you are dragging. */
   #basket { position:absolute; left:11px; bottom:11px; width:272px; z-index:4;
-    background:rgba(13,17,23,.95); border:1px solid #1e2530; border-radius:8px;
+    background:rgba(13,17,23,.95); border:1px solid #1e2530; border-radius:3px;
     padding:9px 11px 10px; max-height:55%; display:flex; flex-direction:column; }
   /* display:flex on an id beats the UA's [hidden]{display:none}, so the hidden
      attribute has to be given its own rule or the panel is never hidden. */
@@ -520,7 +520,7 @@
      ordinary basket and would otherwise run off the bottom of the window. */
   #bk_list { flex:1 1 auto; min-height:0; overflow:auto; margin:0 -3px; }
   .bkr { display:flex; align-items:center; gap:6px; padding:2px 3px;
-    border-radius:4px; cursor:pointer; }
+    border-radius:2px; cursor:pointer; }
   .bkr:hover { background:#161b22; }
   .bkr .nm { flex:1 1 auto; min-width:0; color:#c9d1d9; font-size:11px;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -550,8 +550,8 @@
      once dismissed or once anything plays. */
   #welcome { position:absolute; right:14px; bottom:14px; z-index:5;
     width:min(320px, calc(100% - 28px)); background:rgba(13,17,23,.97);
-    border:1px solid #30363d; border-radius:10px; padding:14px 16px 13px;
-    box-shadow:0 12px 40px rgba(0,0,0,.55); animation:wlin .25s ease-out; }
+    border:1px solid #30363d; border-radius:4px; padding:14px 16px 13px;
+    box-shadow:0 4px 14px rgba(0,0,0,.45); animation:wlin .25s ease-out; }
   #welcome[hidden] { display:none; }
   @keyframes wlin { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
   @media (prefers-reduced-motion:reduce) { #welcome { animation:none; } }
@@ -564,13 +564,13 @@
   #welcome .go:hover { background:#1f6feb55; }
   #welcome .x { position:absolute; top:9px; right:9px; display:flex; align-items:center;
     justify-content:center; width:22px; height:22px; padding:0; background:transparent;
-    border:1px solid #21262d; border-radius:6px; color:#7d8590; font-size:15px; line-height:1; }
+    border:1px solid #21262d; border-radius:2px; color:#7d8590; font-size:15px; line-height:1; }
   #welcome .x:hover { color:#e6edf3; border-color:#30363d; }
   @media (max-width:700px) and (pointer:coarse) {
     #welcome { left:10px; right:10px; bottom:10px; width:auto; } }
   /* The shortcuts, in the clothes the other two dialogs wear. */
   #keys-dl { width:min(480px, calc(100vw - 28px)); padding:0; color:#c9d1d9;
-    background:#0d1117; border:1px solid #30363d; border-radius:10px; font:inherit; }
+    background:#0d1117; border:1px solid #30363d; border-radius:4px; font:inherit; }
   #keys-dl::backdrop { background:rgba(3,5,9,.74); }
   #keys-dl .bd { padding:16px 18px 14px; max-height:min(80vh, 760px); overflow:auto; }
   #keys-dl h2 { font-size:15px; margin:0 0 2px; color:#e6edf3; font-weight:600; }
@@ -584,19 +584,19 @@
   #keys-dl p { margin:0 0 6px; font-size:12px; line-height:1.6; color:#9aa4b0; }
   #keys-dl kbd { font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; font-size:11px;
     color:#e6edf3; background:#161b22; border:1px solid #30363d; border-bottom-width:2px;
-    border-radius:4px; padding:0 5px; white-space:nowrap; }
+    border-radius:2px; padding:0 5px; white-space:nowrap; }
   #keys-dl code { font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; font-size:11px;
-    color:#c9d1d9; background:#0b0e14; border:1px solid #21262d; border-radius:4px;
+    color:#c9d1d9; background:#0b0e14; border:1px solid #21262d; border-radius:2px;
     padding:1px 5px; white-space:nowrap; }
   #keys-dl .ft { display:flex; justify-content:flex-end; margin-top:14px; padding-top:11px;
     border-top:1px solid #1e2530; }
   #keys-dl .ft button { background:#1f6feb33; border:1px solid #4b8bd6; color:#e6edf3;
-    padding:4px 14px; border-radius:6px; font:inherit; font-size:12px; font-weight:600; cursor:pointer; }
+    padding:4px 14px; border-radius:2px; font:inherit; font-size:12px; font-weight:600; cursor:pointer; }
   #keys-dl .xw { position:sticky; top:0; height:0; z-index:2;
     display:flex; justify-content:flex-end; }
   #keys-dl .x { display:flex; align-items:center; justify-content:center;
     width:22px; height:22px; padding:0; background:#0d1117; border:1px solid #21262d;
-    border-radius:6px; color:#7d8590; font:inherit; font-size:15px; line-height:1;
+    border-radius:2px; color:#7d8590; font:inherit; font-size:15px; line-height:1;
     cursor:pointer; }
   #keys-dl .x:hover { color:#e6edf3; border-color:#30363d; }
   #keysbtn { width:24px; padding:2px 0; font-size:12px; font-weight:600; }

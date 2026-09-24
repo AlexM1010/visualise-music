@@ -13,16 +13,16 @@
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
-  html, body { margin:0; height:100%; background:#0b0e14; color:#c9d1d9;
+  html, body { margin:0; height:100%; background:#121212; color:#d0d0d0;
     overscroll-behavior:none; -webkit-text-size-adjust:100%;
     font:13px/1.5 ui-sans-serif,-apple-system,"Segoe UI",system-ui,sans-serif; }
   #wrap { position:fixed; inset:0; display:flex; flex-direction:column; }
-  header { padding:8px 13px; border-bottom:1px solid #1e2530; display:flex; gap:11px;
-    align-items:center; flex-wrap:wrap; background:#0d1117; }
-  h1 { font-size:14px; margin:0; font-weight:600; color:#e6edf3; white-space:nowrap; }
-  .stat { color:#7d8590; font-variant-numeric:tabular-nums; white-space:nowrap; }
-  .stat b { color:#e6edf3; font-weight:600; }
-  input { background:#0b0e14; border:1px solid #30363d; color:#e6edf3; padding:4px 8px;
+  header { padding:8px 13px; border-bottom:1px solid #262626; display:flex; gap:11px;
+    align-items:center; flex-wrap:wrap; background:#1a1a1a; }
+  h1 { font-size:14px; margin:0; font-weight:600; color:#ececec; white-space:nowrap; }
+  .stat { color:#8c8c8c; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .stat b { color:#ececec; font-weight:600; }
+  input { background:#121212; border:1px solid #353535; color:#ececec; padding:4px 8px;
     border-radius:2px; font:inherit; width:180px; }
   input:focus { outline:none; border-color:#4b8bd6; }
   /* A BPM is three digits; the shared `input` rule is sized for the search box
@@ -39,7 +39,7 @@
      cursor that had just used it. Fixed width, right-aligned, tabular figures -
      183 and 1,403 take the same room, so nothing moves when the count changes. */
   .cnt { display:inline-block; min-width:5.2ch; margin-left:5px; text-align:right;
-    font-weight:600; color:#e6edf3; font-variant-numeric:tabular-nums; }
+    font-weight:600; color:#ececec; font-variant-numeric:tabular-nums; }
   /* Laid out but not painted, rather than not laid out at all: the slot is the
      whole point. A `display:none` here would shrink the button the moment the
      count went away and re-wrap the toolbar behind it - the same fault as the
@@ -48,19 +48,19 @@
   .cnt[hidden] { display:inline-block; visibility:hidden; }
   /* A basket holds tens, not thousands. */
   #nbask { min-width:2.4ch; }
-  button.on .cnt { color:#e6edf3; }
+  button.on .cnt { color:#ececec; }
   /* The query box has to show more than a word now that one term can be
      `bpm:120-130`; at the shared 180px you cannot see the term you are typing. */
-  #q { flex:1 1 auto; width:auto; min-width:160px; max-width:520px; background:#161b22;
+  #q { flex:1 1 auto; width:auto; min-width:160px; max-width:520px; background:#222222;
     padding:6px 12px; border-radius:3px; }
-  header select { background:#0b0e14; border:1px solid #30363d; color:#e6edf3;
+  header select { background:#121212; border:1px solid #353535; color:#ececec;
     font:inherit; font-size:12px; padding:3px 5px; border-radius:2px; cursor:pointer; }
   header select:focus { outline:none; border-color:#4b8bd6; }
   .grp { display:flex; gap:3px; align-items:center; }
-  .grp .lbl { color:#6e7681; font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
-  button { background:#161b22; border:1px solid #30363d; color:#9aa4b0; padding:3px 8px;
+  .grp .lbl { color:#787878; font-size:10px; text-transform:uppercase; letter-spacing:.05em; }
+  button { background:#222222; border:1px solid #353535; color:#a6a6a6; padding:3px 8px;
     border-radius:2px; font:inherit; font-size:12px; cursor:pointer; white-space:nowrap; }
-  button.on { background:#1f6feb33; border-color:#4b8bd6; color:#e6edf3; }
+  button.on { background:#1f6feb33; border-color:#4b8bd6; color:#ececec; }
   button.cc.on { background:#57a77333; border-color:#57a773; }
   button:disabled { opacity:.5; cursor:default; }
   /* ---- the toolbar ------------------------------------------------------
@@ -71,24 +71,24 @@
      on, Project spells out the tempo and key. Nothing is gone, only folded. */
   header { flex-direction:column; flex-wrap:nowrap; align-items:stretch; gap:0; padding:0; }
   .hrow { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; padding:10px 18px; min-width:0; }
-  .hrow.r2 { gap:10px; padding:8px 18px; background:#0a0e14; border-top:1px solid #1e2530; }
+  .hrow.r2 { gap:10px; padding:8px 18px; background:#141414; border-top:1px solid #262626; }
   .hsp { flex:1 1 0; min-width:0; }
   header h1 { font-size:15px; letter-spacing:-.01em; }
   h1 a { color:inherit; text-decoration:none; }
   h1 a:hover { text-decoration:underline; }
   header .stat { font-size:12px; }
-  header .stat .sep { color:#484f58; margin:0 7px; }
+  header .stat .sep { color:#4a4a4a; margin:0 7px; }
   #hits { min-width:70px; }
-  header .lbl { color:#6e7681; font-size:10px; text-transform:uppercase;
+  header .lbl { color:#787878; font-size:10px; text-transform:uppercase;
     letter-spacing:.07em; margin-right:5px; }
   header .grp { gap:4px; }
   header .pill { border-radius:3px; padding:3px 11px; font-size:11.5px; }
-  header .tb { display:inline-flex; align-items:center; gap:7px; background:#161b22;
-    border:1px solid #30363d; color:#c9d1d9; padding:5px 12px; border-radius:3px;
+  header .tb { display:inline-flex; align-items:center; gap:7px; background:#222222;
+    border:1px solid #353535; color:#d0d0d0; padding:5px 12px; border-radius:3px;
     transition:border-color .12s, background-color .12s, color .12s; }
-  header .tb:hover, header .pill:hover:not(.on) { border-color:#484f58; color:#e6edf3; }
-  header .tb.on, header .tb.open { border-color:#4b8bd6; background:#1f6feb22; color:#e6edf3; }
-  header .tb .caret { color:#6e7681; font-size:9px; margin-left:-1px; }
+  header .tb:hover, header .pill:hover:not(.on) { border-color:#4a4a4a; color:#ececec; }
+  header .tb.on, header .tb.open { border-color:#4b8bd6; background:#1f6feb22; color:#ececec; }
+  header .tb .caret { color:#787878; font-size:9px; margin-left:-1px; }
   .badge { background:#1f6feb; color:#fff; font-size:10px; font-weight:600; line-height:1.5;
     padding:0 6px; border-radius:4px; text-align:center; font-variant-numeric:tabular-nums; }
   /* ---- popovers -----------------------------------------------------------
@@ -100,27 +100,27 @@
   /* Only the phone layout dims the page behind an open panel - see there. */
   .pop-scrim { display:none; }
   .pop-panel { width:320px; max-width:calc(100vw - 16px); max-height:min(78vh, 580px);
-    overflow:auto; background:#161b22; border:1px solid #30363d; border-radius:4px;
+    overflow:auto; background:#222222; border:1px solid #353535; border-radius:4px;
     padding:12px; box-shadow:0 4px 14px rgba(0,0,0,.45); z-index:6;
     display:flex; flex-direction:column; gap:2px; }
   .pop-panel.narrow { width:260px; }
   .pop-panel[hidden] { display:none; }
   .pop-head { display:flex; align-items:center; gap:8px; padding:2px 4px 10px;
-    margin-bottom:6px; border-bottom:1px solid #21262d; }
-  .pop-title { font-size:13px; font-weight:600; color:#e6edf3; }
-  .pop-sub { margin-left:auto; font-size:11px; color:#6e7681; font-variant-numeric:tabular-nums; }
-  header .pop-x { background:transparent; border:0; color:#6e7681; font-size:17px;
+    margin-bottom:6px; border-bottom:1px solid #2c2c2c; }
+  .pop-title { font-size:13px; font-weight:600; color:#ececec; }
+  .pop-sub { margin-left:auto; font-size:11px; color:#787878; font-variant-numeric:tabular-nums; }
+  header .pop-x { background:transparent; border:0; color:#787878; font-size:17px;
     line-height:1; padding:0 2px; min-height:0; margin-left:auto; }
   header .pop-sub ~ .pop-x { margin-left:0; }
-  header .pop-x:hover { color:#e6edf3; }
+  header .pop-x:hover { color:#ececec; }
   header .pop-panel .opt { display:flex; align-items:flex-start; gap:10px; width:100%;
     text-align:left; white-space:normal; background:transparent; border:1px solid transparent;
-    border-radius:3px; padding:7px 8px; color:#c9d1d9; }
-  header .pop-panel .opt:hover:not(:disabled) { background:#1c2129; }
+    border-radius:3px; padding:7px 8px; color:#d0d0d0; }
+  header .pop-panel .opt:hover:not(:disabled) { background:#2a2a2a; }
   header .pop-panel .opt.on { background:#1f6feb14; border-color:transparent; }
   header .pop-panel .opt.cc.on { background:#57a77314; }
   .opt .ck { flex:none; position:relative; width:14px; height:14px; margin-top:2px;
-    border:1px solid #484f58; border-radius:2px; background:#0d1117;
+    border:1px solid #4a4a4a; border-radius:2px; background:#1a1a1a;
     transition:background-color .12s, border-color .12s; }
   .opt.on .ck { background:#1f6feb; border-color:#4b8bd6; }
   .opt.cc.on .ck { background:#57a773; border-color:#57a773; }
@@ -130,23 +130,23 @@
   .opt.radio.on .ck::after { left:3px; top:3px; width:6px; height:6px; border:0;
     border-radius:50%; background:#fff; transform:none; }
   .opt .tx { display:flex; flex-direction:column; gap:1px; flex:1; min-width:0; }
-  .opt .t { font-size:12px; font-weight:600; color:#e6edf3; }
-  .opt .d { font-size:11px; color:#7d8590; line-height:1.35; }
-  .opt .n { flex:none; margin-top:1px; font-size:11px; font-weight:400; color:#6e7681;
+  .opt .t { font-size:12px; font-weight:600; color:#ececec; }
+  .opt .d { font-size:11px; color:#8c8c8c; line-height:1.35; }
+  .opt .n { flex:none; margin-top:1px; font-size:11px; font-weight:400; color:#787878;
     font-variant-numeric:tabular-nums; }
-  .opt.on .n { color:#9aa4b0; }
+  .opt.on .n { color:#a6a6a6; }
   .pop-field { display:flex; align-items:center; gap:10px; padding:6px 8px; }
-  .pop-field label { flex:none; width:44px; color:#9aa4b0; font-size:12px; }
-  .pop-field .unit { color:#6e7681; font-size:11px; }
-  .pop-field select, .pop-field #pbpm { flex:1; width:auto; background:#0d1117;
+  .pop-field label { flex:none; width:44px; color:#a6a6a6; font-size:12px; }
+  .pop-field .unit { color:#787878; font-size:11px; }
+  .pop-field select, .pop-field #pbpm { flex:1; width:auto; background:#1a1a1a;
     padding:5px 9px; border-radius:3px; font-size:12px; }
-  .pop-sec { padding:10px 8px 3px; color:#6e7681; font-size:10px; text-transform:uppercase;
+  .pop-sec { padding:10px 8px 3px; color:#787878; font-size:10px; text-transform:uppercase;
     letter-spacing:.07em; }
   .pop-foot { display:flex; align-items:center; justify-content:space-between;
-    margin-top:8px; padding-top:10px; border-top:1px solid #21262d; }
+    margin-top:8px; padding-top:10px; border-top:1px solid #2c2c2c; }
   header .pop-clear { background:transparent; border:0; padding:0; min-height:0;
-    color:#7d8590; font-size:11px; }
-  header .pop-clear:hover:not(:disabled) { color:#e6edf3; }
+    color:#8c8c8c; font-size:11px; }
+  header .pop-clear:hover:not(:disabled) { color:#ececec; }
   header .pop-done { background:#1f6feb; border:1px solid #4b8bd6; color:#fff;
     padding:4px 15px; border-radius:3px; font-weight:600; }
   header .pop-done:hover { background:#388bfd; }
@@ -154,69 +154,69 @@
      their own, so it is the one control here that is not grey. Its href is the
      releases page until download.json answers - see the foot of the script. */
   #getapp { background:#1f6feb33; border:1px solid #4b8bd6;
-    color:#e6edf3; padding:5px 12px; border-radius:3px; font:inherit; font-size:12px;
+    color:#ececec; padding:5px 12px; border-radius:3px; font:inherit; font-size:12px;
     text-decoration:none; white-space:nowrap; }
   #getapp:hover { background:#1f6feb55; }
-  #getapp .v { color:#9aa4b0; font-variant-numeric:tabular-nums; }
+  #getapp .v { color:#a6a6a6; font-variant-numeric:tabular-nums; }
   /* Beside it, and deliberately quieter. The download is the thing being
      offered; this is a tip jar, and a tip jar that competes with it is a tip
      jar in the way. Grey like the rest of the toolbar until it is hovered. */
-  #bmc { background:transparent; border:1px solid transparent; color:#7d8590;
+  #bmc { background:transparent; border:1px solid transparent; color:#8c8c8c;
     padding:5px 4px; border-radius:3px; font:inherit; font-size:12px;
     text-decoration:none; white-space:nowrap; }
   #bmc:hover { color:#d4b03c; }
   /* What the button opens. A dialog rather than another corner panel: it is
      read once, on the way out of the page, and what it has to say about an
      unsigned installer does not fit in a 272px column beside the graph. */
-  #getapp-dl { width:min(540px, calc(100vw - 28px)); padding:0; color:#c9d1d9;
-    background:#0d1117; border:1px solid #30363d; border-radius:4px; font:inherit; }
+  #getapp-dl { width:min(540px, calc(100vw - 28px)); padding:0; color:#d0d0d0;
+    background:#1a1a1a; border:1px solid #353535; border-radius:4px; font:inherit; }
   #getapp-dl::backdrop { background:rgba(3,5,9,.74); }
   #getapp-dl .bd { padding:16px 18px 14px; max-height:min(78vh, 720px); overflow:auto; }
-  #getapp-dl h2 { font-size:15px; margin:0 0 4px; color:#e6edf3; font-weight:600; }
-  #getapp-dl .sub { color:#7d8590; font-size:12px; margin:0 0 14px; line-height:1.5; }
-  #getapp-dl h3 { font-size:10px; margin:16px 0 7px; color:#6e7681; font-weight:600;
+  #getapp-dl h2 { font-size:15px; margin:0 0 4px; color:#ececec; font-weight:600; }
+  #getapp-dl .sub { color:#8c8c8c; font-size:12px; margin:0 0 14px; line-height:1.5; }
+  #getapp-dl h3 { font-size:10px; margin:16px 0 7px; color:#787878; font-weight:600;
     text-transform:uppercase; letter-spacing:.05em; }
-  #getapp-dl p { margin:0 0 8px; font-size:12px; line-height:1.55; color:#9aa4b0; }
+  #getapp-dl p { margin:0 0 8px; font-size:12px; line-height:1.55; color:#a6a6a6; }
   #getapp-dl ol { margin:0 0 8px; padding-left:19px; font-size:12px;
-    line-height:1.65; color:#9aa4b0; }
-  #getapp-dl b { color:#e6edf3; font-weight:600; }
+    line-height:1.65; color:#a6a6a6; }
+  #getapp-dl b { color:#ececec; font-weight:600; }
   #getapp-dl .get { display:flex; align-items:center; gap:11px; flex-wrap:wrap;
-    padding:12px 13px; background:#0b0e14; border:1px solid #30363d; border-radius:3px; }
-  #getapp-dl .get a { background:#1f6feb33; border:1px solid #4b8bd6; color:#e6edf3;
+    padding:12px 13px; background:#121212; border:1px solid #353535; border-radius:3px; }
+  #getapp-dl .get a { background:#1f6feb33; border:1px solid #4b8bd6; color:#ececec;
     padding:5px 13px; border-radius:2px; text-decoration:none; font-size:13px;
     font-weight:600; white-space:nowrap; }
   #getapp-dl .get a:hover { background:#1f6feb55; }
-  #getapp-dl .get .m { color:#7d8590; font-size:11px; font-variant-numeric:tabular-nums; }
+  #getapp-dl .get .m { color:#8c8c8c; font-size:11px; font-variant-numeric:tabular-nums; }
   /* The switch above the download. It is what lets the panel be read on a
      machine it is not going to be installed on - and the reason the guidance
      below it is a block per platform rather than one. */
   #getapp-dl .pick { display:flex; gap:6px; margin:0 0 11px; }
-  #getapp-dl .pick button { flex:1; background:#0b0e14; border:1px solid #21262d;
-    color:#7d8590; padding:5px 0; border-radius:2px; font:inherit; font-size:12px;
+  #getapp-dl .pick button { flex:1; background:#121212; border:1px solid #2c2c2c;
+    color:#8c8c8c; padding:5px 0; border-radius:2px; font:inherit; font-size:12px;
     cursor:pointer; }
-  #getapp-dl .pick button:hover { color:#c9d1d9; border-color:#30363d; }
-  #getapp-dl .pick button.on { background:#1f6feb22; border-color:#4b8bd6; color:#e6edf3; }
+  #getapp-dl .pick button:hover { color:#d0d0d0; border-color:#353535; }
+  #getapp-dl .pick button.on { background:#1f6feb22; border-color:#4b8bd6; color:#ececec; }
   /* The second file on a platform that ships two. Under the button rather than
      beside it: it is the answer to a question most people do not have. */
-  #getapp-dl .alt { margin:8px 1px 0; font-size:11px; color:#6e7681; }
+  #getapp-dl .alt { margin:8px 1px 0; font-size:11px; color:#787878; }
   /* Said when download.json has answered and had nothing for the platform being
      asked about. Grey rather than yellow: the yellow rule means "measured, not
      vouched for", and there is no file here to say either about. */
   #getapp-dl .none { margin:10px 1px 0; font-size:12px; line-height:1.55;
-    color:#9aa4b0; border-left:2px solid #30363d; padding-left:11px; }
-  #getapp-dl .alt a { color:#7d8590; }
-  #getapp-dl .alt a:hover { color:#c9d1d9; }
+    color:#a6a6a6; border-left:2px solid #353535; padding-left:11px; }
+  #getapp-dl .alt a { color:#8c8c8c; }
+  #getapp-dl .alt a:hover { color:#d0d0d0; }
   /* The yellow rule is the page's own "measured, not vouched for" colour, which
      is the right thing to say about a binary nobody has signed. */
   #getapp-dl .warn { border-left:2px solid #d4b03c; padding-left:11px; }
   #getapp-dl code { font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;
-    font-size:11px; color:#c9d1d9; background:#0b0e14; border:1px solid #21262d;
+    font-size:11px; color:#d0d0d0; background:#121212; border:1px solid #2c2c2c;
     border-radius:2px; padding:1px 5px; }
   #getapp-dl .cmd { display:block; padding:7px 9px; margin:0 0 8px;
     overflow-wrap:anywhere; line-height:1.5; }
   #getapp-dl .ft { display:flex; justify-content:space-between; align-items:center;
-    gap:9px; margin-top:15px; padding-top:11px; border-top:1px solid #1e2530; }
-  #getapp-dl .ft a { color:#6e7681; font-size:11px; }
+    gap:9px; margin-top:15px; padding-top:11px; border-top:1px solid #262626; }
+  #getapp-dl .ft a { color:#787878; font-size:11px; }
   /* The corner close. The panel scrolls, and the button at the foot of it is a
      long way down from wherever the reader gave up - so this one is sticky at
      the height of the heading, inside the content column so that it never sits
@@ -225,10 +225,10 @@
   #getapp-dl .xw { position:sticky; top:0; height:0; z-index:2;
     display:flex; justify-content:flex-end; }
   #getapp-dl .x { display:flex; align-items:center; justify-content:center;
-    width:22px; height:22px; padding:0; background:#0d1117; border:1px solid #21262d;
-    border-radius:2px; color:#7d8590; font:inherit; font-size:15px; line-height:1;
+    width:22px; height:22px; padding:0; background:#1a1a1a; border:1px solid #2c2c2c;
+    border-radius:2px; color:#8c8c8c; font:inherit; font-size:15px; line-height:1;
     cursor:pointer; }
-  #getapp-dl .x:hover { color:#e6edf3; border-color:#30363d; }
+  #getapp-dl .x:hover { color:#ececec; border-color:#353535; }
   #main { flex:1; position:relative; min-height:0; }
   canvas { display:block; width:100%; height:100%; cursor:grab; }
   canvas.drag { cursor:grabbing; }
@@ -242,11 +242,11 @@
      text-selection loupe in the middle of a drag. */
   #cv { touch-action:none; -webkit-user-select:none; user-select:none;
     -webkit-touch-callout:none; }
-  #legend { position:absolute; top:11px; left:11px; background:rgba(13,17,23,.93);
-    border:1px solid #1e2530; border-radius:3px; padding:8px 10px; max-width:225px;
+  #legend { position:absolute; top:11px; left:11px; background:rgba(26,26,26,.93);
+    border:1px solid #262626; border-radius:3px; padding:8px 10px; max-width:225px;
     max-height:calc(100% - 22px); overflow:auto; }
   #legend[hidden] { display:none; }
-  #legend div.row { display:flex; align-items:center; gap:6px; padding:1px 0; color:#9aa4b0; }
+  #legend div.row { display:flex; align-items:center; gap:6px; padding:1px 0; color:#a6a6a6; }
   /* On a phone the key is a third of the map, sat over the corner of it, and
      the map is the point. What it says is still in the toolbar - the colour
      button that is lit is the scheme being read - so the key is what goes.
@@ -296,7 +296,7 @@
        their own scrim. */
     header { position:relative; }
     header.r2more::after { content:""; position:absolute; right:0; bottom:0; width:44px; height:52px;
-      pointer-events:none; background:linear-gradient(to right, rgba(10,14,20,0), #0a0e14 85%); }
+      pointer-events:none; background:linear-gradient(to right, rgba(20,20,20,0), #141414 85%); }
     header .hrow.r2 > * { flex:none; }
     /* Only the first three or four chips are on screen without a swipe, so
        they are the ones reached for most: what narrows the map and what it is
@@ -305,7 +305,7 @@
     header .hrow.r2 > .pop-wrap:has(#tproj) { order:2; }
     header .hrow.r2 > .pop-wrap:has(#tcol) { order:3; }
     header .hrow.r2 > #tphys { order:4; }
-    header .hrow.r2 > .grp { order:5; padding-left:8px; margin-left:2px; border-left:1px solid #21262d; }
+    header .hrow.r2 > .grp { order:5; padding-left:8px; margin-left:2px; border-left:1px solid #2c2c2c; }
     header .hrow.r2 .lbl { display:none; }
     /* 26px is a target for a mouse, not a thumb. 36 is short of the 44px the
        platform guidelines ask for, because every pixel of toolbar is one the
@@ -325,7 +325,7 @@
       padding:6px 16px calc(14px + env(safe-area-inset-bottom));
       box-shadow:0 -4px 14px rgba(0,0,0,.5); animation:sheet-up .2s ease-out; }
     header .pop-panel::before { content:""; flex:none; width:36px; height:4px; margin:4px auto 8px;
-      border-radius:2px; background:#30363d; }
+      border-radius:2px; background:#353535; }
     .pop-scrim { display:block; position:fixed; inset:0; z-index:5; background:rgba(3,5,9,.62);
       animation:scrim-in .2s ease-out; }
     .pop-scrim[hidden] { display:none; }
@@ -351,21 +351,21 @@
   .sw { width:9px; height:9px; border-radius:2px; flex:none; }
   .nm { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   #ramp { height:10px; border-radius:2px; margin:5px 0 3px; }
-  #legend .ends { display:flex; justify-content:space-between; color:#6e7681; font-size:11px; }
-  #tip { position:absolute; pointer-events:none; background:#161b22; border:1px solid #30363d;
+  #legend .ends { display:flex; justify-content:space-between; color:#787878; font-size:11px; }
+  #tip { position:absolute; pointer-events:none; background:#222222; border:1px solid #353535;
     border-radius:3px; padding:9px 11px; display:none; z-index:5;
     max-width:min(390px, calc(100vw - 22px));
     box-shadow:0 3px 10px rgba(0,0,0,.5); }
-  #tip b { color:#e6edf3; display:block; margin-bottom:3px; word-break:break-word; }
-  #tip .row { color:#7d8590; font-size:12px; }
+  #tip b { color:#ececec; display:block; margin-bottom:3px; word-break:break-word; }
+  #tip .row { color:#8c8c8c; font-size:12px; }
   #tip .cc0 { color:#57a773; font-weight:600; }
   #tip .by { color:#e0823d; font-weight:600; }
-  #tip .dim { color:#6e7681; font-style:italic; }
+  #tip .dim { color:#787878; font-style:italic; }
   #tip table { border-collapse:collapse; margin-top:5px; }
-  #tip td { padding:0 6px 1px 0; font-size:11px; color:#7d8590; }
+  #tip td { padding:0 6px 1px 0; font-size:11px; color:#8c8c8c; }
   #tip .bar { display:inline-block; height:6px; border-radius:2px; vertical-align:middle; }
-  footer { padding:5px 13px; border-top:1px solid #1e2530; color:#6e7681; font-size:12px;
-    background:#0d1117; display:flex; gap:11px; align-items:center; }
+  footer { padding:5px 13px; border-top:1px solid #262626; color:#787878; font-size:12px;
+    background:#1a1a1a; display:flex; gap:11px; align-items:center; }
   /* flex:none, or the help text's huge flex-basis wins the shrink and clips a
      15-character progress line down to "Packing 119/2..." on a 1440px footer.
      #now takes the width it needs; the 44% cap is what stops a long "Saved ..."
@@ -381,7 +381,7 @@
      that wait made visible. It holds off for LOAD_DELAY_MS so a cached one-shot
      never flashes one on its way to playing. */
   #load { flex:none; width:11px; height:11px; border-radius:50%; display:none;
-    border:2px solid #1e2530; border-top-color:#57a773;
+    border:2px solid #262626; border-top-color:#57a773;
     animation:spin .7s linear infinite; }
   #load.on { display:block; }
   @keyframes spin { to { transform:rotate(360deg); } }
@@ -391,7 +391,7 @@
   #dlone, #bkone { padding:2px 8px; font-size:12px; }
   /* The footer is the one place a link is actually clickable: #tip is
      pointer-events:none, and reaching for it changes which node is hovered. */
-  #note { color:#7d8590; white-space:nowrap; flex:none; }
+  #note { color:#8c8c8c; white-space:nowrap; flex:none; }
   #note a { color:#4b8bd6; }
   #note a:hover { color:#6fa8dc; }
   /* The help text is what yields when the footer runs out of room, never the
@@ -401,12 +401,12 @@
   footer button { flex:none; }
   /* Last and flex:none, so the help text yields before it does and the link is
      always whole. Quiet, because it is there to be found rather than noticed. */
-  #privacy { flex:none; color:#6e7681; text-decoration:none; }
-  #privacy:hover { color:#c9d1d9; text-decoration:underline; }
+  #privacy { flex:none; color:#787878; text-decoration:none; }
+  #privacy:hover { color:#d0d0d0; text-decoration:underline; }
   /* The waveform belongs to the footer bar and stays hidden until a decode
      lands, so the bar never holds a gap open for something that may not come. */
   #wave { flex:none; width:190px; height:26px; display:none; cursor:pointer;
-    border:1px solid #1e2530; border-radius:2px; background:#0f1319; }
+    border:1px solid #262626; border-radius:2px; background:#161616; }
   /* Loop is a button rather than a read-out: the state it shows is the one thing
      in the footer anybody would want to change on sight. It keeps its place when
      nothing is playing, where it shows - and sets - the standing preference for
@@ -415,31 +415,31 @@
     font-variant-numeric:tabular-nums; }
   /* Green rather than the default blue .on, because a looping sound is a playing
      sound and the footer says that in one colour. */
-  #loopst.on { background:#57a77333; border-color:#57a773; color:#e6edf3; }
+  #loopst.on { background:#57a77333; border-color:#57a773; color:#ececec; }
   /* A preference is not a state. With no sound to apply it to the button drops
      its fill and sits back, so it never reads as something currently looping. */
-  #loopst.def { background:transparent; border-color:#21262d; color:#6e7681; }
+  #loopst.def { background:transparent; border-color:#2c2c2c; color:#787878; }
   /* The arrangement panel sits opposite the legend, so a slider is never over
      the thing it is changing. Two tabs - where the nodes go and the live physics
      that moves them - because one scroll of
      fifteen controls made the panel taller than most windows. */
   #phys { position:absolute; top:11px; right:11px; width:296px; z-index:4;
-    background:rgba(13,17,23,.96); border:1px solid #1e2530; border-radius:4px;
+    background:rgba(26,26,26,.96); border:1px solid #262626; border-radius:4px;
     box-shadow:0 4px 14px rgba(0,0,0,.45);
     padding:10px 12px 12px; max-height:calc(100% - 22px); overflow:auto; }
   #phys[hidden] { display:none; }
   #phys .ph-tabs { display:flex; gap:3px; padding:3px; margin-bottom:12px;
-    background:#0b0e14; border-radius:3px; }
+    background:#121212; border-radius:3px; }
   #phys .ph-tabs button { flex:1 1 0; padding:5px 0; font-size:11.5px; border-radius:2px;
-    background:transparent; border:1px solid transparent; color:#9aa4b0;
+    background:transparent; border:1px solid transparent; color:#a6a6a6;
     transition:background-color .12s, border-color .12s, color .12s; }
-  #phys .ph-tabs button:hover:not(.on) { color:#e6edf3; }
-  #phys .ph-tabs button.on { background:#1f6feb26; border-color:#4b8bd6; color:#e6edf3; }
+  #phys .ph-tabs button:hover:not(.on) { color:#ececec; }
+  #phys .ph-tabs button.on { background:#1f6feb26; border-color:#4b8bd6; color:#ececec; }
   #phys .ph-pane[hidden] { display:none; }
   #phys .ph-pane { animation:phin .14s ease-out; }
   @keyframes phin { from { opacity:0; transform:translateY(3px); } to { opacity:1; transform:none; } }
   @media (prefers-reduced-motion:reduce) { #phys .ph-pane { animation:none; } }
-  #phys h2 { font-size:10px; margin:0 0 7px; color:#6e7681; font-weight:600;
+  #phys h2 { font-size:10px; margin:0 0 7px; color:#787878; font-weight:600;
     text-transform:uppercase; letter-spacing:.07em; }
   #phys .ph-grp { margin-top:13px; }
   #phys .btns { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:8px; }
@@ -447,28 +447,28 @@
   #phys h2 + .btns { margin-bottom:6px; }
   #phys .lay-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:10px; }
   #phys .lay-card { display:flex; flex-direction:column; align-items:center; gap:5px;
-    padding:10px 6px 8px; border-radius:3px; background:#0f1319; color:#9aa4b0;
+    padding:10px 6px 8px; border-radius:3px; background:#161616; color:#a6a6a6;
     font-size:11px; white-space:normal;
     transition:border-color .12s, background-color .12s, color .12s; }
   #phys .lay-card svg { display:block; }
-  #phys .lay-card:hover:not(.on) { border-color:#484f58; color:#e6edf3; }
-  #phys .lay-card.on { background:#1f6feb1f; border-color:#4b8bd6; color:#e6edf3; }
+  #phys .lay-card:hover:not(.on) { border-color:#4a4a4a; color:#ececec; }
+  #phys .lay-card.on { background:#1f6feb1f; border-color:#4b8bd6; color:#ececec; }
   #phys .chips { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; }
   #phys .chips button { display:inline-flex; align-items:center; gap:6px;
     padding:3px 9px; font-size:11px; }
   #phys .chips .dot { width:6px; height:6px; border-radius:50%; flex:none; }
   #phys .runrow { display:flex; gap:5px; margin-bottom:2px; }
   #phys .runrow button { flex:1 1 0; padding:5px 0; font-size:11.5px; border-radius:3px; }
-  #phys #ph_run { background:#1f6feb26; border-color:#4b8bd6; color:#e6edf3; }
+  #phys #ph_run { background:#1f6feb26; border-color:#4b8bd6; color:#ececec; }
   #phys #ph_run:hover { background:#1f6feb40; }
   #phys label { display:block; margin:0 0 5px; }
   /* Name, track and value on one line: ten stacked three-line sliders made the
      panel taller than most windows, and the panel is meant to sit beside the
      graph rather than scroll over it. */
   #phys label.sl { display:flex; align-items:center; gap:8px; margin:0 0 5px; }
-  #phys label.sl .nm { flex:none; width:64px; color:#7d8590; font-size:11px;
+  #phys label.sl .nm { flex:none; width:64px; color:#8c8c8c; font-size:11px;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  #phys label.sl b { flex:none; width:36px; text-align:right; color:#c9d1d9;
+  #phys label.sl b { flex:none; width:36px; text-align:right; color:#d0d0d0;
     font-size:11px; font-weight:600; font-variant-numeric:tabular-nums; }
   /* The track is filled up to the thumb, so a value reads off the bar rather than
      off hunting for the thumb. --f is the fraction, written by paintSlider(). */
@@ -477,54 +477,54 @@
     background:transparent; cursor:pointer; }
   #phys input[type=range]:focus { outline:none; }
   #phys input[type=range]::-webkit-slider-runnable-track { height:4px; border-radius:2px;
-    background:linear-gradient(to right, #4b8bd6 var(--f), #21262d var(--f)); }
+    background:linear-gradient(to right, #4b8bd6 var(--f), #2c2c2c var(--f)); }
   #phys input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px;
     height:14px; margin-top:-5px; border-radius:50%; background:#4b8bd6;
-    border:2px solid #0d1117; transition:background-color .12s; }
+    border:2px solid #1a1a1a; transition:background-color .12s; }
   #phys input[type=range]:hover::-webkit-slider-thumb { background:#6fa8dc; }
   #phys input[type=range]:focus-visible::-webkit-slider-thumb { box-shadow:0 0 0 2px #4b8bd680; }
-  #phys input[type=range]::-moz-range-track { height:4px; border-radius:2px; background:#21262d; }
+  #phys input[type=range]::-moz-range-track { height:4px; border-radius:2px; background:#2c2c2c; }
   #phys input[type=range]::-moz-range-progress { height:4px; border-radius:2px; background:#4b8bd6; }
   #phys input[type=range]::-moz-range-thumb { width:14px; height:14px; border-radius:50%;
-    background:#4b8bd6; border:2px solid #0d1117; box-sizing:border-box; }
+    background:#4b8bd6; border:2px solid #1a1a1a; box-sizing:border-box; }
   #phys .axes { display:flex; gap:6px; margin-bottom:8px; }
   #phys .axes[hidden] { display:none; }
   #phys .ax { flex:1 1 0; min-width:0; display:flex; align-items:center; gap:5px; margin:0; }
-  #phys .ax span { color:#6e7681; font-size:11px; }
-  #phys select { flex:1 1 0; min-width:0; background:#0b0e14; color:#e6edf3;
-    font:inherit; font-size:11px; border:1px solid #30363d; border-radius:2px;
+  #phys .ax span { color:#787878; font-size:11px; }
+  #phys select { flex:1 1 0; min-width:0; background:#121212; color:#ececec;
+    font:inherit; font-size:11px; border:1px solid #353535; border-radius:2px;
     padding:2px 3px; cursor:pointer; }
   #phys select:focus { outline:none; border-color:#4b8bd6; }
-  #phys .chk { display:flex; align-items:center; gap:6px; color:#7d8590;
+  #phys .chk { display:flex; align-items:center; gap:6px; color:#8c8c8c;
     font-size:11px; margin:6px 0 0; cursor:pointer; }
   #phys .chk input { width:auto; accent-color:#4b8bd6; }
-  #phys .meta { color:#6e7681; font-size:11px; margin-top:12px; padding-top:8px;
-    border-top:1px solid #1e2530; font-variant-numeric:tabular-nums; }
-  #phys .hint { color:#6e7681; font-size:11px; margin-top:5px; line-height:1.35; }
+  #phys .meta { color:#787878; font-size:11px; margin-top:12px; padding-top:8px;
+    border-top:1px solid #262626; font-variant-numeric:tabular-nums; }
+  #phys .hint { color:#787878; font-size:11px; margin-top:5px; line-height:1.35; }
   /* The basket borrows the physics panel's look but not its corner. Bottom left,
      the physics panel is 550px of sliders down the right-hand side, and
      anything sharing that edge covers the ones you are dragging. */
   #basket { position:absolute; left:11px; bottom:11px; width:272px; z-index:4;
-    background:rgba(13,17,23,.95); border:1px solid #1e2530; border-radius:3px;
+    background:rgba(26,26,26,.95); border:1px solid #262626; border-radius:3px;
     padding:9px 11px 10px; max-height:55%; display:flex; flex-direction:column; }
   /* display:flex on an id beats the UA's [hidden]{display:none}, so the hidden
      attribute has to be given its own rule or the panel is never hidden. */
   #basket[hidden] { display:none; }
-  #basket h2 { font-size:10px; margin:0 0 7px; color:#6e7681; font-weight:600;
+  #basket h2 { font-size:10px; margin:0 0 7px; color:#787878; font-weight:600;
     text-transform:uppercase; letter-spacing:.05em; }
   #basket .btns { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:6px; }
   #basket .btns button { padding:2px 7px; font-size:11px; }
-  #basket .hint { color:#6e7681; font-size:11px; margin-top:6px; line-height:1.35; }
+  #basket .hint { color:#787878; font-size:11px; margin-top:6px; line-height:1.35; }
   #basket .hint[hidden] { display:none; }
   /* The rows scroll rather than the panel growing: 200 kept samples is an
      ordinary basket and would otherwise run off the bottom of the window. */
   #bk_list { flex:1 1 auto; min-height:0; overflow:auto; margin:0 -3px; }
   .bkr { display:flex; align-items:center; gap:6px; padding:2px 3px;
     border-radius:2px; cursor:pointer; }
-  .bkr:hover { background:#161b22; }
-  .bkr .nm { flex:1 1 auto; min-width:0; color:#c9d1d9; font-size:11px;
+  .bkr:hover { background:#222222; }
+  .bkr .nm { flex:1 1 auto; min-width:0; color:#d0d0d0; font-size:11px;
     overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .bkr .mt { flex:none; color:#6e7681; font-size:10px; white-space:nowrap;
+  .bkr .mt { flex:none; color:#787878; font-size:10px; white-space:nowrap;
     font-variant-numeric:tabular-nums; }
   .bkr .lic { flex:none; font-size:10px; font-weight:600; }
   .bkr .lic.cc0 { color:#57a773; }
@@ -534,12 +534,12 @@
      middle-clicked and copied like any other link, and draggable is off because
      the row around it is already a drag source for the audio. */
   .bkr .go { flex:none; padding:0 2px; font-size:11px; line-height:1.2;
-    color:#6e7681; text-decoration:none; }
+    color:#787878; text-decoration:none; }
   .bkr .go:hover { color:#4b8bd6; }
   .bkr .x { flex:none; padding:0 3px; font-size:12px; line-height:1.2;
-    background:transparent; border:0; color:#6e7681; }
+    background:transparent; border:0; color:#787878; }
   .bkr .x:hover { color:#d1655b; }
-  #bk_list .none { color:#6e7681; font-size:11px; padding:3px; }
+  #bk_list .none { color:#787878; font-size:11px; padding:3px; }
   /* The now-playing chip is a drag source, but only while it names something. */
   #now { cursor:grab; }
   #now:empty { cursor:default; }
@@ -549,57 +549,76 @@
      button that plays one. Bottom right, opposite the basket, and gone for good
      once dismissed or once anything plays. */
   #welcome { position:absolute; right:14px; bottom:14px; z-index:5;
-    width:min(320px, calc(100% - 28px)); background:rgba(13,17,23,.97);
-    border:1px solid #30363d; border-radius:4px; padding:14px 16px 13px;
+    width:min(320px, calc(100% - 28px)); background:rgba(26,26,26,.97);
+    border:1px solid #353535; border-radius:4px; padding:14px 16px 13px;
     box-shadow:0 4px 14px rgba(0,0,0,.45); animation:wlin .25s ease-out; }
   #welcome[hidden] { display:none; }
   @keyframes wlin { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
   @media (prefers-reduced-motion:reduce) { #welcome { animation:none; } }
-  #welcome h2 { font-size:14px; margin:0 26px 6px 0; color:#e6edf3; font-weight:600; }
-  #welcome p { margin:0 0 12px; font-size:12px; line-height:1.55; color:#9aa4b0; }
-  #welcome p b { color:#e6edf3; font-weight:600; }
+  #welcome h2 { font-size:14px; margin:0 26px 6px 0; color:#ececec; font-weight:600; }
+  #welcome p { margin:0 0 12px; font-size:12px; line-height:1.55; color:#a6a6a6; }
+  #welcome p b { color:#ececec; font-weight:600; }
   #welcome .row { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
   #welcome .row button { font-size:12px; padding:5px 10px; }
-  #welcome .go { background:#1f6feb33; border-color:#4b8bd6; color:#e6edf3; font-weight:600; }
+  #welcome .go { background:#1f6feb33; border-color:#4b8bd6; color:#ececec; font-weight:600; }
   #welcome .go:hover { background:#1f6feb55; }
   #welcome .x { position:absolute; top:9px; right:9px; display:flex; align-items:center;
     justify-content:center; width:22px; height:22px; padding:0; background:transparent;
-    border:1px solid #21262d; border-radius:2px; color:#7d8590; font-size:15px; line-height:1; }
-  #welcome .x:hover { color:#e6edf3; border-color:#30363d; }
+    border:1px solid #2c2c2c; border-radius:2px; color:#8c8c8c; font-size:15px; line-height:1; }
+  #welcome .x:hover { color:#ececec; border-color:#353535; }
   @media (max-width:700px) and (pointer:coarse) {
     #welcome { left:10px; right:10px; bottom:10px; width:auto; } }
   /* The shortcuts, in the clothes the other two dialogs wear. */
-  #keys-dl { width:min(480px, calc(100vw - 28px)); padding:0; color:#c9d1d9;
-    background:#0d1117; border:1px solid #30363d; border-radius:4px; font:inherit; }
+  #keys-dl { width:min(480px, calc(100vw - 28px)); padding:0; color:#d0d0d0;
+    background:#1a1a1a; border:1px solid #353535; border-radius:4px; font:inherit; }
   #keys-dl::backdrop { background:rgba(3,5,9,.74); }
   #keys-dl .bd { padding:16px 18px 14px; max-height:min(80vh, 760px); overflow:auto; }
-  #keys-dl h2 { font-size:15px; margin:0 0 2px; color:#e6edf3; font-weight:600; }
-  #keys-dl h3 { font-size:10px; margin:16px 0 5px; color:#6e7681; font-weight:600;
+  #keys-dl h2 { font-size:15px; margin:0 0 2px; color:#ececec; font-weight:600; }
+  #keys-dl h3 { font-size:10px; margin:16px 0 5px; color:#787878; font-weight:600;
     text-transform:uppercase; letter-spacing:.05em; }
   #keys-dl table { width:100%; border-collapse:collapse; font-size:12px; }
-  #keys-dl td { padding:5px 0; vertical-align:top; color:#9aa4b0;
-    border-bottom:1px solid #161b22; line-height:1.45; }
+  #keys-dl td { padding:5px 0; vertical-align:top; color:#a6a6a6;
+    border-bottom:1px solid #222222; line-height:1.45; }
   #keys-dl tr:last-child td { border-bottom:0; }
-  #keys-dl td:first-child { width:44%; padding-right:12px; color:#c9d1d9; }
-  #keys-dl p { margin:0 0 6px; font-size:12px; line-height:1.6; color:#9aa4b0; }
+  #keys-dl td:first-child { width:44%; padding-right:12px; color:#d0d0d0; }
+  #keys-dl p { margin:0 0 6px; font-size:12px; line-height:1.6; color:#a6a6a6; }
   #keys-dl kbd { font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; font-size:11px;
-    color:#e6edf3; background:#161b22; border:1px solid #30363d; border-bottom-width:2px;
+    color:#ececec; background:#222222; border:1px solid #353535; border-bottom-width:2px;
     border-radius:2px; padding:0 5px; white-space:nowrap; }
   #keys-dl code { font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; font-size:11px;
-    color:#c9d1d9; background:#0b0e14; border:1px solid #21262d; border-radius:2px;
+    color:#d0d0d0; background:#121212; border:1px solid #2c2c2c; border-radius:2px;
     padding:1px 5px; white-space:nowrap; }
   #keys-dl .ft { display:flex; justify-content:flex-end; margin-top:14px; padding-top:11px;
-    border-top:1px solid #1e2530; }
-  #keys-dl .ft button { background:#1f6feb33; border:1px solid #4b8bd6; color:#e6edf3;
+    border-top:1px solid #262626; }
+  #keys-dl .ft button { background:#1f6feb33; border:1px solid #4b8bd6; color:#ececec;
     padding:4px 14px; border-radius:2px; font:inherit; font-size:12px; font-weight:600; cursor:pointer; }
   #keys-dl .xw { position:sticky; top:0; height:0; z-index:2;
     display:flex; justify-content:flex-end; }
   #keys-dl .x { display:flex; align-items:center; justify-content:center;
-    width:22px; height:22px; padding:0; background:#0d1117; border:1px solid #21262d;
-    border-radius:2px; color:#7d8590; font:inherit; font-size:15px; line-height:1;
+    width:22px; height:22px; padding:0; background:#1a1a1a; border:1px solid #2c2c2c;
+    border-radius:2px; color:#8c8c8c; font:inherit; font-size:15px; line-height:1;
     cursor:pointer; }
-  #keys-dl .x:hover { color:#e6edf3; border-color:#30363d; }
+  #keys-dl .x:hover { color:#ececec; border-color:#353535; }
   #keysbtn { width:24px; padding:2px 0; font-size:12px; font-weight:600; }
+  /* ==== studio finish ==========================================================
+     Figures set as read-outs, the active choice marked with an underline, fader
+     caps on the sliders, and a now-playing display inset into the footer. */
+  .stat b, .cnt, .badge, .ct, .opt .n, .pop-sub, .bkr .mt, #phys label.sl b, #phys .meta, #pbpm {
+    font-family:ui-monospace,"SF Mono","Cascadia Mono","JetBrains Mono",Consolas,monospace;
+    font-size:11px; letter-spacing:0; }
+  header .pill.on { box-shadow:inset 0 -2px 0 #4b8bd6; }
+  header .pill.cc.on { box-shadow:inset 0 -2px 0 #57a773; }
+  #phys input[type=range]::-webkit-slider-thumb { width:8px; height:14px; border-radius:1px;
+    background:#d0d0d0; border:1px solid #121212; }
+  #phys input[type=range]:hover::-webkit-slider-thumb { background:#ececec; }
+  #phys input[type=range]::-moz-range-thumb { width:8px; height:14px; border-radius:1px;
+    background:#d0d0d0; border:1px solid #121212; }
+  footer { background:#161616; border-top-color:#353535; }
+  #now:not(:empty) { height:28px; line-height:26px; padding:0 10px; background:#121212;
+    border:1px solid #262626; border-radius:2px;
+    font-family:ui-monospace,"SF Mono","Cascadia Mono","JetBrains Mono",Consolas,monospace;
+    font-size:11.5px; font-weight:500; }
+  #wave { background:#121212; border:1px solid #262626; border-radius:2px; }
 </style>
 <div id="wrap">
   <header>
@@ -807,7 +826,7 @@ try { ["fs-oauth", "fs-oauth-client"].forEach(k => localStorage.removeItem(k)); 
 const N = DATA.nodes, E = DATA.edges;
 const PAL = ["#4b8bd6","#e0823d","#57a773","#c9518f","#9a7bd0","#d4b03c","#4bb3c4",
              "#d1655b","#6fa8dc","#8fbf6a","#c77dbb","#c9a227","#5bbcae","#b07a4f","#7f8fa6"];
-const clusterColour = r => r < PAL.length ? PAL[r] : "#3d4652";
+const clusterColour = r => r < PAL.length ? PAL[r] : "#454545";
 // Blue -> cyan -> yellow -> red, for a 0-100 timbre value.
 const rampColour = v => "hsl(" + Math.round((1 - v) * 225) + ",72%," + Math.round(38 + v * 18) + "%)";
 
@@ -903,7 +922,7 @@ function basketMissing(){ let m = 0;
 const TAU = 6.283185307;
 function drawVinyl(x, y, r, col){
   ctx.beginPath(); ctx.arc(x, y, r, 0, TAU);
-  ctx.fillStyle = "#0f1319"; ctx.fill();
+  ctx.fillStyle = "#161616"; ctx.fill();
   ctx.lineWidth = Math.max(0.4, r * 0.09);
   ctx.strokeStyle = "rgba(200,214,232,0.22)"; ctx.stroke();
   if (r >= 5.5){
@@ -917,7 +936,7 @@ function drawVinyl(x, y, r, col){
   ctx.fillStyle = col; ctx.fill();
   if (r >= 9){                       // spindle hole, once there is room for one
     ctx.beginPath(); ctx.arc(x, y, r * 0.09, 0, TAU);
-    ctx.fillStyle = "#0b0e14"; ctx.fill();
+    ctx.fillStyle = "#121212"; ctx.fill();
   }
 }
 const VINYL_MIN_R = 2.5;
@@ -925,9 +944,9 @@ let showClap = true;
 
 function nodeColour(n){
   if (colourBy === "cluster") return clusterColour(n.c);
-  if (n.k !== "sample") return "#2f3743";
+  if (n.k !== "sample") return "#3a3a3a";
   const v = n.tb && n.tb[+colourBy];
-  if (v === null || v === undefined) return "#2f3743";
+  if (v === null || v === undefined) return "#3a3a3a";
   return rampColour(Math.max(0, Math.min(1, v / 100)));
 }
 function shown(n){
@@ -965,7 +984,7 @@ function drawLegend(){
   el.innerHTML = '<div class="row"><span class="nm">'+TIMBRE[+colourBy]+'</span></div>'+
     '<div id="ramp" style="background:linear-gradient(90deg,'+stops.join(",")+')"></div>'+
     '<div class="ends"><span>0</span><span>100</span></div>'+
-    '<div class="row" style="margin-top:6px"><span class="sw" style="background:#2f3743"></span>'+
+    '<div class="row" style="margin-top:6px"><span class="sw" style="background:#3a3a3a"></span>'+
     '<span class="nm">no value / not a sample</span></div>';
 }
 
@@ -1006,7 +1025,7 @@ function draw(){
   // standing still. At 60fps across 7,214 nodes they are the whole frame budget,
   // so a moving layout draws plain discs and gets its detail back when it stops.
   const fast = (running || tweening) && !fullDetail;
-  ctx.fillStyle="#0b0e14"; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle="#121212"; ctx.fillRect(0,0,W,H);
   drawAxes();                      // nothing, unless a scatter graph is arranged
   const z = scale/Math.min(W,H);
 
@@ -1156,7 +1175,7 @@ function draw(){
       const bx2=sx(n)+r*0.72-s/2, by2=sy(n)-r*0.72-s/2;
       if(bx2 < -s || bx2 > W || by2 < -s || by2 > H) continue;
       ctx.fillStyle="#c9518f"; ctx.fillRect(bx2, by2, s, s);
-      ctx.lineWidth=0.8; ctx.strokeStyle="#0b0e14"; ctx.strokeRect(bx2, by2, s, s); } }
+      ctx.lineWidth=0.8; ctx.strokeStyle="#121212"; ctx.strokeRect(bx2, by2, s, s); } }
 
   // Where the walk can go next. A diamond over the node, not a fourth ring: gold
   // already means pinned, green means playing and white means matched, and at 3px
@@ -1183,7 +1202,7 @@ function draw(){
     ctx.font = n.k==="family" ? "600 13px ui-sans-serif, system-ui, sans-serif"
              : big ? "600 11px ui-sans-serif, system-ui, sans-serif"
              : "11px ui-sans-serif, system-ui, sans-serif";
-    ctx.fillStyle = big ? "#e6edf3" : "#a8b3bf";
+    ctx.fillStyle = big ? "#ececec" : "#b0b0b0";
     ctx.fillText(n.l, px, py-rad(n)-4); }
 
   if(hover>=0 && N[hover] && shown(N[hover])){ const n=N[hover];
@@ -1966,10 +1985,10 @@ function drawWave(){
   for (let x=0;x<w;x++){
     const v = wavePeaks[Math.min(WAVE_BINS-1, (x/w*WAVE_BINS)|0)];
     const a = Math.max(0.5, v*(mid - 1.5));       // a silent column still draws a line
-    wctx.fillStyle = x < px ? "#57a773" : "#3f4c5c";
+    wctx.fillStyle = x < px ? "#57a773" : "#4a4a4a";
     wctx.fillRect(x, mid - a, 1, a*2);
   }
-  if (len){ wctx.fillStyle = "#e6edf3"; wctx.fillRect(Math.min(w-1, Math.max(0, px)), 0, 1, h); }
+  if (len){ wctx.fillStyle = "#ececec"; wctx.fillRect(Math.min(w-1, Math.max(0, px)), 0, 1, h); }
 }
 // Only while a sound is actually moving. Once it has ended the strip stays up
 // with the bar, frozen where it stopped: there is nothing left to animate, and
@@ -2514,7 +2533,7 @@ document.getElementById("phys").innerHTML =
   '<h2>style</h2>' +
   '<div class="chips">' + Object.keys(PRESETS).map(p =>
     '<button class="pre" data-p="' + p + '"><span class="dot" style="background:' +
-    (PRESET_DOT[p] || "#7d8590") + '"></span>' + (PRESET_NAMES[p] || p) + '</button>').join("") + '</div>' +
+    (PRESET_DOT[p] || "#8c8c8c") + '"></span>' + (PRESET_NAMES[p] || p) + '</button>').join("") + '</div>' +
   '<div class="runrow"><button id="ph_run">&#9654; run</button>' +
   '<button id="ph_unpin">unpin all</button></div>' +
   CTRL_GROUPS.map(g => '<h2 class="ph-grp">' + g[0] + '</h2>' +
@@ -2930,17 +2949,17 @@ function drawAxes(){
     if (A.gx !== null){ const x = gx(A.gx); ctx.moveTo(x, T); ctx.lineTo(x, gy(A.gy !== null ? A.gy : A.y1)); }
     if (A.gy !== null){ const y = gy(A.gy); ctx.moveTo(gx(A.gx !== null ? A.gx : A.x0), y); ctx.lineTo(R, y); }
     ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle = "#6e7681"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = "#787878"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
     if (A.gx !== null) ctx.fillText("no value", gx(A.gx) - 62, T - 6);
     if (A.gy !== null) ctx.fillText("no value", R + 8, gy(A.gy) + 4);
   }
 
-  ctx.fillStyle = "#8b949e"; ctx.textAlign = "center"; ctx.textBaseline = "top";
+  ctx.fillStyle = "#969696"; ctx.textAlign = "center"; ctx.textBaseline = "top";
   for (const t of A.xt) ctx.fillText(t.t, gx(t.p), B + 6);
   ctx.textAlign = "right"; ctx.textBaseline = "middle";
   for (const t of A.yt) ctx.fillText(t.t, L - 7, gy(t.p));
 
-  ctx.fillStyle = "#c9d1d9"; ctx.font = "600 12px ui-sans-serif, system-ui, sans-serif";
+  ctx.fillStyle = "#d0d0d0"; ctx.font = "600 12px ui-sans-serif, system-ui, sans-serif";
   ctx.textAlign = "center"; ctx.textBaseline = "top";
   ctx.fillText(A.fx.l, (L + R)/2, B + 24);
   ctx.save(); ctx.translate(L - 46, (T + B)/2); ctx.rotate(-Math.PI/2);
